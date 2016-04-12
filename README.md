@@ -5,7 +5,7 @@ Architect is a time explicit hybrid code design to perform quick simulations for
 
 This newer version, in part rewritten from scratch, is released as an alpha version as is, without any warranty, and will be maintained here on GitHub. A new publication is currently underway to describe progresses on this new code. If you use `architect`, you're kindly required to cite the reference papers as well as the Zenodo DOI of the latest release.
 
-releases:  
-v1.0.0-alpha: [![DOI]()
+releases:
+v1.0.0-alpha: [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.49572.svg)](http://dx.doi.org/10.5281/zenodo.49572)
 
 Copyright on the code is by A. Marocchino, F. Massimo
