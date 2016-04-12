@@ -1,0 +1,576 @@
+MODULE Advance_Fluid_Compact_Upwind
+
+USE my_types
+USE use_my_types
+
+
+IMPLICIT NONE
+
+CONTAINS
+
+! Upwind, Sprang operator splitting (half advection, electromagnetic advance, half advection)
+
+
+!---! !---! !---!
+   SUBROUTINE AdvanceFluid_CompactUpwind
+
+   IMPLICIT NONE
+
+
+
+   INTEGER :: i,j,iter,q
+   INTEGER :: Nz,Nr,Node_min_z,Node_max_z,Node_min_r,Node_max_r,Node_end_z,Node_end_r
+
+   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: ux,uz,ne,ux_halfDt,uz_halfDt,ux_new,uz_new,gamma_new,ne_new
+   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: Ex_f,Ez_f,Bphi_f
+   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: ne_ux_halfDt,ne_uz_halfDt,ne_ux_new,ne_uz_new
+
+   REAL DeltaR,DeltaZ,Dt,threshold_factor
+   REAL beta_x_halfDt,beta_z_halfDt
+   REAL beta_z_left,beta_z_right,beta_x_down,beta_x_up
+   REAL ux_temp,uz_temp
+   REAL, DIMENSION(mesh_par%Nxm) :: r_mesh,Sr,Sz,Vol
+
+   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: beta_z_i_minus_halfDz,beta_x_j_minus_halfDr
+
+
+   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: quantity_td,quantity
+   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: flux_z,flux_r
+   REAL u_th
+
+
+
+
+
+   !write(*,*) 'Hey ya'
+   !pause
+
+
+   !--------------!
+   !     Mesh     !
+   !--------------!
+
+   DeltaR = mesh_par%dxm
+   DeltaZ = mesh_par%dzm
+   !~Dt     = Dt_fs*plasma%omega_0
+   Dt     = sim_parameters%dt*plasma%omega_p
+
+
+   threshold_factor = 1e-18
+   !---------------------------------------------------------------------------------!
+   !                                     Z axis                                      !
+   !         									     !
+   !     ghost cell                  physical domain                ghost cell       !
+   !  |______________|___________________________________________|____________|      !
+   !  |              |            |                |             |            |      !
+   !       1           Node_min_z                     Node_max_z   Node_end_z        !
+   !---------------------------------------------------------------------------------!
+   !                                    Fluid Mesh				     !
+   !---------------------------------------------------------------------------------!
+   !                                      R axis                                     !
+   !										     !
+   !     ghost cell                  physical domain                ghost cell       !
+   !  |______________|___________________________________________|____________|      !
+   !  |              |            |                |             |            |      !
+   !       1           Node_min_z                     Node_max_z   Node_end_z        !
+   !                   Axis cell                                                     !
+   !---------------------------------------------------------------------------------!
+
+   Nz             = mesh_par%Nzm
+   Nr             = mesh_par%Nxm
+
+   !--- low order boundaries ---!
+   Node_min_z    = 2
+   Node_max_z    = Nz-1
+
+   Node_min_r    = 2
+   Node_max_r    = Nr-1
+
+   Node_end_z    = Nz
+   Node_end_r    = Nr
+
+   !--- --- ---!
+   r_mesh(1)            = -DeltaR
+   r_mesh(2)            = 0.
+   Sr    (1)	        = 0.
+   Sr    (2)	        = 0. !2.*pi * DeltaZ * (DeltaR/2.)
+   Sz	 (2)	        = pi    *(DeltaR/2.)**2
+   Vol   (2)            = pi    * DeltaZ * (DeltaR/2.)**2
+
+   do j=(Node_min_r+1),Node_end_r
+            r_mesh(j)   = DeltaR*(j-2)
+            Sr    (j)	= 2.*pi * DeltaZ * (r_mesh(j)-DeltaR/2.) !half cell down
+            Sz	  (j)	= 2.*pi *          DeltaR * r_mesh(j)
+            Vol   (j)	= 2.*pi * DeltaZ * DeltaR * r_mesh(j)
+   enddo
+
+   !-----------------------!
+   !   Initial Conditions  !
+   !-----------------------!
+   ux  =	mesh(:,:)%ux
+   uz  =	mesh(:,:)%uz
+   ne  =	mesh(:,:)%n_plasma_e
+
+   ! Initialize auxiliary vectors and reals
+
+
+   ne_ux_halfDt     = 0.
+   ne_uz_halfDt     = 0.
+
+   ux_new           = 0.
+   uz_new           = 0.
+
+   ne_new	    = 0.
+
+   beta_x_halfDt    = 0.
+   beta_z_halfDt    = 0.
+
+   Ez_f	            = 0.
+   Ex_f		    = 0.
+   Bphi_f	    = 0.
+
+!------------------------ Advection Upwind -----------------------------!
+
+
+	!-------------------------------------------!
+	! First Advection begins here 			        !
+	!-------------------------------------------!
+
+	!--> beta-face-centered
+	do i= Node_min_z,Node_end_z
+	do j= Node_min_r,Node_end_r
+	    beta_z_left   = uz(i-1,j)/sqrt( 1. + ux(i-1,j)**2 + uz(i-1,j)**2 + threshold_factor)
+	    beta_z_right  = uz(i  ,j)/sqrt( 1. + ux(i  ,j)**2 + uz(i  ,j)**2 + threshold_factor)
+	    beta_x_down   = ux(i,j-1)/sqrt( 1. + ux(i,j-1)**2 + uz(i,j-1)**2 + threshold_factor)
+	    beta_x_up     = ux(i,j  )/sqrt( 1. + ux(i,j  )**2 + uz(i,j  )**2 + threshold_factor)
+
+	    beta_z_i_minus_halfDz(i,j) = 0.5*( beta_z_left + beta_z_right )
+	    beta_x_j_minus_halfDr(i,j) = 0.5*( beta_x_down + beta_x_up    )
+	end do
+	end do
+
+
+
+
+
+
+  do q=1,3
+	quantity = 0.
+	quantity_td=0.
+	if (q.eq.1) quantity = ne
+	if (q.eq.2) quantity = ne*ux
+	if (q.eq.3) quantity = ne*uz
+
+	!--- fluxes
+	do i= Node_min_z,Node_end_z
+	do j= Node_min_r,Node_end_r
+		!--- donor cell scheme
+		flux_z (i,j) = quantity(i-1,j  ) * max(0.,beta_z_i_minus_halfDz(i,j)) + quantity(i  ,j  ) * min(0.,beta_z_i_minus_halfDz(i,j))
+		flux_r (i,j) = quantity(i  ,j-1) * max(0.,beta_x_j_minus_halfDr(i,j)) + quantity(i  ,j  ) * min(0.,beta_x_j_minus_halfDr(i,j))
+		!---!
+		flux_z (i,j) = flux_z (i,j) * Sz(j) * Dt/2.
+		flux_r (i,j) = flux_r (i,j) * Sr(j) * Dt/2.
+	end do
+	end do
+
+	!
+
+	!---------------------------------------------!
+	!  Boundary conditions for fluxes along z     !
+        !---------------------------------------------!
+	! left boundary
+   	do j = Node_min_r,Node_max_r
+		flux_z (2,j)          = 0.
+   	enddo
+   	! right boundary
+   	do j = Node_min_r,Node_max_r
+        	flux_z (Node_end_z,j) = 0.
+   	enddo
+
+        !-------------------------------------!
+	! Compute the upwind solution         !
+        !-------------------------------------!
+	do i= Node_min_z,Node_max_z
+	do j= Node_min_r,Node_max_r
+		quantity_td(i,j) = quantity(i,j) - 1./Vol(j) * (flux_z(i+1,j)-flux_z(i,j)+flux_r(i,j+1)-flux_r(i,j))
+	end do
+	end do
+
+	!---------------------------------------------!
+	!  Boundary conditions for upwind             !
+        !---------------------------------------------!
+	if (q.eq.1) then
+		! upper boundary
+   		do i = Node_min_z,Node_max_z
+        		quantity_td (i,Node_end_r) = quantity_td(i,Node_max_r)
+   		enddo
+   		! lower boundary
+   		do i = Node_min_z,Node_max_z
+        		quantity_td (i,1         ) = quantity_td(i,Node_min_r+1)
+   		enddo
+   		! left boundary
+   		do j = Node_min_r,Node_max_r
+			quantity_td (1,j)          = quantity_td(Node_min_z,j)
+   		enddo
+   		!! right boundary
+   		!do j = Node_min_r,Node_max_r
+        	!	quantity_td (Node_end_z,j) = quantity_td(Node_max_z,j)
+   		!enddo
+	else if (q.eq.2) then
+		! upper boundary
+   		do i = Node_min_z,Node_max_z
+        		quantity_td(i,Node_end_r)  =  quantity_td(i,Node_max_r)
+   		enddo
+   		! lower boundary
+   		do i = Node_min_z,Node_max_z
+        		quantity_td(i,1         )  = -quantity_td(i,Node_min_r+1)
+        		quantity_td(i,Node_min_r)  =  0.
+   		enddo
+   		! left boundary
+   		do j = Node_min_r,Node_max_r
+        		quantity_td(1,j)           =  0.
+   		enddo
+   		!! right boundary
+   		!do j = Node_min_r,Node_max_r
+        	!	quantity_td(Node_end_z,j)  =  quantity_td(Node_max_z,j)
+   		!enddo
+	else if (q.eq.3) then
+		! upper boundary
+   		do i = Node_min_z,Node_max_z
+        		quantity_td(i,Node_end_r)  =  quantity_td(i,Node_max_r)
+   		enddo
+   		! lower boundary
+   		do i = Node_min_z,Node_max_z
+        		quantity_td(i,1         )  =  quantity_td(i,Node_min_r+1)
+   		enddo
+   		! left boundary
+   		do j = Node_min_r,Node_max_r
+        		quantity_td(1,j)           =  0.
+   		enddo
+   		!! right boundary
+   		!do j = Node_min_r,Node_max_r
+        	!	quantity_td(Node_end_z,j)  = quantity_td(Node_max_z,j)
+   		!enddo
+	endif
+
+    !   ------- backward substitution
+	if (q.eq.1) ne_new       = quantity_td
+	if (q.eq.2) ne_ux_halfDt = quantity_td
+	if (q.eq.3) ne_uz_halfDt = quantity_td
+
+  enddo
+
+   !-----------------------!
+   !  Boundary Conditions  !
+   !-----------------------!
+   ! upper boundary
+   do i = Node_min_z,Node_max_z
+        ne_new      (i,Node_end_r) =  ne_new      (i,Node_max_r)
+        ne_ux_halfDt(i,Node_end_r) =  ne_ux_halfDt(i,Node_max_r)
+        ne_uz_halfDt(i,Node_end_r) =  ne_uz_halfDt(i,Node_max_r)
+   enddo
+
+   ! lower boundary
+   do i = Node_min_z,Node_max_z
+        ne_new      (i,1         )    =  ne_new      (i,Node_min_r+1)
+        ne_uz_halfDt(i,1         )    =  ne_uz_halfDt(i,Node_min_r+1)
+        ne_ux_halfDt(i,1         )    = -ne_ux_halfDt(i,Node_min_r+1)
+        ne_ux_halfDt(i,Node_min_r) =  0.
+   enddo
+
+   ! left boundary
+   do j = Node_min_r,Node_max_r
+	ne_new      (2,j)             =  ne_new(Node_min_z,j)
+        ne_ux_halfDt(2,j)             =  0.
+        ne_uz_halfDt(2,j)             =  0.
+   enddo
+
+   !! right boundary
+   !do j = Node_min_r,Node_max_r
+   !     ne_new      (Node_end_z,j) = ne_new      (Node_max_z,j)
+   !     ne_ux_halfDt(Node_end_z,j) = ne_ux_halfDt(Node_max_z,j)
+   !     ne_uz_halfDt(Node_end_z,j) = ne_uz_halfDt(Node_max_z,j)
+   !enddo
+
+!-------------------------- Electromagnetic Advance ------------------------------
+
+   do i= Node_min_z,Node_max_z
+ 	do j= Node_min_r,Node_max_r
+		Ez_f   (i,j) = 0.5*( mesh(i,j  )%Ez_bunch   + mesh(i  ,j-1)%Ez_bunch       ) ! properly centered in space
+		Ex_f   (i,j) = 0.5*( mesh(i,j-1)%Ex_bunch   + mesh(i+1,j-1)%Ex_bunch       ) ! properly centered in space
+		Bphi_f (i,j) = 0.5*( mesh(i,j-1)%Bphi_bunch + mesh(i  ,j-1)%Bphi_old_bunch ) ! properly centered in time
+	enddo
+   enddo
+
+
+
+   do i= Node_min_z,Node_max_z
+    		do j= Node_min_r,Node_max_r
+
+			if (ne_new(i,j).le.1.e-18) then
+				beta_x_halfDt = 0.
+				beta_z_halfDt = 0.
+			else
+	ux_temp = ne_ux_halfDt(i,j)/max(ne_new(i,j),threshold_factor)
+	uz_temp = ne_uz_halfDt(i,j)/max(ne_new(i,j),threshold_factor)
+	beta_x_halfDt = ux_temp/ sqrt(1.+ux_temp**2+uz_temp**2)
+	beta_z_halfDt = uz_temp/ sqrt(1.+ux_temp**2+uz_temp**2)
+			endif
+    ux_new       (i,j) = ux(i,j) + Dt*( Ex_f(i,j) - beta_z_halfDt*Bphi_f(i,j) )
+		uz_new       (i,j) = uz(i,j) + Dt*( Ez_f(i,j) + beta_x_halfDt*Bphi_f(i,j) )
+
+			if ((ux_new(i,j).ne.ux_new(i,j)).or.(ux_new(i,j).ne.ux_new(i,j))) then
+				write(*,*) 'bla'
+				write(*,*) i,j
+				write(*,*) 'n_new',ne_new(i,j)
+				write(*,*) 'ux',ux(i,j)
+				write(*,*) 'uz',uz(i,j)
+				write(*,*) 'n_ux_new',ux_new(i,j)
+				write(*,*) 'n_uz_new',ux_new(i,j)
+				write(*,*) 'ux_temp',ux_temp
+				write(*,*) 'uz_temp',ux_temp
+
+				write(*,*) 'beta_x_halfDt',beta_x_halfDt
+				write(*,*) 'beta_z_halfDt',beta_z_halfDt
+				write(*,*) 'Ex',Ex_f(i,j)
+				write(*,*) 'Ez',Ez_f(i,j)
+				write(*,*) 'B',Bphi_f(i,j)
+
+				stop
+			endif
+		enddo
+   enddo
+
+   !-----------------------!
+   !  Boundary Conditions  !
+   !-----------------------!
+
+
+   ! upper boundary
+   do i = Node_min_z,Node_max_z
+        ux_new(i,Node_end_r) = ux_new(i,Node_max_r)
+        uz_new(i,Node_end_r) = uz_new(i,Node_max_r)
+   enddo
+
+   ! lower boundary
+   do i = Node_min_z,Node_max_z
+        uz_new(i,1)             =  uz_new(i,Node_min_r+1)
+        ux_new(i,1)             = -ux_new(i,Node_min_r+1)
+        ux_new(i,Node_min_r) =  0.
+   enddo
+
+   ! left boundary
+   do j = Node_min_r,Node_max_r
+	ux_new(1,j)             = 0.
+        uz_new(1,j)             = 0.
+   enddo
+
+   !! right boundary
+   !do j = Node_min_r,Node_max_r
+   !     ux_new(Node_end_z,j) = ux_new(Node_max_z,j)
+   !     uz_new(Node_end_z,j) = uz_new(Node_max_z,j)
+   !enddo
+
+   ! --------------- Second Advection --------------------!
+
+
+!--> beta-face-centered
+   do i= Node_min_z,Node_end_z
+   do j= Node_min_r,Node_end_r
+	beta_z_left   = uz_new(i-1,j)/sqrt( 1. + ux_new(i-1,j)**2 + uz_new(i-1,j)**2 + threshold_factor)
+	beta_z_right  = uz_new(i  ,j)/sqrt( 1. + ux_new(i  ,j)**2 + uz_new(i  ,j)**2 + threshold_factor)
+	beta_x_down   = ux_new(i,j-1)/sqrt( 1. + ux_new(i,j-1)**2 + uz_new(i,j-1)**2 + threshold_factor)
+	beta_x_up     = ux_new(i,j  )/sqrt( 1. + ux_new(i,j  )**2 + uz_new(i,j  )**2 + threshold_factor)
+
+	beta_z_i_minus_halfDz(i,j) = 0.5*( beta_z_left + beta_z_right )
+	beta_x_j_minus_halfDr(i,j) = 0.5*( beta_x_down + beta_x_up    )
+   end do
+   end do
+
+
+
+
+
+
+ do q=1,3
+	quantity = 0.
+	quantity_td=0.
+	if (q.eq.1) quantity = ne_new
+	if (q.eq.2) quantity = ne_new*ux_new
+	if (q.eq.3) quantity = ne_new*uz_new
+
+	!--- fluxes
+	do i= Node_min_z,Node_end_z
+	do j= Node_min_r,Node_end_r
+		!--- donor cell scheme
+		flux_z (i,j) = quantity(i-1,j  ) * max(0.,beta_z_i_minus_halfDz(i,j)) + quantity(i  ,j  ) * min(0.,beta_z_i_minus_halfDz(i,j))
+		flux_r (i,j) = quantity(i  ,j-1) * max(0.,beta_x_j_minus_halfDr(i,j)) + quantity(i  ,j  ) * min(0.,beta_x_j_minus_halfDr(i,j))
+		!---!
+		flux_z (i,j) = flux_z (i,j) * Sz(j) * Dt/2.
+		flux_r (i,j) = flux_r (i,j) * Sr(j) * Dt/2.
+	end do
+	end do
+
+        !---------------------------------------------!
+	!  Boundary conditions for fluxes along z     !
+        !---------------------------------------------!
+	! left boundary
+   	do j = Node_min_r,Node_max_r
+		flux_z (2,j)          = 0.
+   	enddo
+   	! right boundary
+   	do j = Node_min_r,Node_max_r
+        	flux_z (Node_end_z,j) = 0.
+   	enddo
+
+	!-------------------------------------------!
+	! Compute the upwind solution               !
+        !-------------------------------------------!
+	do i= Node_min_z,Node_max_z
+	do j= Node_min_r,Node_max_r
+		quantity_td(i,j) = quantity(i,j) - 1./Vol(j) * (flux_z(i+1,j)-flux_z(i,j)+flux_r(i,j+1)-flux_r(i,j))
+	end do
+	end do
+
+	!---------------------------------------------!
+	!  Boundary conditions for upwind             !
+        !---------------------------------------------!
+	if (q.eq.1) then
+		! upper boundary
+   		do i = Node_min_z,Node_max_z
+        		quantity_td (i,Node_end_r) = quantity_td(i,Node_max_r)
+   		enddo
+   		! lower boundary
+   		do i = Node_min_z,Node_max_z
+        		quantity_td (i,1         ) = quantity_td(i,Node_min_r+1)
+   		enddo
+   		! left boundary
+   		do j = Node_min_r,Node_max_r
+			quantity_td (1,j)          = quantity_td(Node_min_z,j)
+   		enddo
+   		!! right boundary
+   		!do j = Node_min_r,Node_max_r
+        	!	quantity_td (Node_end_z,j) = quantity_td(Node_max_z,j)
+   		!enddo
+	else if (q.eq.2) then
+		! upper boundary
+   		do i = Node_min_z,Node_max_z
+        		quantity_td(i,Node_end_r)  =  quantity_td(i,Node_max_r)
+   		enddo
+   		! lower boundary
+   		do i = Node_min_z,Node_max_z
+        		quantity_td(i,1         )  = -quantity_td(i,Node_min_r+1)
+			quantity_td(i,Node_min_r)  =  0.
+   		enddo
+   		! left boundary
+   		do j = Node_min_r,Node_max_r
+        		quantity_td(1,j)           =  0.
+   		enddo
+   		!! right boundary
+   		!do j = Node_min_r,Node_max_r
+        	!	quantity_td(Node_end_z,j)  =  quantity_td(Node_max_z,j)
+   		!enddo
+	else if (q.eq.3) then
+		! upper boundary
+   		do i = Node_min_z,Node_max_z
+        		quantity_td(i,Node_end_r)  =  quantity_td(i,Node_max_r)
+   		enddo
+   		! lower boundary
+   		do i = Node_min_z,Node_max_z
+        		quantity_td(i,1         )  =  quantity_td(i,Node_min_r+1)
+   		enddo
+   		! left boundary
+   		do j = Node_min_r,Node_max_r
+        		quantity_td(1,j)           =  0.
+   		enddo
+   		!! right boundary
+   		!do j = Node_min_r,Node_max_r
+        	!	quantity_td(Node_end_z,j)  = quantity_td(Node_max_z,j)
+   		!enddo
+	endif
+
+    !   ------- backward substitution
+	if (q.eq.1) ne_new       = quantity_td
+	if (q.eq.2) ne_ux_halfDt = quantity_td
+	if (q.eq.3) ne_uz_halfDt = quantity_td
+
+  enddo
+
+   !-----------------------!
+   !  Boundary Conditions  !
+   !-----------------------!
+   ! upper boundary
+   do i = Node_min_z,Node_max_z
+        ne_new      (i,Node_end_r) =  ne_new      (i,Node_max_r)
+        ne_ux_halfDt(i,Node_end_r) =  ne_ux_halfDt(i,Node_max_r)
+        ne_uz_halfDt(i,Node_end_r) =  ne_uz_halfDt(i,Node_max_r)
+   enddo
+
+   ! lower boundary
+   do i = Node_min_z,Node_max_z
+        ne_new      (i,1         )    =  ne_new      (i,Node_min_r+1)
+        ne_uz_halfDt(i,1         )    =  ne_uz_halfDt(i,Node_min_r+1)
+        ne_ux_halfDt(i,1         )    = -ne_ux_halfDt(i,Node_min_r+1)
+	ne_ux_halfDt(i,Node_min_r) =  0.
+   enddo
+
+   ! left boundary
+   do j = Node_min_r,Node_max_r
+	ne_new      (2,j)             =  ne_new(Node_min_z,j)
+        ne_ux_halfDt(2,j)             =  0.
+        ne_uz_halfDt(2,j)             =  0.
+   enddo
+
+   !! right boundary
+   !do j = Node_min_r,Node_max_r
+   !     ne_new      (Node_end_z,j) = ne_new      (Node_max_z,j)
+   !     ne_ux_halfDt(Node_end_z,j) = ne_ux_halfDt(Node_max_z,j)
+   !     ne_uz_halfDt(Node_end_z,j) = ne_uz_halfDt(Node_max_z,j)
+   !enddo
+
+
+ ! ------------------ Backward computation of ux, uz -------------------------
+   do i= 1,Node_end_z
+    		do j= 1,Node_end_r
+
+	if (ne_new(i,j).le.1.e-18) then
+		ux_temp = 0.
+		uz_temp = 0.
+	else
+		ux_temp = ne_ux_halfDt(i,j)/max(ne_new(i,j),threshold_factor)
+		uz_temp = ne_uz_halfDt(i,j)/max(ne_new(i,j),threshold_factor)
+	endif
+
+        ux_new       (i,j) = ux_temp
+	uz_new       (i,j) = uz_temp
+
+		enddo
+   enddo
+
+
+
+
+
+
+   !--------------------------------------------!
+   ! Substitution of the new fields in the mesh !
+   !--------------------------------------------!
+   do i= Node_min_z,Node_max_z
+   do j= Node_min_r,Node_max_r
+   ! computes gamma
+   gamma_new(i,j)				  = sqrt (ne_new(i,j)**2 + ne_ux_new(i,j)**2 + ne_uz_new(i,j)**2 )/ne_new(i,j)
+   enddo
+   enddo
+
+
+
+   !write(*,*) ne_new(2,2)
+
+   mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%n_plasma_e =      ne_new     (1:Node_end_z,1:Node_end_r)
+   mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%ux         =      ux_new     (1:Node_end_z,1:Node_end_r)
+   mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%uz         =      uz_new     (1:Node_end_z,1:Node_end_r)
+
+
+   END SUBROUTINE
+
+END MODULE
