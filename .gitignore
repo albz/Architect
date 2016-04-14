@@ -1,5 +1,4 @@
 # Compiled Object files
-Architect
 *.slo
 *.lo
 *.o
@@ -32,8 +31,6 @@ Architect
 *.exe
 *.out
 *.app
-ALaDyn
-ALaDyn.debug
 log.txt
 [Dd]ebug/
 x64/[Dd]ebug/

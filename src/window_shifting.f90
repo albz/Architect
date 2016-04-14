@@ -90,10 +90,20 @@ CONTAINS
 	Bphi 	   	  = 0.
 	Bphi_old   	= 0
 
+	!--->Er_bunch   	= 0.
+	!--->Ez_bunch   	= 0.
+	!--->Bphi_bunch  = 0.
+	!--->Bphi_old_bunch 	= 0
+
 	Er_new     	= 0.
 	Ez_new     	= 0.
 	Bphi_new   	= 0.
 	Bphi_old_new   	= 0.
+
+	!--->Er_bunch_new     	= 0.
+	!--->Ez_bunch_new     	= 0.
+	!--->Bphi_bunch_new   	= 0.
+	!--->	Bphi_old_bunch_new   	= 0.
 
 	ux  	   	= 0.
 	uz  	   	= 0.
@@ -152,6 +162,11 @@ CONTAINS
 	Er      (1:Node_end_z,1:Node_end_r)  =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ex
 	Bphi_old(1:Node_end_z,1:Node_end_r)  =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Bphi_old
 
+	!--->Bphi_bunch    (1:Node_end_z,1:Node_end_r)  =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Bphi_bunch
+	!--->Ez_bunch      (1:Node_end_z,1:Node_end_r)  =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ez_bunch
+	!--->Er_bunch      (1:Node_end_z,1:Node_end_r)  =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ex_bunch
+	!--->Bphi_old_bunch(1:Node_end_z,1:Node_end_r)  =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Bphi_old_bunch
+
 	uz  (1:Node_end_z,1:Node_end_r)	     =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%uz
 	ux  (1:Node_end_z,1:Node_end_r)      =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%ux
 	ne  (1:Node_end_z,1:Node_end_r)	     =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%n_plasma_e
@@ -166,6 +181,11 @@ CONTAINS
 		Bphi_new    (i+1,:) = Bphi    (i,:)
 		Bphi_old_new(i+1,:) = Bphi_old(i,:)
 
+		!--->Er_bunch_new(i+1,:) 			= Er_bunch(i,:)
+		!--->Ez_bunch_new(i+1,:) 			= Ez_bunch(i,:)
+		!--->Bphi_bunch_new(i+1,:) 		= Bphi_bunch(i,:)
+		!--->Bphi_old_bunch_new(i+1,:) = Bphi_old_bunch(i,:)
+
 		ux_new      (i+1,:) = ux      (i,:)
 		uz_new      (i+1,:) = uz      (i,:)
 		ne_new	    (i+1,:) = ne      (i,:)
@@ -176,6 +196,12 @@ CONTAINS
 	Ez_new      (1:2,:) = 0.
 	Bphi_new    (1:2,:) = 0.
   Bphi_old_new(1:2,:) = 0.
+
+	!--->Er_bunch_new	(1:2,:) = 0.
+	!--->Ez_bunch_new	(1:2,:) = 0.
+	!--->Bphi_bunch_new(1:2,:) = 0.
+	!--->Bphi_old_bunch_new(1:2,:) = 0.
+
 
 	ux_new      (1:2,:) = 0.
 	uz_new      (1:2,:) = 0.
@@ -274,6 +300,11 @@ CONTAINS
 	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Bphi       =      Bphi_new    (1:Node_end_z,1:Node_end_r)
 	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ez         =      Ez_new      (1:Node_end_z,1:Node_end_r)
 	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ex         =      Er_new      (1:Node_end_z,1:Node_end_r)
+
+	!--->mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ex_bunch				= Er_bunch_new			(1:Node_end_z,1:Node_end_r)
+	!--->mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ez_bunch				= Ez_bunch_new			(1:Node_end_z,1:Node_end_r)
+	!--->mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Bphi_bunch			= Bphi_bunch_new		(1:Node_end_z,1:Node_end_r)
+	!--->mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Bphi_old_bunch	= Bphi_old_bunch_new(1:Node_end_z,1:Node_end_r)
 
 	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%uz         =      uz_new      (1:Node_end_z,1:Node_end_r)
 	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%ux         =      ux_new      (1:Node_end_z,1:Node_end_r)

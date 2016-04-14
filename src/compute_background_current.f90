@@ -199,7 +199,7 @@ CONTAINS
 					if (test_ne .le. 0.) test_ne = 0.
           mesh(j,1:mesh_par%NRmax_plasma)%n_plasma_e  = test_ne
 				enddo
-        mesh(1,1:mesh_par%NRmax_plasma)%n_plasma_e = mesh(2,1:Node_end_r-200)%n_plasma_e
+        mesh(1,1:mesh_par%NRmax_plasma)%n_plasma_e = mesh(2,1:mesh_par%NRmax_plasma)%n_plasma_e
 			endif
 
 		else if (sim_parameters%ramps_order.eq.2) then ! longitudinal parabolic ramp

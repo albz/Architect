@@ -203,6 +203,7 @@ contains
 		!enddo
 
 		!---> using 3points stencil
+		gamma_0 = bunch_initialization%bunch_gamma_m(1)
 		do i=2,(mesh_par%Nzm-2)
 			do j=2,(mesh_par%Nxm-1)
 				mesh(i,j)%Ex_bunch = -1.*(Phi(i,j+1)-Phi(i,j-1))/2./mesh_par%dxm
