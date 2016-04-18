@@ -69,7 +69,7 @@ CONTAINS
    !     Mesh     !
    !--------------!
 
-   threshold_factor = 1e-3
+   threshold_factor = 1d-3
 
    !---------------------------------------------------------------------------------!
    !                                     Z axis                                      !
@@ -98,42 +98,42 @@ CONTAINS
    ne  =	mesh(:,:)%n_plasma_e
 
    ! Initialize auxiliary vectors and reals
-   ne_ux_halfDt     = 0.
-   ne_uz_halfDt     = 0.
+   ne_ux_halfDt     = 0.D0
+   ne_uz_halfDt     = 0.D0
 
-   ux_new           = 0.
-   uz_new           = 0.
+   ux_new           = 0.D0
+   uz_new           = 0.D0
 
-   ne_new	    	= 0.
+   ne_new	    	= 0.D0
 
-   beta_x_halfDt    = 0.
-   beta_z_halfDt    = 0.
+   beta_x_halfDt    = 0.D0
+   beta_z_halfDt    = 0.D0
 
-   Ez_f		    	= 0.
-   Ex_f	        = 0.
-   Bphi_f	    	= 0.
+   Ez_f		    	= 0.D0
+   Ex_f	        = 0.D0
+   Bphi_f	    	= 0.D0
 
-	!-------------------------------------------!
-	! Advection begins here 			        !
-	!-------------------------------------------!
+	!--------------------------!
+	! Advection begins here 	 !
+	!--------------------------!
 
 	!--> beta-face-centered
 	do i= Node_min_lo_z,Node_end_lo_z
 	do j= Node_min_lo_r,Node_end_lo_r
-		beta_z_left   = uz(i-1,j)/sqrt( 1. + ux(i-1,j)**2 + uz(i-1,j)**2 + threshold_factor)
-		beta_z_right  = uz(i  ,j)/sqrt( 1. + ux(i  ,j)**2 + uz(i  ,j)**2 + threshold_factor)
-		beta_x_down   = ux(i,j-1)/sqrt( 1. + ux(i,j-1)**2 + uz(i,j-1)**2 + threshold_factor)
-		beta_x_up     = ux(i,j  )/sqrt( 1. + ux(i,j  )**2 + uz(i,j  )**2 + threshold_factor)
+		beta_z_left   = uz(i-1,j)/sqrt( 1.D0 + ux(i-1,j)**2 + uz(i-1,j)**2 + threshold_factor)
+		beta_z_right  = uz(i  ,j)/sqrt( 1.D0 + ux(i  ,j)**2 + uz(i  ,j)**2 + threshold_factor)
+		beta_x_down   = ux(i,j-1)/sqrt( 1.D0 + ux(i,j-1)**2 + uz(i,j-1)**2 + threshold_factor)
+		beta_x_up     = ux(i,j  )/sqrt( 1.D0 + ux(i,j  )**2 + uz(i,j  )**2 + threshold_factor)
 
-		beta_z_i_minus_halfDz(i,j) = 0.5*( beta_z_left + beta_z_right )
-		beta_x_j_minus_halfDr(i,j) = 0.5*( beta_x_down + beta_x_up    )
+		beta_z_i_minus_halfDz(i,j) = 0.5D0*( beta_z_left + beta_z_right )
+		beta_x_j_minus_halfDr(i,j) = 0.5D0*( beta_x_down + beta_x_up    )
 	end do
 	end do
 
 !to be structured to be converted into a function
 do q=1,3
-	quantity    = 0.
-	quantity_td = 0.
+	quantity    = 0.D0
+	quantity_td = 0.D0
 	if (q.eq.1) quantity = ne
 	if (q.eq.2) quantity = ne*ux
 	if (q.eq.3) quantity = ne*uz
@@ -142,23 +142,14 @@ do q=1,3
 	!--- low-order
 	do i= Node_min_lo_z,Node_max_lo_z
 	do j= Node_min_lo_r,Node_max_lo_r
-    flux_lo_z (i,j) = quantity(i-1,j  ) * max(0.,beta_z_i_minus_halfDz(i,j)) + quantity(i  ,j  ) * min(0.,beta_z_i_minus_halfDz(i,j))
-		flux_lo_r (i,j) = quantity(i  ,j-1) * max(0.,beta_x_j_minus_halfDr(i,j)) + quantity(i  ,j  ) * min(0.,beta_x_j_minus_halfDr(i,j))
-		!---!
-		flux_lo_z (i,j) = flux_lo_z (i,j)
-		flux_lo_r (i,j) = flux_lo_r (i,j)
+    flux_lo_z (i,j) = quantity(i-1,j  ) * max(0.D0,beta_z_i_minus_halfDz(i,j)) + quantity(i  ,j  ) * min(0.D0,beta_z_i_minus_halfDz(i,j))
+		flux_lo_r (i,j) = quantity(i  ,j-1) * max(0.D0,beta_x_j_minus_halfDr(i,j)) + quantity(i  ,j  ) * min(0.D0,beta_x_j_minus_halfDr(i,j))
 	end do
 	end do
-
-	! right border
-	do j= Node_min_lo_r,Node_max_lo_r
-		flux_lo_z (Node_max_lo_z+1,j) = flux_lo_z (Node_max_lo_z,j)
-	end do
-
-	! upper border
-	do i= Node_min_lo_z,Node_max_lo_z
-		flux_lo_r (i,Node_max_lo_r+1) = flux_lo_r (i,Node_max_lo_r)
-	end do
+	!--- right border ---!
+	flux_lo_z (Node_max_lo_z+1,Node_min_lo_r:Node_max_lo_r) = flux_lo_z (Node_max_lo_z,Node_min_lo_r:Node_max_lo_r)
+	!--- upper border ---!
+		flux_lo_r (Node_min_lo_z:Node_max_lo_z,Node_max_lo_r+1) = flux_lo_r (Node_min_lo_z:Node_max_lo_z,Node_max_lo_r)
 
 
 	!--- compute the low order solution
@@ -175,69 +166,39 @@ do q=1,3
 	end do
 
 
-	!---------------------------------------------!
-	!  Boundary conditions for low order solution !
-	!---------------------------------------------!
-
+	!----------------------!
+	!  Boundary conditions !
+	!----------------------!
 	if (q.eq.1) then
+		!--- upper boundary ---!
+		quantity_td(Node_min_lo_z:Node_max_lo_z,Node_end_lo_r) = quantity_td(Node_min_lo_z:Node_max_lo_z,Node_max_lo_r)
+ 		!--- lower boundary ---!
+		quantity_td(Node_min_lo_z:Node_max_lo_z,1) = quantity_td(Node_min_lo_z:Node_max_lo_z,Node_min_lo_r)
+ 		!--- left boundary ---!
+		quantity_td(1,Node_min_lo_r:Node_max_lo_r) = quantity_td(Node_min_lo_z,Node_min_lo_r:Node_max_lo_r)
+ 		!--- right boundary ---!
+    !quantity_td (Node_end_lo_z,Node_min_lo_r:Node_max_lo_r) = quantity_td(Node_max_lo_z,Node_min_lo_r:Node_max_lo_r)
 
-		! upper boundary
-   		do i = Node_min_lo_z,Node_max_lo_z
-        		quantity_td(i,Node_end_lo_r) = quantity_td(i,Node_max_lo_r)
-   		enddo
-
-   		! lower boundary
-   		do i = Node_min_lo_z,Node_max_lo_z
-        		quantity_td(i,1)          = quantity_td(i,Node_min_lo_r)
-   		enddo
-   		! left boundary
-   		do j = Node_min_lo_r,Node_max_lo_r
-			quantity_td(1,j)              = quantity_td(Node_min_lo_z,j)
-   		enddo
-   		! right boundary
-!   		do j = Node_min_lo_r,Node_max_lo_r
-!        	quantity_td (Node_end_lo_z,j)     = quantity_td(Node_max_lo_z,j)
-!   		enddo
 	else if (q.eq.2) then
+		!--- upper boundary ---!
+  		quantity_td(Node_min_lo_z:Node_max_lo_z,Node_end_lo_r)  =  quantity_td(Node_min_lo_z:Node_max_lo_z,Node_max_lo_r)
+   		!--- lower boundary ---!
+  		quantity_td(Node_min_lo_z:Node_max_lo_z,1) = -quantity_td(Node_min_lo_z:Node_max_lo_z,Node_min_lo_r)
+   		!--- left boundary ---!
+  		quantity_td(1,Node_min_lo_r:Node_max_lo_r) =  0.D0
+   		!--- right boundary ---!
+  		!quantity_td(Node_end_lo_z,Node_min_lo_r:Node_max_lo_r) = quantity_td(Node_max_lo_z,Node_min_lo_r:Node_max_lo_r)
 
-		! upper boundary
-		! High order domain
-   		do i = Node_min_lo_z,Node_max_lo_z
-        		quantity_td(i,Node_end_lo_r)  =  quantity_td(i,Node_max_lo_r)
-   		enddo
-
-   		! lower boundary
-   		do i = Node_min_lo_z,Node_max_lo_z
-        		quantity_td(i,1         )     = -quantity_td(i,Node_min_lo_r)
-   		enddo
-   		! left boundary
-   		do j = Node_min_lo_r,Node_max_lo_r
-        		quantity_td(1,j)              =  0.
-   		enddo
-   		! right boundary
-!   		do j = Node_min_lo_r,Node_max_lo_r
-!        		quantity_td(Node_end_lo_z,j)  =  quantity_td(Node_max_lo_z,j)
-!   		enddo
 	else if (q.eq.3) then
-
-		! upper boundary
-		do i = Node_min_lo_z,Node_max_lo_z
-        		quantity_td(i,Node_end_lo_r)  =  quantity_td(i,Node_max_lo_r)
-   		enddo
-
-   		! lower boundary
-   		do i = Node_min_lo_z,Node_max_lo_z
-        		quantity_td(i,1         )  =  quantity_td(i,Node_min_lo_r)
-   		enddo
-   		! left boundary
-   		do j = Node_min_lo_r,Node_max_lo_r
-        		quantity_td(1,j)           =  0.
-   		enddo
-   		! right boundary
-!   		do j = Node_min_lo_r,Node_max_lo_r
-!        		quantity_td(Node_end_lo_z,j)  = quantity_td(Node_max_lo_z,j)
-!   		enddo
-	endif
+		!--- upper boundary ---!
+  		quantity_td(Node_min_lo_z:Node_max_lo_z,Node_end_lo_r) = quantity_td(Node_min_lo_z:Node_max_lo_z,Node_max_lo_r)
+   		!--- lower boundary ---!
+  		quantity_td(Node_min_lo_z:Node_max_lo_z,1) = quantity_td(Node_min_lo_z:Node_max_lo_z,Node_min_lo_r)
+   		!--- left boundary ---!
+  		quantity_td(1,Node_min_lo_r:Node_max_lo_r) =  0.D0
+   		!--- right boundary ---!
+  		!quantity_td(Node_end_lo_z,Node_min_lo_r:Node_max_lo_r)  = quantity_td(Node_max_lo_z,Node_min_lo_r:Node_max_lo_r)
+  end if
 
 
   do i= Node_min_lo_z,Node_max_lo_z
@@ -270,13 +231,13 @@ enddo
         do i= Node_min_lo_z,Node_max_lo_z
         do j= Node_min_lo_r,Node_max_lo_r
       Ez_f   (i,j) =        mesh(i,j  )%Ez + mesh(i,j  )%Ez_bunch           ! properly centered in space
-      Ex_f   (i,j) = 0.25*( mesh(i,j  )%Ex       + mesh(i+1,j  )%Ex   &
+      Ex_f   (i,j) = 0.25D0*( mesh(i,j  )%Ex       + mesh(i+1,j  )%Ex   &
                           + mesh(i,j-1)%Ex       + mesh(i+1,j-1)%Ex   ) &   ! properly centered in space
-                    +0.25*( mesh(i,j  )%Ex_bunch + mesh(i+1,j  )%Ex_bunch &
+                    +0.25D0*( mesh(i,j  )%Ex_bunch + mesh(i+1,j  )%Ex_bunch &
                           + mesh(i,j-1)%Ex_bunch + mesh(i+1,j-1)%Ex_bunch ) ! properly centered in space
-      Bphi_f (i,j) = 0.25*( mesh(i,j  )%Bphi     + mesh(i  ,j-1)%Bphi &
+      Bphi_f (i,j) = 0.25D0*( mesh(i,j  )%Bphi     + mesh(i  ,j-1)%Bphi &
                           + mesh(i,j  )%Bphi_old + mesh(i  ,j-1)%Bphi_old ) & ! properly centered in time
-                    +0.25*( mesh(i,j  )%Bphi_bunch     + mesh(i  ,j-1)%Bphi_bunch &
+                    +0.25D0*( mesh(i,j  )%Bphi_bunch     + mesh(i  ,j-1)%Bphi_bunch &
                           + mesh(i,j  )%Bphi_old_bunch + mesh(i  ,j-1)%Bphi_old_bunch ) ! properly centered in time
         enddo
         enddo
@@ -287,16 +248,16 @@ enddo
 		do j= Node_min_lo_r,Node_max_lo_r
 
 			if (ne_new(i,j).le.threshold_factor) then
-					beta_x_halfDt = 0.
-					beta_z_halfDt = 0.
+					beta_x_halfDt = 0.D0
+					beta_z_halfDt = 0.D0
 					!ne_new(i,j)   = threshold_factor
 			else
 
 
 	ux_temp = ne_ux_halfDt(i,j)/max(ne_new(i,j),threshold_factor)
 	uz_temp = ne_uz_halfDt(i,j)/max(ne_new(i,j),threshold_factor)
-	beta_x_halfDt = ux_temp/ sqrt(1.+ux_temp**2+uz_temp**2)
-	beta_z_halfDt = uz_temp/ sqrt(1.+ux_temp**2+uz_temp**2)
+	beta_x_halfDt = ux_temp/ sqrt(1.D0+ux_temp**2+uz_temp**2)
+	beta_z_halfDt = uz_temp/ sqrt(1.D0+ux_temp**2+uz_temp**2)
 
 			endif
 
@@ -339,8 +300,8 @@ enddo
 
    ! left boundary
    do j = Node_min_lo_r,Node_max_lo_r
-		ux_new(1,j)             = 0.
-    uz_new(1,j)             = 0.
+		ux_new(1,j)             = 0.D0
+    uz_new(1,j)             = 0.D0
    enddo
 
    ! right boundary
