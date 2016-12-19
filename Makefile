@@ -1,4 +1,4 @@
-FC          = gfortran-mp-4.7
+FC          = gfortran
 OPTFC       = -ffree-line-length-none -fmax-stack-var-size=50000000
 SRC_FOLDER  = src
 OBJ_FOLDER  = obj
