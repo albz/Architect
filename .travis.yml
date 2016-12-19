@@ -1,0 +1,14 @@
+sudo: false
+language: c
+addons:
+  apt:
+    packages:
+    - gfortran
+    - gcc
+install:
+    - export CC="/usr/bin/gcc"
+    - export FC="/usr/bin/gfortran"
+compiler:
+  - gcc
+script:
+  - make all
