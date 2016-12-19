@@ -163,72 +163,131 @@ CONTAINS
    	END SUBROUTINE
 
 
+!--- --- --- --- --- --- --- --- --- ---!
+    subroutine set_initial_background_condition
+      call set_initial_plasma_density
+      call set_initial_velocity
+    end subroutine set_initial_background_condition
+!--- --- --- --- --- --- --- --- --- ---!
 
 
-    SUBROUTINE set_initial_plasma_density
+  SUBROUTINE set_initial_plasma_density
     ! define capillary density at first iteration
-    REAL :: test_ne
-		INTEGER j
+    REAL(8) :: test_ne,Radius,Zposition,bck_density_value
+		INTEGER j,i,k
 
-		mesh(:,:)%ux 			    = 0.
-		mesh(:,:)%uz 			    = 0.
-    mesh(:,:)%n_plasma_e 	= 0.
+    !--- *** ---!
+    bck_plasma%z_coordinate=bck_plasma%z_coordinate_um*plasma%k_p
+    mesh(:,:)%n_plasma_e 	= 0.d0
+    !--- *** ---!
 
-		if (sim_parameters%ramps_order.eq.1) then ! linear ramp at capillary entrance
-
-			if (sim_parameters%I_start_ramp_peak_position.gt.2) then
-				! ramp initially inside the window
-
-				if (sim_parameters%order_capillary_density_z.eq.0) then ! uniform density profile along z
-          mesh(1:sim_parameters%I_start_ramp_peak_position,1:mesh_par%NRmax_plasma)%n_plasma_e = 1.
-				else if (sim_parameters%order_capillary_density_z.eq.2) then ! parabolic density profile along z
-
-				endif
-
-				do j=sim_parameters%I_start_ramp_peak_position,(sim_parameters%I_start_ramp_peak_position+sim_parameters%I_start_ramp_length_in_window)
-					test_ne				 = 1.-1./sim_parameters%I_start_ramp_length_in_window*(1.*(j-sim_parameters%I_start_ramp_peak_position) )
-					if (test_ne .le. 0.) test_ne = 0.
-          mesh(j,1:1:mesh_par%NRmax_plasma)%n_plasma_e  = test_ne
-				enddo
-
-
-			else if (sim_parameters%I_start_ramp_peak_position.eq.2)	then
-				! ramp initially in part inside the window, in part outside the window
-				do j=2,(1+sim_parameters%I_start_ramp_length_in_window)
-					test_ne				 = sim_parameters%start_n_peak_in_window*(1.-1./sim_parameters%I_start_ramp_length_in_window*(1.*j) )
-					if (test_ne .le. 0.) test_ne = 0.
-          mesh(j,1:mesh_par%NRmax_plasma)%n_plasma_e  = test_ne
-				enddo
-        mesh(1,1:mesh_par%NRmax_plasma)%n_plasma_e = mesh(2,1:mesh_par%NRmax_plasma)%n_plasma_e
-			endif
-
-		else if (sim_parameters%ramps_order.eq.2) then ! longitudinal parabolic ramp
-			!DO NOT DELETE UNTIL PARABOLIC Z PROFILE IS IMPLEMENTED!!!
-
-			!~do j=2,(sim_parameters%I_parabola_length_in_window+1)
-			!~
-			!~	ne (j,1:Node_end_r)  = - sim_parameters%I_parabola_normalization_factor* &
-			!~	 (j-sim_parameters%I_origin_z_axis - 1 + sim_parameters%I_parabola_start) &
-			!~	*(j-sim_parameters%I_origin_z_axis - 1 + sim_parameters%I_parabola_end)
-			!~
-			!~enddo
-			!~
-			!~ne (1,1:Node_end_r) = ne (2,1:Node_end_r)
-
-		endif
-
-		if (sim_parameters%order_capillary_density_r.eq.2) then
-			! multiplication by radial factor
-			do j= 2,Node_max_r
-				mesh(:,j)%n_plasma_e 	  = mesh(:,j)%n_plasma_e*radial_factor(j)
-			enddo
-			! BC
-			mesh(:,Node_end_r)%n_plasma_e = mesh(:,Node_max_r)%n_plasma_e ! upper boundary
-			mesh(:,1         )%n_plasma_e = mesh(:,2         )%n_plasma_e ! lower boundary
-		endif
-
-
+    do i=2,mesh_par%Nzm
+          do j=2,mesh_par%Nxm
+            mesh(i,j)%n_plasma_e=background_density_value(i,j)
+      enddo
+    enddo
 	END SUBROUTINE set_initial_plasma_density
 
+
+
+
+  SUBROUTINE set_initial_velocity
+  ! define capillary velocity at first iteration
+  REAL(8) :: test_ne
+  REAL(8) :: ne_m3,R_current_m
+  INTEGER j,i
+
+  mesh(:,:)%ux 			    = 0.
+  mesh(:,:)%uz 			    = 0.
+
+
+  !---***---!
+  if(Bpoloidal%L_BfieldfromV) then
+    allocate(mesh_util%Bphi_BC_Left(Node_max_r))
+
+    !--- *** ---! calculate background velocity
+    ne_m3=plasma%n0*1e6
+    R_current_m=Bpoloidal%capillary_radius_um*1d-6
+    sim_parameters%velocity_background = Bpoloidal%background_current_A(1) / (R_current_m**2*pi*ne_m3*electron_charge*c_SI)
+    sim_parameters%velocity_background = -1.D0*sim_parameters%velocity_background
+    write(*,*) ''
+    write(*,'(A)') 'Case :: with Moving Background >'
+    write(*,'(A,1e11.3,A)') 'The background velocity is',sim_parameters%velocity_background,' * c'
+    write(*,*)
+
+
+    !--- *** ---! assign velocity
+    do i=1,Node_max_z
+      do j=1,Node_max_r
+        if(mesh(i,j)%n_plasma_e>0.) mesh(i,j)%uz=sim_parameters%velocity_background
+      enddo
+    enddo
+
+    !--- *** ---! caluclate Bphi
+    i=2
+    do j=1,Node_max_r
+      mesh(i,j)%Bphi=(mesh(i,j)%uz*mesh(i,j)%n_plasma_e)*j*mesh_par%dxm/2.
+      if(j>mesh_par%NRmax_plasma) then
+        mesh(i,j)%Bphi=(mesh(i,mesh_par%NRmax_plasma-10)%uz*mesh(i,mesh_par%NRmax_plasma-10)%n_plasma_e) &
+        *(mesh_par%NRmax_plasma*mesh_par%dxm)**2/2./j/mesh_par%dxm
+      endif
+      !---
+      mesh_util%Bphi_BC_Left(j)=mesh(i,j)%Bphi
+      !---
+    enddo
+    !--- now forcing the copy of i=1 to all-i
+    do i=2,Node_max_z
+      mesh(i,:)%Bphi=mesh_util%Bphi_BC_Left(:)
+    end do
+  endif
+END SUBROUTINE set_initial_velocity
+
+  FUNCTION background_density_value(i,j)
+    real(8) :: background_density_value,Zposition,slope,den
+    real(8) :: i_eff,j_eff, radius
+    real(8) :: weightR, weightZ
+    integer :: i,j,k
+
+    i_eff=real(i-2)+.5d0
+    j_eff=real(j-2)+.5d0
+
+    radius = j_eff*mesh_par%dxm/plasma%k_p
+
+    background_density_value=0.d0
+    Zposition=mesh_par%z_min_moving_um+i_eff*mesh_par%dzm/plasma%k_p
+
+    !--vacuum layer---!
+    !if(j>=mesh_par%NRmax_plasma) return
+    !----------------------!
+
+    weightR=1.d0
+    weightZ=1.d0
+
+    do k=1,8
+      if(Zposition<=bck_plasma%z_coordinate_um(k) .and. Zposition>bck_plasma%z_coordinate_um(k+1)) then
+
+        !---*** Longitudinal profile ***---!
+        if(bck_plasma%order_logitudinal(k)==0) weightZ=bck_plasma%n_over_n0(k)
+        if(bck_plasma%order_logitudinal(k)==1) then
+          slope=(bck_plasma%n_over_n0(k-1)-bck_plasma%n_over_n0(k))/(bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1))
+          weightZ=bck_plasma%n_over_n0(k-1)+slope*(Zposition-bck_plasma%z_coordinate_um(k))
+          if(k==1) then
+            slope=(0.d0-bck_plasma%n_over_n0(k+1))/(bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1))
+            weightZ=0.d0+slope*(Zposition-bck_plasma%z_coordinate_um(k))
+          endif
+        endif
+
+        !---*** TRansveres-Radial profile ***---!
+        if(bck_plasma%order_radial(k)==0) weightR=bck_plasma%n_over_n0(k)
+        if(bck_plasma%order_radial(k)==3) weightR = cos(radius/bck_plasma%radius_um(k)*pi/2.0)**2 !COS^2 profile
+        if(bck_plasma%order_radial(k)==4) weightR=1.d0+bck_plasma%perturbation_amplitude(k)*(1.d0-2.d0*cos(radius/bck_plasma%radius_um(k)*pi/2.0)**2) !1 + A (1 - 2 Cos[r/R \Pi/2]^2)
+        if(radius >   bck_plasma%radius_um(k)) weightR=0.0
+
+        background_density_value=weightZ*weightR
+
+      endif !Zposition
+    enddo
+
+  END FUNCTION background_density_value
 
 END MODULE

@@ -10,16 +10,20 @@
 % Last modified : 17/3/2015
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [dist,x,y,z,px,py,pz,bunch_id,cut,dcut] = architect_read_bin_ps(full_name)
+function [dist,x,y,z,px,py,pz,bunch_id,cut,dcut,bunch_charges] = architect_read_bin_ps_v2(full_name)
     file = fopen(full_name,'rb','l');
     
 
     % --- Output version
     output_version=fread(file,1,'int32');
-
+    
+    % --- Bunch number and Charges
+    n_bunches=fread(file,1,'int32');
+    bunch_charges=fread(file,n_bunches,'float64');
+    
     % --- Traveled distance
     dist=fread(file,1,'int32');
-
+    
     % --- Number of particles
     Np=fread(file,1,'int32');
 

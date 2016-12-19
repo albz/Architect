@@ -25,6 +25,7 @@ USE my_types
 USE use_my_types
 USE pstruct_data
 USE architect_class_structure
+USE ion_background
 
 
 
@@ -34,17 +35,21 @@ CONTAINS
 
 	SUBROUTINE first_print_at_screen
 
-		   write(*,*) 'Time     = ',sim_parameters%sim_time
-		   write(*,*) 'dt(fs)   = ',sim_parameters%dt
-		   write(*,*) 'l_p (um) = ',plasma%lambda_p
+		   write(*,'(A,f15.8)') 'Time(fs)    = ',sim_parameters%sim_time
+		   write(*,'(A,f15.8)') 'dt(fs)      = ',sim_parameters%dt
+		   write(*,'(A,f8.3)')  'l_p (um)    = ',plasma%lambda_p
 		   write(*,*)
-		   write(*,*) 'Mesh points in physical half plane x > 0 : '
-		   write(*,*) 'Nz_mesh =',(mesh_par%Nzm-2),'       Nx_mesh =',(mesh_par%Nxm-2)
-		   write(*,*)
-		   write(*,*) 'dz_mesh(um)    =',mesh_par%dzm/plasma%k_p,  '       dx_mesh(um)    =',mesh_par%dxm/plasma%k_p
-		   write(*,*) 'z_min_mesh(um) =',maxval(z_mesh)/plasma%k_p,'       z_max_mesh(um) =',minval(z_mesh)/plasma%k_p
-		   write(*,*) 'r_max_mesh(um) =',maxval(x_mesh)/plasma%k_p
-		   write(*,*)
+		   write(*,'(A)') ' --- Mesh number of Points:'
+		   write(*,'(A,I5)') 'Nz_mesh > ',(mesh_par%Nzm-2)
+			 write(*,'(A,I5)') 'Nx_mesh > ',(mesh_par%Nxm-2)
+			 write(*,*)
+			 write(*,'(A)') ' --- Mesh Physical Size:'
+		   write(*,'(A,f8.3)') 'Delta_Z(um) > ',mesh_par%dzm/plasma%k_p
+			 write(*,'(A,f8.3)') 'Delta_R(um) > ',mesh_par%dxm/plasma%k_p
+			 write(*,*)
+			 write(*,'(A)') ' --- Box (Domain) physical extension:'
+			 write(*,'(A,f11.3,A)')       'Z_min_mesh(um) =',maxval(z_mesh)/plasma%k_p, ' ___ R_min_mesh(um) = 0.000'
+			 write(*,'(A,f11.3,A,f11.3)') 'Z_max_mesh(um) =',minval(z_mesh)/plasma%k_p, ' ___ R_max_mesh(um) = ',maxval(x_mesh)/plasma%k_p
 		   write(*,*)
 		   write(*,*)
 
@@ -96,6 +101,8 @@ CONTAINS
 
 	SUBROUTINE final_data_dump
 
+		call from_particleZstart_to_meshZstar
+
 		if (sim_parameters%Output_format.eq.0) then
 			call savedata
 			call save_beam
@@ -112,15 +119,16 @@ CONTAINS
 		sim_parameters%gridDeltaOutput=abs(sim_parameters%sim_time*c-sim_parameters%gridLastOutput)
 		sim_parameters%PSDeltaOutput=abs(sim_parameters%sim_time*c-sim_parameters%PSLastOutput)
 		! Plasma data dump
-		  if(mod(sim_parameters%iter,sim_parameters%output_grid_nstep).eq.0 &
+
+			if(mod(sim_parameters%iter,sim_parameters%output_grid_nstep).eq.0 &
 		    .or. sim_parameters%gridDeltaOutput>sim_parameters%output_grid_dist) then
-			if (sim_parameters%Output_format.eq.0) then
-				call savedata
-			else if (sim_parameters%Output_format.eq.1) then
-				call savedata_bin
+
+					call from_particleZstart_to_meshZstar
+					if (sim_parameters%Output_format.eq.0) call savedata
+					if (sim_parameters%Output_format.eq.1) call savedata_bin
+			    sim_parameters%gridLastOutput=sim_parameters%sim_time*c
+
 			endif
-		    sim_parameters%gridLastOutput=sim_parameters%sim_time*c
-		  endif
 
 		  ! PS-Bunch data dump
 		  if(mod(sim_parameters%iter,sim_parameters%output_PS_nstep).eq.0 &
@@ -136,15 +144,16 @@ CONTAINS
 
 
 
-	SUBROUTINE dump_input_file
+	SUBROUTINE write_read_nml
+		NAMELIST / write_nml / plasma, sim_parameters, bck_plasma, bunch_initialization, &
+													 ionisation, Bpoloidal, twiss, mesh_par, OSys
 
-		NAMELIST / in_phys_pars / plasma, sim_parameters, bunch_initialization, mesh_par
-
-		open(9,file=TRIM(sim_parameters%out_root)//'datain.arch',status='unknown')
-			write(9,NML=in_phys_pars)
+		open(9,file='datain.arch')!,status='unknown')
+			write(9,NML=write_nml,err=30)
+30  continue
 		close(9)
 
-	END SUBROUTINE dump_input_file
+	END SUBROUTINE write_read_nml
 
 
 
@@ -166,12 +175,16 @@ CONTAINS
 
 !--------------------------- Saving Phase Space ------------------------------------------------------------------------
 	filename=TRIM(sim_parameters%path_PS)//TRIM(ADJUSTL(position))//'.arch'
-	Output_version = 1
+	Output_version = 2
 
 	open(15,file=filename,status='unknown',access='stream')
 
 	!--------------------------- Writes Output version -----------------------------------------------------------------
     	write(15) Output_version
+
+	!--------------------------- Writes number of Bunches and Bunch Charges ----------------------------------------------------------------
+			write(15) bunch_initialization%n_total_bunches
+			write(15) bunch_initialization%ChargeB(1:bunch_initialization%n_total_bunches)
 
 	!--------------------------- Writes Z position -----------------------------------------------------------------
     	write(15) int(-avgz)
@@ -240,7 +253,8 @@ CONTAINS
 
 !--------------------------- Saving grid defined quantities -------------------------------------------------------------
     filename=TRIM(sim_parameters%path_grid)//TRIM(ADJUSTL(position))//'.arch'
-    Output_version = 3
+    !Output_version = 3 :prior to ionisatio
+		Output_version = 4
     open(15,file=filename,status='unknown',access='stream')
 
 !--------------------------- Writes Output version -----------------------------------------------------------------
@@ -309,6 +323,14 @@ CONTAINS
 !--------------------------- Writes plasma Jz ---------------------------------------------------------------------------
 	write(15) ( mesh(2:(mesh_par%Nzm-1),ss)%Jpe_z , ss=mesh_par%Nxm-1,2,  -sim_parameters%jump_grid )
 	write(15) ( mesh(2:(mesh_par%Nzm-1),ss)%Jpe_z , ss=2,(mesh_par%Nxm-1),sim_parameters%jump_grid  )
+
+!--------------------------- Writes plasma Zstar ---------------------------------------------------------------------------
+	write(15) ( mesh(2:(mesh_par%Nzm-1),ss)%Zstar , ss=mesh_par%Nxm-1,2,  -sim_parameters%jump_grid )
+	write(15) ( mesh(2:(mesh_par%Nzm-1),ss)%Zstar , ss=2,(mesh_par%Nxm-1),sim_parameters%jump_grid  )
+
+!--------------------------- Writes n_plasma_i ---------------------------------------------------------------------------
+	write(15) ( mesh(2:(mesh_par%Nzm-1),ss)%n_plasma_i , ss=mesh_par%Nxm-1,2,  -sim_parameters%jump_grid )
+	write(15) ( mesh(2:(mesh_par%Nzm-1),ss)%n_plasma_i , ss=2,(mesh_par%Nxm-1),sim_parameters%jump_grid  )
 
     close(15)
 

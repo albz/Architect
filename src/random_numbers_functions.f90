@@ -19,53 +19,95 @@
 !  along with architect.  If not, see <http://www.gnu.org/licenses/>.                                 !
 !*****************************************************************************************************!
 
-MODULE ComputeCurrentFDTD
+ module random_numbers_functions
+ implicit none
 
-USE my_types
-USE use_my_types
-USE Compute_beam_current_FDTD
-USE Compute_plasma_current
-USE pstruct_data
-USE architect_class_structure
-USE utilities
+ !--- --- ---!
+ contains
+ !--- --- ---!
 
+ !--- Box-Muller for a Norm(0,1)
+ !--- random distributed variable
+ subroutine boxmuller(randnormal)
+ real(8), intent(inout) :: randnormal
+ real(8) :: x,y,s,r
 
+ s=10.
+ do while( s >= 1. )
+  call random_number(x)
+  call random_number(y)
+  x = 2.* x -1.
+  y = 2.* y -1.
+  s = x**2+y**2
+ end do
+ r=sqrt(-2.*log(s)/s)
+ x = x*r
+ randnormal=x
 
-IMPLICIT NONE
-
-CONTAINS
-
-
-
-
-   SUBROUTINE Kernel_ComputeCurrent_FDTD
-   IMPLICIT NONE
-   INTEGER inc,tt
-   REAL(8) :: k_0,n_0,conv
-
-   k_0 = plasma%k_p
-   n_0 = plasma%n0
-
-   call Compute_beam_3current_FDTD
-
-   ! Conversion factor
-   conv     = (1./(2.*pi*mesh_par%dzm*mesh_par%dxm))*(k_0*1.e4)**3   	!Divide by cell volume (1/r factor included in subroutine Compute_beam_3current_FDTD)
-   conv     = conv/n_0     						!dimensionless
-
-   mesh%rho =   mesh%rho*conv
-   mesh%Jz  =   mesh%Jz*conv
-   mesh%Jr  =   mesh%Jr*conv
-
-   if ( sim_parameters%Fluid_Scheme==0 ) then
-	     write(*,*) 'error: old upwind centering is not supported in this version'
-	     stop
-   !call Compute_plasma_electron_current_FDTD
-   else if (sim_parameters%Fluid_Scheme==2   .or.   sim_parameters%Fluid_Scheme==1) then
-       call Compute_plasma_electron_current
-   endif
-
-   return
-   END SUBROUTINE
+ end subroutine boxmuller
 
 
-END MODULE
+ subroutine boxmuller_vector(randnormal,len)
+ integer, intent(in) :: len
+ real(8), intent(inout) :: randnormal(len)
+ real(8) :: x,y,s,r
+ integer :: i
+
+ do i=1,len
+  s=10.
+  do while( s >= 1. )
+   call random_number(x)
+   call random_number(y)
+   x = 2.* x -1.
+   y = 2.* y -1.
+   s = x**2+y**2
+  end do
+  r=sqrt(-2.*log(s)/s)
+  randnormal(i)=x*r
+ enddo
+ randnormal = randnormal-sum(randnormal)/(1.*max(1,size(randnormal)))
+
+ end subroutine boxmuller_vector
+
+
+ subroutine random_uniform_vector(randuniform,len)
+ integer, intent(in) :: len
+ real(8), intent(inout) :: randuniform(len)
+ real(8) :: x
+ integer :: i
+
+ do i=1,len
+    call random_number(x)
+    randuniform(i)=x
+ enddo
+
+ end subroutine random_uniform_vector
+
+
+ subroutine random_INTeger_uniform_vector(randuniform,len,min,max)
+ integer, intent(in) :: len,min,max
+ integer, intent(inout) :: randuniform(len)
+ real(8) :: x
+ integer :: i
+
+ do i=1,len
+    call random_number(x)
+    randuniform(i)=min + Nint(x*(max-min))
+ enddo
+
+ end subroutine random_INTeger_uniform_vector
+
+
+ !--- function: uniform distribution between 'min' and 'max'
+  real(8) function random_number_range(minimum,maximum)
+  real(8), intent(in) :: minimum,maximum
+  real(8) :: x
+    call random_number(x)
+    random_number_range = (maximum-minimum)*x+minimum
+  end function random_number_range
+
+
+
+ !--- --- ---!
+ end module random_numbers_functions
+ !--- --- ---!

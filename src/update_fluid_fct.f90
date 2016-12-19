@@ -553,7 +553,7 @@ enddo
 			endif
 
     ux_new       (i,j) = ux_temp + Dt*( Ex_f(i,j) - beta_z_halfDt*Bphi_f(i,j) )
-	uz_new       (i,j) = uz_temp + Dt*( Ez_f(i,j) + beta_x_halfDt*Bphi_f(i,j) )
+  	uz_new       (i,j) = uz_temp + Dt*( Ez_f(i,j) + beta_x_halfDt*Bphi_f(i,j) )
 
 			if ((ux_new(i,j).ne.ux_new(i,j)).or.(ux_new(i,j).ne.ux_new(i,j))) then
 				write(*,*) 'bla'

@@ -72,7 +72,7 @@ contains
 
 		! -- finds bunches position in order to know where to cut the partial domain
 		do b=1,bunch_initialization%n_total_bunches
-			bunches_position(b) = 1 + max(1,int(sim_parameters%Left_Domain_boundary/mesh_par%dzm*2.*pi)   )
+			bunches_position(b) = 1 + abs(mesh_par%z_min)/mesh_par%dzm
 			distance = calculate_nth_moment_bunch(b,1,3)-calculate_nth_moment_bunch(1,1,3)
 			distance = distance/mesh_par%dzm*plasma%k_p
 			bunches_position(b) = bunches_position(b) + int(distance)
@@ -98,10 +98,10 @@ contains
 				write(*,*) 'Laplacian matrix generated'
 			else if(bunch_initialization%self_consistent_field_bunch==3) then
 				! ---- Laplacian matrix for the Poisson problem
-				write(*,*) 'generating sparse Laplacian matrix'
+				write(*,'(A)') 'generating sparse Laplacian matrix'
 				call Laplacian_sparse(Laplacian_matrix_sparse_vector,Laplacian_matrix_sparse_vector_row, &
 				Laplacian_matrix_sparse_vector_column,count_non_null_elements)
-				write(*,*) 'Sparse Laplacian matrix generated'
+				write(*,'(A)') 'Sparse Laplacian matrix generated'
 			endif
 
 			! ---- The part of the domain involved is around the bunch
@@ -147,7 +147,7 @@ contains
 
 			Phi_whole_domain(left:right,bottom:up) = Phi_whole_domain(left:right,bottom:up) + Phi_matrix(:,:)
 
-			write(*,'(A,I2)') 'Computed Potential by bunch:',b
+			write(*,'(A,I2)') 'Computed Potential for bunch:',b
 		enddo
 
 
@@ -219,7 +219,6 @@ contains
 		mesh(mesh_par%Nzm-2:mesh_par%Nzm,:)%Ex_bunch = 0.D0
 		mesh(mesh_par%Nzm-2:mesh_par%Nzm,:)%Ez_bunch = 0.D0
 
-
 		! ----- center E fields for FDTD
 		call center_E_fields
 		! ----- Boundary conditions
@@ -277,7 +276,7 @@ contains
 			do j=2,(dim_Lapl_r+1)
 			do i=1,(2*dim_Lapl_half_z)
 				if(i.eq.1) then
-					Lapl_matrix(k,k-1) = 0.
+					!------------->>> Lapl_matrix(k,k-1) = 0.
 				endif
 				k=k+1
 			enddo
@@ -289,7 +288,7 @@ contains
 			do i=1,(2*dim_Lapl_half_z)
 				if(   (i.eq.(2*dim_Lapl_half_z)) .and. &
 				(k.lt.(2*dim_Lapl_half_z*(dim_Lapl_r)))    ) then
-					Lapl_matrix(k,k+1) = 0.
+					!------------->>> Lapl_matrix(k,k+1) = 0.
 				endif
 				k=k+1
 			enddo
@@ -302,7 +301,7 @@ contains
 				if( j.eq.(dim_Lapl_r) ) then
 					if ( k.lt.(dim_Lapl-nn) ) then
 					!if ( k.lt.(dim_Lapl_r+1) ) then
-						Lapl_matrix(k,k+nn) = 0.
+						!------------->>> Lapl_matrix(k,k+nn) = 0.
 					endif
 				endif
 				k=k+1
@@ -345,7 +344,7 @@ contains
 
 			nn=2*dim_Lapl_half_z
 			gamma_0 = bunch_initialization%bunch_gamma_m(1)
-			write(*,*) dim_Lapl
+			write(*,'(A,I10)') 'Laplacian matrix size: n x n, with n:',dim_Lapl
 			k=1
 			count=1
 			do j=2,(dim_Lapl_r+1)
@@ -437,7 +436,7 @@ contains
 
 						if( j.eq.(dim_Lapl_r) ) then ! -- Upper boundary BC
 						!if ( k.lt.(dim_Lapl_r+1) ) then
-							Lapl_matrix_sparse_vector		(count) = 0.
+							Lapl_matrix_sparse_vector		(count) = 0. !***ALBZ***
 							Lapl_matrix_sparse_vector_row	(count) = k
 							Lapl_matrix_sparse_vector_column(count) = k+nn
 						endif
@@ -584,7 +583,9 @@ contains
 		mesh(:         ,1         )%Ex_bunch = 0.
 		! Upper Boundary
 		mesh(:         ,Node_end_r)%Ex = mesh(:         ,Node_max_r)%Ex
-		mesh(:         ,Node_end_r)%Ex_bunch = mesh(:   ,Node_max_r)%Ex_bunch
+		mesh(:         ,Node_end_r)%Ex_bunch    = mesh(:   ,Node_end_r-3)%Ex_bunch !***ALBZ***
+		mesh(:         ,Node_end_r-1)%Ex_bunch = mesh(:   ,Node_end_r-3)%Ex_bunch
+		mesh(:         ,Node_end_r-2)%Ex_bunch = mesh(:   ,Node_end_r-3)%Ex_bunch
 	end subroutine BC_Efield
 
 
@@ -611,8 +612,7 @@ contains
 	! all the bunches must have the same average initial gammma
 		REAL(8) gamma_0
 		INTEGER j, j_prime
-		write(*,*) 'Initializing EM fields, coaxial shells method '
-		write(*,*)
+		write(*,'(A)') 'Initialization bunch self-consistent field :: Initializing EM fields, coaxial shells method '
 
 		!---project charge on the grid
 
@@ -647,16 +647,10 @@ contains
 
 		call center_E_field_coax_shells
 		mesh(:,:)%Ex_bunch = mesh(:,:)%Ex_bunch*gamma_0*0.5 ! gamma factor needed to go back to the lab frame
-		write(*,*)
-		write(*,*) 'E field initialized'
+		write(*,'(A)') 'E field initialized'
 
 		call init_B_field
-		write(*,*) 'B field initialized'
-		write(*,*)
-
-		write(*,*)
-		write(*,*) 'EM fields initialized'
-		write(*,*)
+		write(*,'(A)') 'B field initialized'
 	end subroutine init_EM_fields_coax_shells
 
 
@@ -683,7 +677,7 @@ contains
 !-----------------------------------------------!
 SUBROUTINE ReInitialise_EB_Bunch_fields
 	if ( sim_parameters%L_BunchREinit ) then
-		if ( abs(calculate_nth_moment_bunch(1,1,3)-sim_parameters%lastBunchREinit) > sim_parameters%BunchREinitDelta ) then
+		if ( abs(calculate_nth_moment_bunch(1,1,3)-sim_parameters%lastBunchREinit) > sim_parameters%bunch_reinit_distance_um ) then
 			sim_parameters%lastBunchREinit = calculate_nth_moment_bunch(1,1,3)
 			call Compute_bunch_density
 			call init_EM_fields
@@ -695,34 +689,82 @@ END SUBROUTINE ReInitialise_EB_Bunch_fields
 subroutine init_null_EM_fields
 	! Nonphysical option: null initial EM fields, only for comparisons with initialization
 	write(*,*) 'Initializing EM fields to zero'
-	mesh(:,:)%Ex = 0.
-	mesh(:,:)%Ez = 0.
-	mesh(:,:)%Bphi = 0.
-	mesh(:,:)%Bphi_old 	= 0.
+	mesh(:,:)%Ex = 0.D0
+	mesh(:,:)%Ez = 0.D0
+	mesh(:,:)%Bphi = 0.D0
+	mesh(:,:)%Bphi_old 	= 0.D0
 
-	mesh(:,:)%Ex_bunch 	= 0.
-	mesh(:,:)%Ez_bunch 	= 0.
-	mesh(:,:)%Bphi_bunch = 0.
-	mesh(:,:)%Bphi_old_bunch = 0.
+	mesh(:,:)%Ex_bunch 	= 0.D0
+	mesh(:,:)%Ez_bunch 	= 0.D0
+	mesh(:,:)%Bphi_bunch = 0.D0
+	mesh(:,:)%Bphi_old_bunch = 0.D0
 	write(*,*) 'EM fields initialized to zero'
 end subroutine init_null_EM_fields
 
 
+!--- *** ---!
 subroutine init_external_Bfields
-	Bpoloidal%radius_poloidal = Bpoloidal%radius_poloidal * plasma%k_p
+	if(Bpoloidal%L_Bpoloidal) then
+		write(*,'(A)') 'B-field :: Externally imposed'
+		call set_external_Bfield
+	endif
+end subroutine init_external_Bfields
+!--- *** ---!
+
+subroutine set_external_Bfield
+	!*** Poloidal External Field ***!
+	!--- Controlled by input file:
+	!--- Activate with: Bpoloidal%L_Bpoloidal=.TRUE.
+	real(8) :: Bfield,Radius,a,Zposition
+	Bfield   = mu0*Bpoloidal%background_current_A(1)/(2.D0*pi*Bpoloidal%capillary_radius_um*1e-6) !Poloidal field from current
+	write(*,'(A,1p1e14.5,A)') 'B_external activated :: Peak B-field > ',Bfield,' (T)'
+	Bfield   = Bfield / (96.*sqrt(plasma%n0)/3e8) !from Dimensional to DimensionLESS
+	Bpoloidal%capillary_radius = Bpoloidal%capillary_radius_um * plasma%k_p !from Dimensional to DimensionLESS
 	!Bpoloidal%B_ex_poloidal   = Bpoloidal%B_ex_poloidal / (electron_mass*(plasma%omega_p*1e15)/electron_charge)
-	Bpoloidal%B_ex_poloidal   = Bpoloidal%B_ex_poloidal / (96.*sqrt(plasma%n0)/3e8)
-	do i=2,(mesh_par%Nzm)
-		do j=2,(mesh_par%Nxm)
-			mesh(i,j)%B_ex_poloidal = -Bpoloidal%B_ex_poloidal * r_mesh(j) / Bpoloidal%radius_poloidal
-		enddo
+
+	do i=2,(mesh_par%Nzm) !---*** ***---!
+		Zposition=(mesh_par%z_min+i*mesh_par%dzm)/plasma%k_p
+		if(Zposition < Bpoloidal%z_coordinate_um(1)) then
+			do j=2,(mesh_par%Nxm)
+
+				  Select Case (Bpoloidal%Bprofile(1))
+						case (1) !---Linear+Cubic
+							Radius=r_mesh(j)/Bpoloidal%capillary_radius
+							a=Bpoloidal%a_shape(1)
+							mesh(i,j)%B_ex_poloidal = -Bfield*((1.D0-a)*Radius+a*Radius**3)
+
+						case (2) !---Linear+FlatSaturation
+							a=Bpoloidal%a_shape(1)*plasma%k_p
+							mesh(i,j)%B_ex_poloidal = -Bfield/a*r_mesh(j)
+							if(r_mesh(j)>a) then
+								mesh(i,j)%B_ex_poloidal = -Bfield
+							endif
+
+						case (3) !---Exponential Profile
+							a=Bpoloidal%a_shape(1)*plasma%k_p
+							mesh(i,j)%B_ex_poloidal = -Bfield*( 1.D0-exp(-r_mesh(j)/a) )/( 1.D0-exp(-r_mesh(mesh_par%Nxm)/a) )
+
+						case(4) !--- x^a
+							a=Bpoloidal%a_shape(1)
+							Radius=r_mesh(j)/Bpoloidal%capillary_radius
+							mesh(i,j)%B_ex_poloidal = -Bfield*( Radius )**a
+
+						case(5) !--- a^-1 + (1-a^-1) * 1/x^a
+							a=Bpoloidal%a_shape(1)
+							Radius=r_mesh(j)/Bpoloidal%capillary_radius
+							mesh(i,j)%B_ex_poloidal = -Bfield* (1.D0/a + (1.D0-1.D0/a)*Radius**a)
+
+					end select !---and Shape Select
+
+			enddo
+		endif
 	enddo
 	!--->BC
-    mesh(1,:)%B_ex_poloidal						=-mesh(2,:)%B_ex_poloidal
+  mesh(1,:)%B_ex_poloidal						=-mesh(2,:)%B_ex_poloidal
 	mesh(mesh_par%Nzm,:)%B_ex_poloidal= mesh(mesh_par%Nzm-1,:)%B_ex_poloidal
 	mesh(:,1)%B_ex_poloidal						= mesh(:,2)%B_ex_poloidal
 	mesh(:,mesh_par%Nxm)%B_ex_poloidal= mesh(:,mesh_par%Nxm-1)%B_ex_poloidal
-end subroutine init_external_Bfields
+end subroutine set_external_Bfield
 
 
 

@@ -19,53 +19,45 @@
 !  along with architect.  If not, see <http://www.gnu.org/licenses/>.                                 !
 !*****************************************************************************************************!
 
-MODULE ComputeCurrentFDTD
+MODULE dump_status
 
 USE my_types
 USE use_my_types
-USE Compute_beam_current_FDTD
-USE Compute_plasma_current
 USE pstruct_data
 USE architect_class_structure
-USE utilities
-
-
 
 IMPLICIT NONE
 
 CONTAINS
 
 
+!--- *** ---!
+! SUBROUTINE dump_status
+! 	call dump_status_particles
+! END SUBROUTINE dump_status
+!--- *** ---!
 
 
-   SUBROUTINE Kernel_ComputeCurrent_FDTD
-   IMPLICIT NONE
-   INTEGER inc,tt
-   REAL(8) :: k_0,n_0,conv
 
-   k_0 = plasma%k_p
-   n_0 = plasma%n0
 
-   call Compute_beam_3current_FDTD
+!---------------------------------!
+!---------------------------------!
+SUBROUTINE dump_status_particles
+	integer :: i,j,k
+	CHARACTER(255) :: filename
 
-   ! Conversion factor
-   conv     = (1./(2.*pi*mesh_par%dzm*mesh_par%dxm))*(k_0*1.e4)**3   	!Divide by cell volume (1/r factor included in subroutine Compute_beam_3current_FDTD)
-   conv     = conv/n_0     						!dimensionless
+	filename=TRIM(sim_parameters%path_dumprestart)//'particle_dump.arch'
+	open(15,file=filename,status='unknown',access='stream')
 
-   mesh%rho =   mesh%rho*conv
-   mesh%Jz  =   mesh%Jz*conv
-   mesh%Jr  =   mesh%Jr*conv
+	write(15) 1 !output-identifier-format
+	write(15) bunch_initialization%n_total_bunches
+	write(15) (bunch_initialization%n_particles(I),I=1,bunch_initialization%n_total_bunches)
+	write(15) (((bunch(i)%part(j)%cmp(k),k=1,13),J=1,size(bunch(i)%part(:))),I=1,sim_parameters%Nbunches)
+	close(15)
 
-   if ( sim_parameters%Fluid_Scheme==0 ) then
-	     write(*,*) 'error: old upwind centering is not supported in this version'
-	     stop
-   !call Compute_plasma_electron_current_FDTD
-   else if (sim_parameters%Fluid_Scheme==2   .or.   sim_parameters%Fluid_Scheme==1) then
-       call Compute_plasma_electron_current
-   endif
+END SUBROUTINE dump_status_particles
 
-   return
-   END SUBROUTINE
+
 
 
 END MODULE

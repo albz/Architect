@@ -52,7 +52,7 @@ CONTAINS
   ! Please remember: time and space centering of rho and J are different!
 
   ! -------------------------------------------------------------------------!
-  !                   Beam charge and current deposition                     !
+  !                Beam charge and current deposition              !
   ! -------------------------------------------------------------------------!
 
 
@@ -275,6 +275,9 @@ CONTAINS
 
    return
    END SUBROUTINE
+
+
+
 
 
 

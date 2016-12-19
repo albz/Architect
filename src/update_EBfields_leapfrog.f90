@@ -31,7 +31,7 @@ IMPLICIT NONE
 CONTAINS
 
 
-   SUBROUTINE Kernel_Fields_FDTD_COMB ! The new subroutine
+   SUBROUTINE Kernel_Fields_FDTD_bck ! The new subroutine
 
    IMPLICIT NONE
 
@@ -140,6 +140,9 @@ CONTAINS
 		Bphi(1         ,j         ) = Bphi(Node_min_z,j         )
 ! 		Bphi_bunch(1         ,j         ) = Bphi_bunch(Node_min_z,j         ) HERE HERE HERE
 	enddo
+  !--- Background current Boundary Conditions ---!
+  if(Bpoloidal%L_BfieldfromV) Bphi(1,:) = mesh_util%Bphi_BC_Left(:)
+  if(Bpoloidal%L_BfieldfromV) Bphi(2,:) = mesh_util%Bphi_BC_Left(:)
 
 	! right boundary
 	do j = Node_min_r,Node_max_r
@@ -174,12 +177,12 @@ CONTAINS
 
 
 	! beam current
-	Jz   (1:Node_end_z,1:Node_end_r)  =   mesh(1:Node_end_z,1:Node_end_r)%Jz
-	Jr   (1:Node_end_z,1:Node_end_r)  =   mesh(1:Node_end_z,1:Node_end_r)%Jr
+	Jz(1:Node_end_z,1:Node_end_r) =  mesh(1:Node_end_z,1:Node_end_r)%Jz
+	Jr(1:Node_end_z,1:Node_end_r)  =  mesh(1:Node_end_z,1:Node_end_r)%Jr
 
 	! plasma electron current
-    Jpe_z(1:Node_end_z,1:Node_end_r)  =   mesh(1:Node_end_z,1:Node_end_r)%Jpe_z
-	Jpe_r(1:Node_end_z,1:Node_end_r)  =   mesh(1:Node_end_z,1:Node_end_r)%Jpe_r
+  Jpe_z(1:Node_end_z,1:Node_end_r)  =   mesh(1:Node_end_z,1:Node_end_r)%Jpe_z
+  Jpe_r(1:Node_end_z,1:Node_end_r)  =   mesh(1:Node_end_z,1:Node_end_r)%Jpe_r
 
 
 
@@ -261,6 +264,8 @@ CONTAINS
     do j=Node_min_r,Node_max_r
       Bphi_new(1         ,j         ) = Bphi_new(Node_min_z,j)
     enddo
+	!--- Background current Boundary Conditions ---!
+	if(Bpoloidal%L_BfieldfromV) Bphi_new(1,:) = mesh_util%Bphi_BC_Left(:)
 
 
 	! right boundary
@@ -269,10 +274,6 @@ CONTAINS
     enddo
 
 	!~endif
-
-
-
-
 
 
 	!--------------------------------!
@@ -302,10 +303,6 @@ CONTAINS
 !   mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ex       = 0.0
 
 
-
-
-
-
 ! Filtering fields:
 !   if(filter) then
 
@@ -320,6 +317,168 @@ CONTAINS
    return
 
    END SUBROUTINE
+
+
+!--- *** leapfrong for bunch fields *** ---!
+SUBROUTINE Kernel_Fields_FDTD_bunch
+
+  INTEGER i,iter,j
+  REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: Jr,Jz
+  REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: Ez_bunch,Er_bunch,Bphi_bunch
+  REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: Ez_bunch_new,Er_bunch_new,Bphi_bunch_new
+  REAL(8), DIMENSION(mesh_par%Nxm) :: r_mesh_EM
+  REAL(8) :: r_factor1,r_factor2
+  REAL(8) :: threshold_factor=1e-3
+
+ !----------------------!
+ !    Mesh creation
+ !----------------------!
+
+ r_factor1     		= 0.
+ r_factor2     		= 0.
+ r_mesh_EM        	= 0.
+ do j=1,Node_max_r
+           r_mesh_EM(j) =  DeltaR*(j-1)
+ enddo
+
+ !----------------------!
+ !  Initial conditions
+ !----------------------!
+ Bphi_bunch(:,:)  =	mesh(:,:)%Bphi_bunch
+ Ez_bunch  (:,:)  =	mesh(:,:)%Ez_bunch
+ Er_bunch  (:,:)  =	mesh(:,:)%Ex_bunch
+
+ !--------------------------------!
+ !  Boundary Conditions  !
+ !-------------------------------!
+
+ ! upper boundary
+ do i = Node_min_z,Node_max_z
+   Bphi_bunch(i   ,Node_end_r) = Bphi_bunch(i   ,Node_max_r)
+ enddo
+
+ ! lower boundary
+ do i = Node_min_z,Node_max_z
+   Bphi_bunch(i   ,1         ) = 0.
+ enddo
+
+ ! left boundary
+ do j = Node_min_r,Node_max_r
+   Bphi_bunch(1         ,j         ) = Bphi_bunch(Node_min_z,j         )
+ enddo
+
+ ! right boundary
+ do j = Node_min_r,Node_max_r
+   Bphi_bunch(Node_end_z,j   ) = Bphi_bunch(Node_max_z,j   )
+ enddo
+
+
+
+ !------------------------!
+ !        Sources        !
+ !------------------------!
+ Jz       =   0.
+ Jr       =   0.
+
+ ! beam current
+ Jz(1:Node_end_z,1:Node_end_r) =  mesh(1:Node_end_z,1:Node_end_r)%Jz
+ Jr(1:Node_end_z,1:Node_end_r)  =  mesh(1:Node_end_z,1:Node_end_r)%Jr
+
+ !------------------------------!
+ !     E Fields Advance   !
+ !------------------------------!
+
+ do i= Node_min_z,Node_max_z
+   do j= Node_min_r,Node_max_r
+
+     Ez_bunch_new(i,j) = Ez_bunch(i,j) + Dt/DeltaR*( Bphi_bunch(i,j)*r_mesh_EM(j) - Bphi_bunch(i,j-1)*r_mesh_EM(j-1) ) &
+                                                                *2./(r_mesh_EM(j)+r_mesh_EM(j-1)) - Dt * Jz(i,j)
+     Er_bunch_new (i,j) = Er_bunch(i,j) - Dt/DeltaZ*( Bphi_bunch  (i,j)- Bphi_bunch(i-1,j  ))- Dt * Jr(i,j)
+
+   enddo
+ enddo
+
+ !-----------------------!
+ !  Boundary conditions  !
+ !         for E         !
+ !-----------------------!
+
+ ! upper boundary
+  do i=Node_min_z,Node_max_z
+    Er_bunch_new(i,Node_end_r) = Er_bunch_new(i,Node_max_r)
+    Ez_bunch_new(i,Node_end_r) = Ez_bunch_new(i,Node_max_r)
+  enddo
+
+ ! lower boundary
+   do i=Node_min_z,Node_max_z
+     Er_bunch_new(i,1) = 0.
+     Ez_bunch_new(i,1) = Ez_bunch_new(i,Node_min_r)
+   enddo
+
+ ! left boundary
+   do j=Node_min_r,Node_max_r
+     Er_bunch_new(1         ,j         ) = Er_bunch_new(Node_min_z,j)
+     Ez_bunch_new(1         ,j         ) = Ez_bunch_new(Node_min_z,j)
+   enddo
+
+ ! right boundary
+   do j=Node_min_r,Node_max_r
+     Er_bunch_new(Node_end_z,j         ) = Er_bunch_new(Node_max_z,j)
+     Ez_bunch_new(Node_end_z,j         ) = Ez_bunch_new(Node_max_z,j)
+   enddo
+
+
+ !------------------------!
+ !     B Field Advance
+ !------------------------!
+
+ do i= Node_min_z,Node_max_z
+   do j= Node_min_r,Node_max_r
+
+     Bphi_bunch_new(i,j) = Bphi_bunch(i,j) + Dt/DeltaR*( Ez_bunch_new(i,j+1) - Ez_bunch_new(i,j)  ) &
+                                          - Dt/DeltaZ*( Er_bunch_new(i+1,j) - Er_bunch_new(i,j) )
+
+   enddo
+ enddo
+
+ !-----------------------!
+ !  Boundary conditions  !
+ !         for B         !
+ !-----------------------!
+
+ ! upper boundary
+   do i=Node_min_z,Node_max_z
+     Bphi_bunch_new(i         ,Node_end_r) = Bphi_bunch_new(i,Node_max_r)
+   enddo
+
+ ! lower boundary
+   do i=Node_min_z,Node_max_z
+     Bphi_bunch_new(i,1) = 0.
+   enddo
+
+ ! left boundary
+   do j=Node_min_r,Node_max_r
+     Bphi_bunch_new(1         ,j         ) = Bphi_bunch_new(Node_min_z,j)
+   enddo
+
+ ! right boundary
+   do j=Node_min_r,Node_max_r
+     Bphi_bunch_new(Node_end_z,j         ) = Bphi_bunch_new(Node_max_z,j)
+   enddo
+
+ !--------------------------------!
+ ! Substitution of the new fields !
+ !--------------------------------!
+ mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Bphi_old_bunch =   Bphi_bunch(1:Node_end_z,1:Node_end_r) ! Needed to center Bphi in time in Boris Pusher
+ mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Bphi_bunch     =   Bphi_bunch_new(1:Node_end_z,1:Node_end_r)
+ mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ez_bunch       =   Ez_bunch_new  (1:Node_end_z,1:Node_end_r)
+ mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ex_bunch       =   Er_bunch_new  (1:Node_end_z,1:Node_end_r)
+END SUBROUTINE Kernel_Fields_FDTD_bunch
+
+
+
+
+
 
 
 END MODULE

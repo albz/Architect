@@ -113,9 +113,9 @@ CONTAINS
    Ex_f	        = 0.D0
    Bphi_f	    	= 0.D0
 
-	!--------------------------!
+	!------------------------------!
 	! Advection begins here 	 !
-	!--------------------------!
+	!------------------------------!
 
 	!--> beta-face-centered
 	do i= Node_min_lo_z,Node_end_lo_z
@@ -129,6 +129,7 @@ CONTAINS
 		beta_x_j_minus_halfDr(i,j) = 0.5D0*( beta_x_down + beta_x_up    )
 	end do
 	end do
+	!--->Remove<---!beta_z_i_minus_halfDz(2,:)=beta_z_i_minus_halfDz(3,:)
 
 !to be structured to be converted into a function
 do q=1,3
@@ -138,12 +139,13 @@ do q=1,3
 	if (q.eq.2) quantity = ne*ux
 	if (q.eq.3) quantity = ne*uz
 
-	!--- FCT-fluxes
-	!--- low-order
+	flux_lo_z=0.D0
+	flux_lo_r=0.D0
+	!--- donor-cell
 	do i= Node_min_lo_z,Node_max_lo_z
 	do j= Node_min_lo_r,Node_max_lo_r
     flux_lo_z (i,j) = quantity(i-1,j  ) * max(0.D0,beta_z_i_minus_halfDz(i,j)) + quantity(i  ,j  ) * min(0.D0,beta_z_i_minus_halfDz(i,j))
-		flux_lo_r (i,j) = quantity(i  ,j-1) * max(0.D0,beta_x_j_minus_halfDr(i,j)) + quantity(i  ,j  ) * min(0.D0,beta_x_j_minus_halfDr(i,j))
+    flux_lo_r (i,j) = quantity(i  ,j-1) * max(0.D0,beta_x_j_minus_halfDr(i,j)) + quantity(i  ,j  ) * min(0.D0,beta_x_j_minus_halfDr(i,j))
 	end do
 	end do
 	!--- right border ---!
@@ -166,9 +168,10 @@ do q=1,3
 	end do
 
 
-	!----------------------!
-	!  Boundary conditions !
-	!----------------------!
+	!---------------------------------------------!
+	!  Boundary conditions for low order solution !
+	!---------------------------------------------!
+
 	if (q.eq.1) then
 		!--- upper boundary ---!
 		quantity_td(Node_min_lo_z:Node_max_lo_z,Node_end_lo_r) = quantity_td(Node_min_lo_z:Node_max_lo_z,Node_max_lo_r)
@@ -222,12 +225,11 @@ do q=1,3
 	if (q.eq.1) ne_new       = quantity
 	if (q.eq.2) ne_ux_halfDt = quantity
 	if (q.eq.3) ne_uz_halfDt = quantity
-
 enddo
 
 
-!-------------------------- Electromagnetic Advance ------------------------------
 
+!-------------------------- Electromagnetic Advance ------------------------------
         do i= Node_min_lo_z,Node_max_lo_z
         do j= Node_min_lo_r,Node_max_lo_r
       Ez_f   (i,j) =        mesh(i,j  )%Ez + mesh(i,j  )%Ez_bunch           ! properly centered in space
@@ -299,10 +301,10 @@ enddo
    enddo
 
    ! left boundary
-   do j = Node_min_lo_r,Node_max_lo_r
-		ux_new(1,j)             = 0.D0
-    uz_new(1,j)             = 0.D0
-   enddo
+	do j = Node_min_lo_r,Node_max_lo_r
+		ux_new(1,j)   = 0.D0
+		uz_new(1,j)   = 0.D0
+	enddo
 
    ! right boundary
 !   do j = Node_min_lo_r,Node_max_lo_r
@@ -319,31 +321,25 @@ enddo
    enddo
 
 
-   !--------------------------------------------!
-   ! Substitution of the new fields in the mesh !
-   !--------------------------------------------!
-
-   mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%n_plasma_e =      ne_new     (1:Node_end_lo_z,1:Node_end_lo_r)
-   mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%ux         =      ux_new     (1:Node_end_lo_z,1:Node_end_lo_r)
-   mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%uz         =      uz_new     (1:Node_end_lo_z,1:Node_end_lo_r)
-
-
+   !-----------------------------------------------------!
+   ! Backward Substitution of the new fields in the mesh !
+   !-----------------------------------------------------!
+   mesh(:,:)%n_plasma_e = ne_new(:,:)
+   mesh(:,:)%ux         = ux_new(:,:)
+   mesh(:,:)%uz         = uz_new(:,:)
 
    END SUBROUTINE
 
 
+	!--- *** ----!
+	Subroutine fluid_UpWind
+		call Upwind(Dt)
+		call EB_forces(Dt)
+		!call Upwind(Dt/2.)
+	end Subroutine fluid_UpWind
 
-   Subroutine fluid_UpWind
-     call Upwind(Dt)
-     call EB_forces(Dt)
-     !call Upwind(Dt/2.)
-   end Subroutine
-
-
-
-
+	!--- *** ----!
     SUBROUTINE Upwind(DeltaT)
-
       INTEGER :: i,j,q
       real(8), intent(in) :: DeltaT
       REAL(8) threshold_factor, flux_down,flux_up,beta_mean

@@ -21,10 +21,46 @@
 
 MODULE Diagnostics_on_Bunches
 
+  ! USE pstruct_data
+  USE my_types
+  USE use_my_types
+  USE moments
+  USE random_numbers_functions
+  USE shapiro_wilks
 
-IMPLICIT NONE
+  IMPLICIT NONE
 
 CONTAINS
+
+  ! --- BUNCH DIAGNOSTIC MANAGER ---!
+  SUBROUTINE bunch_diagnostics_Integrated_AllBunches
+  integer :: i, n,n1,n2,ier
+  real(8) :: mu_z,sigma_z
+
+  do i=1,bunch_initialization%n_total_bunches
+    call bunch_sliced_diagnostics(i)
+    call bunch_integrated_diagnostics(i)
+    if(sim_parameters%L_SW_test) call bunch_shapiro_wilks(i)
+  enddo
+
+  if (sim_parameters%diagnostics_with_dcut.eq.1) then
+    call apply_Sigma_cut(sim_parameters,plasma%k_p)
+    do i=1,bunch_initialization%n_total_bunches
+      mu_z    = calculate_nth_moment_bunch_dcut(i,1,3)
+      sigma_z = sqrt( calculate_nth_central_moment_bunch_dcut(i,2,3) )
+
+      call bunch_sliced_diagnostics_dcut(i,mu_z,sigma_z)
+      call bunch_integrated_diagnostics_dcut(i)
+    enddo
+  endif
+
+END SUBROUTINE bunch_diagnostics_Integrated_AllBunches
+! --- --- --- --- --- --- --- --- !
+
+
+
+
+
 
 !--- --- --- --- --- --- ---!
 SUBROUTINE apply_Sigma_cut(sim_par,plasma_k_0)
@@ -144,36 +180,78 @@ USE architect_class_structure
 END SUBROUTINE
 
 
+SUBROUTINE bunch_shapiro_wilks(bunch_number)
+integer, intent(in) :: bunch_number
+integer :: n,n1,n2,ier,sub_iter,component
+real(8) :: w, pw, w_tmp,pw_tmp, SW(6), PSW(6)
+real(8), allocatable :: x(:),a(:),selected(:),bunch_mask(:)
+integer, allocatable :: order(:),randuniform(:)
+logical :: init
+character(1) :: num2str
+character*90 :: filename
+
+
+n=sim_parameters%SW_sample_dimension
+n1 = n
+n2 = n/2
+ALLOCATE( x(n1), a(n2), order(n1), selected(n), randuniform(n))
+
+do component=1,6
+  w_tmp=0.d0
+  pw_tmp=0.d0
+  do sub_iter=1,sim_parameters%SW_sub_iter
+    call random_INTeger_uniform_vector(randuniform,n,1,size(bunch(bunch_number)%part(:)))
+    selected=bunch(bunch_number)%part(randuniform)%cmp(component)
+    !--- Sort ascending order ---!
+    CALL quick_sort(selected, order)
+    !--- Shapiro-Wilks test ---!
+    init = .FALSE.
+    CALL swilk(init, selected, n, n1, n2, a, w, pw, ier)
+    w_tmp=w_tmp+w
+    pw_tmp=pw_tmp+pw
+  enddo
+  SW(component)=w_tmp/real(sim_parameters%SW_sub_iter)
+  PSW(component)=pw_tmp/real(sim_parameters%SW_sub_iter)
+enddo
+
+write(num2str,'(I1)') bunch_number
+filename=TRIM(sim_parameters%path_integrated_diagnostics)//'bunch_ShapiroWilks_'//num2str//'.dat'
+call open_file(OSys%macwin,filename)
+  !--- ShapiroWilks W-statistics for: X,Y,Z,Px,Py,Pz --- P-value for the same quantities ---!
+  write(11,'(1p100e14.5)') sim_parameters%sim_time*c,SW(:),PSW(:)
+close(11)
+
+
+DEALLOCATE( x, a, order, selected, randuniform )
+end subroutine bunch_shapiro_wilks
 
 
 
 
+!---bunch mask creation ---!
+!---select a specific bunch family---!
+! mask_type :: 1 = slices
+! SUBROUTINE bunch_mask_definition(bunch_number,component,slice_number,mask_type,len,selected)
+!   integer, intent(in) :: bunch_number,component,slice_number,mask_type
+!   integer, intent(out) :: len
+!   real(8), intent(out) :: selected(len)
+!   logical, intent(inout) :: bunch_mask
+!   real(8) :: mu_z,sigma_z,nSigmaCut=5.0
+!   integer :: np,np_inside=0
+!
+! if(mask_type==1) then
+!     mu_z      = calculate_nth_moment_bunch(bunch_number,1,3)
+!     sigma_z = sqrt(calculate_nth_central_moment_bunch(bunch_number,2,3))
+!     np       = size(bunch(bunch_number)%part(:))
+!     !---count particle---!
+!     do ip=1,np_local
+!      bunch_mask(ip)=( (bunch(bunch_number)%part(ip)%cmp(3)- mu_z ) >( real(slice_number)-nSigmaCut)*sigma_z  ) &
+!       .and.( (bunch(bunch_number)%part(ip)%cmp(3)- mu_z ) <(real(islslice_numberice+1)-nSigmaCut)*sigma_z )
+!      if (bunch_mask(ip)) np_inside=np_inside+1
+!     enddo
+!   endif
+!
+! END SUBROUTINE bunch_mask_creation
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-END MODULE
+END MODULE Diagnostics_on_Bunches

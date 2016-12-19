@@ -25,6 +25,8 @@
  USE my_types
  USE use_my_types
  USE utilities
+ USE random_numbers_functions
+ USE shapiro_wilks
 
  implicit none
 
@@ -59,7 +61,6 @@
  !--- moment calculation
  moment   = sum( ( bunch(number_bunch)%part(:)%cmp(component) - mu_mean(1) )**nth )
  moment   = moment / real( SIZE( bunch(number_bunch)%part(:) ) )
- moment   = moment**(1./nth)
 
  !---
  calculate_nth_central_moment_bunch = moment(1)
@@ -76,7 +77,6 @@
  !--- moment calculation
  moment   = sum( ( bunch(number_bunch)%part(:)%cmp(component) )**nth )
  moment   = moment / real( SIZE( bunch(number_bunch)%part(:) ) )
- moment   = moment**(1./nth)
 
  !---
  calculate_nth_moment_bunch = moment(1)
@@ -114,6 +114,7 @@
  real(8) :: mu_px(1),mu_py(1),mu_pz(1)       !momenta mean
  real(8) :: s_x(1),s_y(1),s_z(1)                         !spatial variance
  real(8) :: s_px(1),s_py(1), s_pz(1)                      !momenta variance
+ real(8) :: m4_x(1),m4_y(1),m4_z(1),m4_px(1),m4_py(1),m4_pz(1) !4th central moments for kurtosis
  real(8) :: mu_gamma(1),s_gamma(1),dgamma_su_gamma(1)     !gamma mean-variance
  real(8) :: corr_y_py(1),corr_z_pz(1),corr_x_px(1) !correlation transverse plane
  real(8) :: emittance_x(1),emittance_y(1) !emittance variables
@@ -129,12 +130,19 @@
 	mu_py(1) = calculate_nth_moment_bunch(number_bunch,1,5)
 	mu_pz(1) = calculate_nth_moment_bunch(number_bunch,1,6)
 
-	s_x(1)  = calculate_nth_central_moment_bunch(number_bunch,2,1)
-	s_y(1)  = calculate_nth_central_moment_bunch(number_bunch,2,2)
-	s_z(1)  = calculate_nth_central_moment_bunch(number_bunch,2,3)
-	s_px(1) = calculate_nth_central_moment_bunch(number_bunch,2,4)
-	s_py(1) = calculate_nth_central_moment_bunch(number_bunch,2,5)
-	s_pz(1) = calculate_nth_central_moment_bunch(number_bunch,2,6)
+	s_x(1)  = sqrt( calculate_nth_central_moment_bunch(number_bunch,2,1) )
+	s_y(1)  = sqrt( calculate_nth_central_moment_bunch(number_bunch,2,2) )
+	s_z(1)  = sqrt( calculate_nth_central_moment_bunch(number_bunch,2,3) )
+	s_px(1) = sqrt( calculate_nth_central_moment_bunch(number_bunch,2,4) )
+	s_py(1) = sqrt( calculate_nth_central_moment_bunch(number_bunch,2,5) )
+	s_pz(1) = sqrt( calculate_nth_central_moment_bunch(number_bunch,2,6) )
+
+  m4_x(1)  = calculate_nth_central_moment_bunch(number_bunch,4,1)
+	m4_y(1)  = calculate_nth_central_moment_bunch(number_bunch,4,2)
+	m4_z(1)  = calculate_nth_central_moment_bunch(number_bunch,4,3)
+	m4_px(1) = calculate_nth_central_moment_bunch(number_bunch,4,4)
+	m4_py(1) = calculate_nth_central_moment_bunch(number_bunch,4,5)
+	m4_pz(1) = calculate_nth_central_moment_bunch(number_bunch,4,6)
 
 	corr_x_px(1) = calculate_central_correlation(number_bunch,1,4)
 	corr_y_py(1) = calculate_central_correlation(number_bunch,2,5)
@@ -162,13 +170,23 @@
 
 
   write(b2str,'(I1.1)') number_bunch
-  filename='bunch_integrated_quantity_'//b2str//'.dat'
+  filename=TRIM(sim_parameters%path_integrated_diagnostics)//'bunch_integrated_quantity_'//b2str//'.dat'
   call open_file(OSys%macwin,filename)
   !1  2   3   4   5    6    7     8      9      10     11      12      13     14    15    16     17       18       19       20
   !t,<X>,<Y>,<Z>,<Px>,<Py>,<Pz>,<rmsX>,<rmsY>,<rmsZ>,<rmsPx>,<rmsPy>,<rmsPz>,<Emx>,<Emy>,<Gam>,DGam/Gam,cov<xPx>,cov<yPy>,cov<zPz>
   write(11,'(100e14.5)') sim_parameters%sim_time*c,mu_x,mu_y,mu_z,mu_px,mu_py,mu_pz,s_x,s_y,s_z,s_px,s_py, &
    s_pz,emittance_x,emittance_y,mu_gamma,dgamma_su_gamma,corr_x_px,corr_y_py,corr_z_pz
   close(11)
+
+  filename=TRIM(sim_parameters%path_integrated_diagnostics)//'kurtosis_'//b2str//'.dat'
+  call open_file(OSys%macwin,filename)
+  !1,  2,  3,  4,   5,   6,   7
+  !t,K_x,K_y,K_z,K_px,K_py,K_pz
+  write(11,'(100e14.5)') sim_parameters%sim_time*c, &
+                         m4_x/s_x**4-3.D0,   m4_y/s_y**4-3.D0,   m4_z/s_z**4-3.D0, &
+                         m4_px/s_px**4-3.D0, m4_py/s_py**4-3.D0, m4_pz/s_pz**4-3.D0
+  close(11)
+
  END SUBROUTINE
 
 
@@ -203,7 +221,7 @@
 
  !--- bunch position and variance
  avgz=calculate_nth_moment_bunch(bunch_number,1,3)
- sigmaz=calculate_nth_central_moment_bunch(bunch_number,2,3)
+ sigmaz=sqrt(calculate_nth_central_moment_bunch(bunch_number,2,3))
 
  !---  -5sigma   -4sigma   -3sigma   -2sigma  -1sigma     0sigma   +1sigma   +2sigma    +3sigma   +4sigma   +5sigma
  !---  | slice 0  |    1     |    2    |     3   |     4    |    5    |     6   |     7    |   8    |     9    |   ----!
@@ -278,7 +296,7 @@
   write(s2str,'(I1.1)') islice
 !  open(11,file='bunch_sliced_quantity_'//b2str//'_'//s2str//'.dat',form='formatted', position='append')
 !  open(11,file=TRIM(sim_parameters%out_root)//'bunch_sliced_quantity_'//b2str//'_'//s2str//'.dat',form='formatted',position='append')
-  filename='bunch_sliced_quantity_'//b2str//'_'//s2str//'.dat'
+  filename=TRIM(sim_parameters%path_integrated_diagnostics)//'bunch_sliced_quantity_'//b2str//'_'//s2str//'.dat'
   call open_file(OSys%macwin,filename)
   !1  2   3   4   5    6    7     8      9      10     11      12      13     14    15    16     17       18       19       20
   !t,<X>,<Y>,<Z>,<Px>,<Py>,<Pz>,<rmsX>,<rmsY>,<rmsZ>,<rmsPx>,<rmsPy>,<rmsPz>,<Emx>,<Emy>,<Gam>,DGam/Gam,cov<xPx>,cov<yPy>,cov<zPz>
@@ -311,7 +329,6 @@
  !--- moment calculation
  moment   = sum( ( bunch(number_bunch)%part(:)%cmp(component)*bunch(number_bunch)%part(:)%cmp(8) - mu_mean(1) )**nth )
  moment   = moment / real( count_particles(number_bunch,"yescut") )
- moment   = moment**(1./nth)
 
  !---
  calculate_nth_central_moment_bunch_dcut = moment(1)
@@ -329,7 +346,6 @@
  !--- moment calculation
  moment   = sum( ( bunch(number_bunch)%part(:)%cmp(component)*bunch(number_bunch)%part(:)%cmp(8) )**nth )
  moment   = moment / real( count_particles(number_bunch,"yescut") )
- moment   = moment**(1./nth)
 
  !---
  calculate_nth_moment_bunch_dcut = moment(1)
@@ -367,6 +383,7 @@
  real(8) :: mu_px(1),mu_py(1),mu_pz(1)       !momenta mean
  real(8) :: s_x(1),s_y(1),s_z(1)                         !spatial variance
  real(8) :: s_px(1),s_py(1), s_pz(1)                      !momenta variance
+ real(8) :: m4_x(1),m4_y(1),m4_z(1),m4_px(1),m4_py(1),m4_pz(1) !4th central moments for kurtosis
  real(8) :: mu_gamma(1),s_gamma(1),dgamma_su_gamma(1)     !gamma mean-variance
  real(8) :: corr_y_py(1),corr_z_pz(1),corr_x_px(1) !correlation transverse plane
  real(8) :: emittance_x(1),emittance_y(1) !emittance variables
@@ -382,12 +399,19 @@
 	mu_py(1) = calculate_nth_moment_bunch_dcut(number_bunch,1,5)
 	mu_pz(1) = calculate_nth_moment_bunch_dcut(number_bunch,1,6)
 
-	s_x(1)  = calculate_nth_central_moment_bunch_dcut(number_bunch,2,1)
-	s_y(1)  = calculate_nth_central_moment_bunch_dcut(number_bunch,2,2)
-	s_z(1)  = calculate_nth_central_moment_bunch_dcut(number_bunch,2,3)
-	s_px(1) = calculate_nth_central_moment_bunch_dcut(number_bunch,2,4)
-	s_py(1) = calculate_nth_central_moment_bunch_dcut(number_bunch,2,5)
-	s_pz(1) = calculate_nth_central_moment_bunch_dcut(number_bunch,2,6)
+	s_x(1)  = sqrt( calculate_nth_central_moment_bunch_dcut(number_bunch,2,1) )
+	s_y(1)  = sqrt( calculate_nth_central_moment_bunch_dcut(number_bunch,2,2) )
+	s_z(1)  = sqrt( calculate_nth_central_moment_bunch_dcut(number_bunch,2,3) )
+	s_px(1) = sqrt( calculate_nth_central_moment_bunch_dcut(number_bunch,2,4) )
+	s_py(1) = sqrt( calculate_nth_central_moment_bunch_dcut(number_bunch,2,5) )
+	s_pz(1) = sqrt( calculate_nth_central_moment_bunch_dcut(number_bunch,2,6) )
+
+  m4_x(1)  = calculate_nth_central_moment_bunch_dcut(number_bunch,4,1)
+	m4_y(1)  = calculate_nth_central_moment_bunch_dcut(number_bunch,4,2)
+	m4_z(1)  = calculate_nth_central_moment_bunch_dcut(number_bunch,4,3)
+	m4_px(1) = calculate_nth_central_moment_bunch_dcut(number_bunch,4,4)
+	m4_py(1) = calculate_nth_central_moment_bunch_dcut(number_bunch,4,5)
+	m4_pz(1) = calculate_nth_central_moment_bunch_dcut(number_bunch,4,6)
 
 	corr_x_px(1) = calculate_central_correlation_dcut(number_bunch,1,4)
 	corr_y_py(1) = calculate_central_correlation_dcut(number_bunch,2,5)
@@ -415,12 +439,21 @@
 
 
   write(b2str,'(I1.1)') number_bunch
-  filename='bunch_integrated_quantity_'//b2str//'_dcut.dat'
+  filename=TRIM(sim_parameters%path_integrated_diagnostics)//'bunch_integrated_quantity_'//b2str//'_dcut.dat'
   call open_file(OSys%macwin,filename)
   !1  2   3   4   5    6    7     8      9      10     11      12      13     14    15    16     17       18       19       20
   !t,<X>,<Y>,<Z>,<Px>,<Py>,<Pz>,<rmsX>,<rmsY>,<rmsZ>,<rmsPx>,<rmsPy>,<rmsPz>,<Emx>,<Emy>,<Gam>,DGam/Gam,cov<xPx>,cov<yPy>,cov<zPz>
   write(11,'(100e14.5)') sim_parameters%sim_time*c,mu_x,mu_y,mu_z,mu_px,mu_py,mu_pz,s_x,s_y,s_z,s_px,s_py, &
    s_pz,emittance_x,emittance_y,mu_gamma,dgamma_su_gamma,corr_x_px,corr_y_py,corr_z_pz
+  close(11)
+
+  filename=TRIM(sim_parameters%path_integrated_diagnostics)//'kurtosis_'//b2str//'_dcut.dat'
+  call open_file(OSys%macwin,filename)
+  !1,  2,  3,  4,   5,   6,   7
+  !t,K_x,K_y,K_z,K_px,K_py,K_pz
+  write(11,'(100e14.5)') sim_parameters%sim_time*c, &
+                         m4_x/s_x**4-3.D0,   m4_y/s_y**4-3.D0,   m4_z/s_z**4-3.D0, &
+                         m4_px/s_px**4-3.D0, m4_py/s_py**4-3.D0, m4_pz/s_pz**4-3.D0
   close(11)
  END SUBROUTINE
 
@@ -550,7 +583,7 @@
 
   write(b2str,'(I1.1)') bunch_number
   write(s2str,'(I1.1)') islice
-  filename='bunch_sliced_quantity_'//b2str//'_'//s2str//'_dcut.dat'
+  filename=TRIM(sim_parameters%path_integrated_diagnostics)//'bunch_sliced_quantity_'//b2str//'_'//s2str//'_dcut.dat'
   call open_file(OSys%macwin,filename)
   !1  2   3   4   5    6    7     8      9      10     11      12      13     14    15    16     17       18       19       20
   !t,<X>,<Y>,<Z>,<Px>,<Py>,<Pz>,<rmsX>,<rmsY>,<rmsZ>,<rmsPx>,<rmsPy>,<rmsPz>,<Emx>,<Emy>,<Gam>,DGam/Gam,cov<xPx>,cov<yPy>,cov<zPz>
@@ -561,12 +594,6 @@
  !--- deallocate memory ----!
  deallocate (bunch_mask)
  END SUBROUTINE bunch_sliced_diagnostics_dcut
-
-
-
-
-
-
 
 
 

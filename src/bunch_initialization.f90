@@ -41,53 +41,139 @@
 	INTEGER :: nb,i,j
 	REAL(8) zmmedB,Zb
 	REAL(8), DIMENSION(:,:), ALLOCATABLE ::  bunch_init
+  REAL(8) :: alphaTwiss, betaTwiss, ax11,ay11,ax12,ay12,s_x,s_y,eps_x,eps_y
 	CHARACTER :: name_file*255
 
 
-	write(*,*) "initializing the bunches"
-	! Bunch(es) memory allocation
-   DO nb = 1,bunch_initialization%n_total_bunches
-	allocate(   bunch(nb)%part(bunch_initialization%n_particles(nb)) )! ,STAT=AllocStatus)
-   ENDDO
+  write(*,'(A)') ' --- Bunch initialisation'
+
+    !init-bunch(es)   --- Internal init
+    if(bunch_initialization%l_bunch_internal_init) then
+
+      do nb = 1,bunch_initialization%n_total_bunches
+         allocate(   bunch(nb)%part(bunch_initialization%n_particles(nb)) )! ,STAT=AllocStatus)
+      enddo
+
+      do i=1,bunch_initialization%n_total_bunches
+        allocate( bunch_init(6,bunch_initialization%n_particles(i)) )
+        sim_parameters%rB0(i)    = bunch_initialization%bunch_s_x(i)
+  			sim_parameters%lbunch(i) = bunch_initialization%bunch_s_z(i)
+
+        if(bunch_initialization%shape(i)==1) &
+  				call generate_bunch(0.D0 , 0.D0, 0.D0,&
+    				bunch_initialization%bunch_s_x(i), &
+    				bunch_initialization%bunch_s_y(i), &
+    				bunch_initialization%bunch_s_z(i), &
+    				bunch_initialization%bunch_gamma_m(i),&
+    				bunch_initialization%bunch_eps_x(i), &
+    				bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
+    				bunch_initialization%n_particles(i),bunch_init)
+
+  			! if(twiss%L_TWISS .and. bunch_initialization%shape(i)==1) &
+  			! 	call generate_bunch_twiss( &
+    		! 		0.D0 , 0.D0, 0.D0,&
+    		! 		bunch_initialization%bunch_s_x(i), &
+    		! 		bunch_initialization%bunch_s_y(i), &
+    		! 		bunch_initialization%bunch_s_z(i),&
+    		! 		bunch_initialization%bunch_gamma_m(i),&
+    		! 		bunch_initialization%bunch_eps_x(i), &
+    		! 		bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
+    		! 		bunch_initialization%n_particles(i),bunch_init, &
+    		! 		twiss%alpha_new_factor(i),  &
+    		! 		twiss%beta_new_factor(i)   )
+
+        if(bunch_initialization%shape(i)==5) &
+  				call generate_hollow_bunch( &
+    				0.D0 , 0.D0, 0.D0,&
+    				bunch_initialization%bunch_s_x(i), &
+    				bunch_initialization%bunch_s_y(i), &
+    				bunch_initialization%bunch_s_z(i),&
+    				bunch_initialization%bunch_gamma_m(i),&
+    				bunch_initialization%bunch_eps_x(i), &
+    				bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
+    				bunch_initialization%n_particles(i),bunch_init)
+
+        !--- --- ---!
+        !--- this shape:
+        !--- triangular (or ramped) profile along Z
+        !--- uniform along R: so it has a cut-off
+        if(bunch_initialization%shape(i)==2) &
+  				call generate_triangularZ_uniformR_bunch( &
+    				0.D0 , 0.D0, 0.D0,&
+    				bunch_initialization%bunch_s_x(i), &
+    				bunch_initialization%bunch_s_y(i), &
+    				bunch_initialization%bunch_s_z(i),&
+    				bunch_initialization%bunch_gamma_m(i),&
+    				bunch_initialization%bunch_eps_x(i), &
+    				bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
+    				bunch_initialization%n_particles(i),bunch_init,&
+            bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i))
+
+        !--- --- ---!
+        !--- like previous shape
+        !--- but normal distributed in the transverse direction
+        if( bunch_initialization%shape(i)==3) &
+  				call generate_triangularZ_normalR_bunch( &
+    				0.D0 , 0.D0, 0.D0,&
+    				bunch_initialization%bunch_s_x(i), &
+    				bunch_initialization%bunch_s_y(i), &
+    				bunch_initialization%bunch_s_z(i),&
+    				bunch_initialization%bunch_gamma_m(i),&
+    				bunch_initialization%bunch_eps_x(i), &
+    				bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
+    				bunch_initialization%n_particles(i),bunch_init,&
+            bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i))
+
+            !--- --- ---!
+            !--- this shape: Cylinder
+            !--- uniform along Z: cut-off distribution
+            !--- uniform along R: cut-off distribution
+            if(bunch_initialization%shape(i)==4) &
+      				call generate_cylindrical_bunch( &
+        				0.D0 , 0.D0, 0.D0,&
+        				bunch_initialization%bunch_s_x(i), &
+        				bunch_initialization%bunch_s_y(i), &
+        				bunch_initialization%bunch_s_z(i),&
+        				bunch_initialization%bunch_gamma_m(i),&
+        				bunch_initialization%bunch_eps_x(i), &
+        				bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
+        				bunch_initialization%n_particles(i),bunch_init)
 
 
-    !init-bunch(es)
-   if(bunch_initialization%l_bunch_internal_init) then
+!--- Apply Twiss Rotation ---!
+            if( twiss%L_TWISS(i)  ) then
 
-	do i=1,bunch_initialization%n_total_bunches
+              alphaTwiss = twiss%alpha_new_factor(i)
+              betaTwiss  =	twiss%beta_new_factor(i)
+              eps_x=bunch_initialization%bunch_eps_x(i)
+              eps_y=bunch_initialization%bunch_eps_y(i)
+              s_x=bunch_initialization%bunch_s_x(i)
+              s_y=bunch_initialization%bunch_s_y(i)
 
-			allocate( bunch_init(6,bunch_initialization%n_particles(i)) )
+              ax11=sqrt( eps_x*betaTwiss/(s_x**2+s_x**2*alphaTwiss**2) )
+              ay11=sqrt( eps_y*betaTwiss/(s_y**2+s_y**2*alphaTwiss**2) )
+              ax12=-ax11*alphaTwiss*s_x**2/eps_x
+              ay12=-ay11*alphaTwiss*s_y**2/eps_y
 
-			sim_parameters%rB0(i)    = bunch_initialization%bunch_s_x(i)
-			sim_parameters%lbunch(i) = bunch_initialization%bunch_s_z(i)
+              do j=1,bunch_initialization%n_particles(i)
+                 bunch_init(1,j)=ax11*bunch_init(1,j)+ax12*bunch_init(4,j)
+                 bunch_init(2,j)=ay11*bunch_init(2,j)+ay12*bunch_init(5,j)
+                 bunch_init(3,j)=bunch_init(3,j)
+                 bunch_init(4,j)=bunch_init(4,j)/ax11
+                 bunch_init(5,j)=bunch_init(5,j)/ay11
+                 bunch_init(6,j)=bunch_init(6,j)
+             enddo
+           endif
 
-			if(.not.twiss%L_TWISS) then
-				call generate_bunch( &
-				0.D0 , 0.D0, 0.D0,&
-				bunch_initialization%bunch_s_x(i), &
-				bunch_initialization%bunch_s_y(i), &
-				bunch_initialization%bunch_s_z(i), &
-				bunch_initialization%bunch_gamma_m(i),&
-				bunch_initialization%bunch_eps_x(i), &
-				bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
-				bunch_initialization%n_particles(i),bunch_init)
-			else !bunch with twiss
-				call generate_bunch_twiss( &
-				0.D0 , 0.D0, 0.D0,&
-				bunch_initialization%bunch_s_x(i), &
-				bunch_initialization%bunch_s_y(i), &
-				bunch_initialization%bunch_s_z(i),&
-				bunch_initialization%bunch_gamma_m(i),&
-				bunch_initialization%bunch_eps_x(i), &
-				bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
-				bunch_initialization%n_particles(i),bunch_init, &
-				twiss%alpha_new_factor(i),  &
-				twiss%beta_new_factor(i)   )
-			endif
+!--- Apply Shifting ---!
+              ! do j=1,bunch_initialization%n_particles(i)
+              !    bunch_init(1,i)=bunch_init(1,i) + 0.D0
+              !    bunch_init(2,i)=bunch_init(2,i) + 0.D0
+              !    bunch_init(3,i)=bunch_init(3,i) + 0.D0
+              ! enddo
 
-			!il nome di questa funzione e' incomprensibile
-			!call modify_bunch(bunch_init,i)
 
+      !--- *** bunch copy ***---!
 			do j=1,bunch_initialization%n_particles(i)
 				bunch(i)%part(j)%cmp(1)=bunch_init(1,j)
 				bunch(i)%part(j)%cmp(2)=bunch_init(2,j)
@@ -106,49 +192,63 @@
 			if (allocated(bunch_init)) deallocate(bunch_init)
 	enddo
 
-   else !read from external file
+      else !read from external file
+            do i=1,bunch_initialization%n_total_bunches
+                name_file = bunch_initialization%inbunch(i)
+                write(*,*) name_file
+                call read_header_external_file(name_file,bunch_initialization%chargeB(i),bunch_initialization%n_particles(i))
+                bunch_initialization%chargeB(i)=-bunch_initialization%chargeB(i)
+                allocate( bunch_init(6,bunch_initialization%n_particles(i)) )
+                allocate( bunch(i)%part(bunch_initialization%n_particles(i)) )! ,STAT=AllocStatus)
+                call read_from_external_file(name_file,bunch_initialization%n_particles(i),bunch_init)
 
-	do i=1,bunch_initialization%n_total_bunches
+                if (twiss%L_TWISS(i)) write(*,'(A)') 'No Twiss option for externally read files'
 
-		allocate( bunch_init(6,bunch_initialization%n_particles(i)) )
+                do j=1,bunch_initialization%n_particles(i)
+                    bunch(i)%part(j)%cmp(1)=bunch_init(1,j)
+                    bunch(i)%part(j)%cmp(2)=bunch_init(2,j)
+                    bunch(i)%part(j)%cmp(3)=bunch_init(3,j)
+                    bunch(i)%part(j)%cmp(4)=bunch_init(4,j)
+                    bunch(i)%part(j)%cmp(5)=bunch_init(5,j)
+                    bunch(i)%part(j)%cmp(6)=bunch_init(6,j)
+                    bunch(i)%part(j)%cmp(7)=1.
+                    bunch(i)%part(j)%cmp(8)=1.
 
-		name_file = sim_parameters%inbunch(i)
-		call read_from_external_file(name_file, bunch_initialization%n_particles(i),bunch_init)
-
-            if (twiss%beta_new_factor(i).le.0) then
-
-                write(*,*) 'Non positive new beta function value.'
-                write(*,*) 'Doing nothing on bunch', i
-
-            else
-
-                call modify_bunch(bunch_init,i)
-
-            endif
-
-		do j=1,bunch_initialization%n_particles(i)
-			bunch(i)%part(j)%cmp(1)=bunch_init(1,j)
-			bunch(i)%part(j)%cmp(2)=bunch_init(2,j)
-			bunch(i)%part(j)%cmp(3)=bunch_init(3,j)
-			bunch(i)%part(j)%cmp(4)=bunch_init(4,j)
-			bunch(i)%part(j)%cmp(5)=bunch_init(5,j)
-			bunch(i)%part(j)%cmp(6)=bunch_init(6,j)
-			bunch(i)%part(j)%cmp(7)=1.
-			bunch(i)%part(j)%cmp(8)=1.
-
-			bunch(i)%part(j)%cmp(9)=bunch_init(1,j)  !Xold
-			bunch(i)%part(j)%cmp(10)=bunch_init(2,j) !Yold
-			bunch(i)%part(j)%cmp(11)=bunch_init(3,j) !Zold
-		enddo
-		if (allocated(bunch_init)) deallocate(bunch_init)
-
-		sim_parameters%rB0(i)    = calculate_nth_central_moment_bunch(i,2,1)
-		sim_parameters%lbunch(i) = calculate_nth_central_moment_bunch(i,2,3)
-	enddo
-
+                    bunch(i)%part(j)%cmp(9)=bunch_init(1,j)  !Xold
+                    bunch(i)%part(j)%cmp(10)=bunch_init(2,j) !Yold
+                    bunch(i)%part(j)%cmp(11)=bunch_init(3,j) !Zold
+                enddo
+            		if (allocated(bunch_init)) deallocate(bunch_init)
+            		sim_parameters%rB0(i)    = sqrt( calculate_nth_central_moment_bunch(i,2,1) )
+            		sim_parameters%lbunch(i) = sqrt( calculate_nth_central_moment_bunch(i,2,3) )
+          	enddo
    endif
 
 !------------------------------------------------------!
+
+!--- calculate bunch charge for the non-gaussian bunches and write a diagnostic---!
+  do i=1,bunch_initialization%n_total_bunches
+    if(bunch_initialization%shape(i)==1) write(*,'(A,I1,A,f8.4,A)') 'Charge Bunch(',i,') :: ', bunch_initialization%ChargeB(i),'[nC] --- selected from nml file'
+    if(bunch_initialization%shape(i)==4) write(*,'(A,I1,A,f8.4,A)') 'Charge Bunch(',i,') :: ', bunch_initialization%ChargeB(i),'[nC] --- selected from nml file'
+
+    if(bunch_initialization%shape(i)==2) then !for bunch shape==2 the total charge need to be computed
+      bunch_initialization%ChargeB(i)= electron_charge*pi * (bunch_initialization%bunch_s_x(i)*1d-6) * (bunch_initialization%bunch_s_y(i)*1d-6) &
+                                                            *(bunch_initialization%Charge_left(i)+bunch_initialization%Charge_right(i))*bunch_initialization%bunch_s_z(i)*1d-6/2.d0 &
+                                                            *(plasma%n0*1d6)
+      bunch_initialization%ChargeB(i)=bunch_initialization%ChargeB(i)*1e9 !converting to [nC]
+      write(*,'(A,I1,A,f8.4,A)') 'Charge Bunch(',i,') :: ',bunch_initialization%ChargeB(i),'[nC] --- computed'
+    endif
+
+    if(bunch_initialization%shape(i)==3) then !for bunch shape==3 the total charge need to be computed
+      bunch_initialization%ChargeB(i)= electron_charge* 2.d0*pi* (bunch_initialization%bunch_s_x(i)*1d-6) * (bunch_initialization%bunch_s_y(i)*1d-6) &
+                                                            *(bunch_initialization%Charge_left(i)+bunch_initialization%Charge_right(i))*bunch_initialization%bunch_s_z(i)*1d-6/2.d0 &
+                                                            *(plasma%n0*1d6)
+      bunch_initialization%ChargeB(i)=bunch_initialization%ChargeB(i)*1e9 !converting to [nC]
+      write(*,'(A,I1,A,f8.4,A)') 'Charge Bunch(',i,') :: ',bunch_initialization%ChargeB(i),'[nC] --- computed'
+    endif
+enddo
+write(*,'(A)')
+
 
    Zb=0.
    !~if  (bunch_initialization%n_total_bunches.gt.1) then
@@ -159,27 +259,32 @@
    !~endif
    !~bunch_initialization%db(1) = 0.
 
-   do i=1,bunch_initialization%n_total_bunches
-      zmmedB                    		= calculate_nth_moment_bunch(i,1,3)
-	  if (i.ge.1) then
-		Zb                          	= Zb+bunch_initialization%db(i)*plasma%lambda_p
-	  else if (i.eq.1) then
-		Zb = 0.
-	  endif
-      bunch(i)%part(:)%cmp(3)			= bunch(i)%part(:)%cmp(3)- zmmedB + Zb 							! shift Z of bunch
-      bunch(i)%part(:)%cmp(11)			= bunch(i)%part(:)%cmp(3)  										! change Z_old accordingly
-	  bunch(i)%part(:)%cmp(12)			= bunch_initialization%ChargeB(i)/bunch_initialization%n_particles(i) ! macroparticle charge
-	  bunch(i)%part(:)%cmp(13)			= 1.e10*bunch(i)%part(:)%cmp(12)/1.6021766 						! electrons per macroparticle
-   enddo
+    do i=1,bunch_initialization%n_total_bunches
+      zmmedB = calculate_nth_moment_bunch(i,1,3)
+      if (i.ge.1) Zb = Zb+bunch_initialization%db(i)*plasma%lambda_p
+      if (bunch_initialization%shape(i)==3) zmmedB=0.d0
+      if (bunch_initialization%shape(i)==4) zmmedB=0.d0
+      ! else if (i.eq.1) then
+      !   Zb = 0.
+      ! endif
+      bunch(i)%part(:)%cmp(3)  = bunch(i)%part(:)%cmp(3)- zmmedB + Zb 							! shift Z of bunch
+      bunch(i)%part(:)%cmp(11) = bunch(i)%part(:)%cmp(3)  										! change Z_old accordingly
+      bunch(i)%part(:)%cmp(12) = bunch_initialization%ChargeB(i)/bunch_initialization%n_particles(i) ! macroparticle charge
+      bunch(i)%part(:)%cmp(13) = 1.e10*bunch(i)%part(:)%cmp(12)/1.6021766 						! electrons per macroparticle
+    enddo
 
    !---initial diagnostic
       do i=1,bunch_initialization%n_total_bunches
-         write(*,*) 'Bunch(',i,')  sigma_x (um) =',calculate_nth_central_moment_bunch(i,2,1)
-         write(*,*) 'Bunch(',i,')  sigma_z (um) =',calculate_nth_central_moment_bunch(i,2,3)
+        if(bunch_initialization%shape(i)==1) write(*,'(A,I1,A)') 'Bunch(',i,') :: shape > Normal distributed'
+        if(bunch_initialization%shape(i)==2) write(*,'(A,I1,A)') 'Bunch(',i,') :: shape > triangular (or ramped) profile along Z uniform along R'
+        if(bunch_initialization%shape(i)==3) write(*,'(A,I1,A)') 'Bunch(',i,') :: shape > triangular (or ramped) profile along Z gaussian along R'
+        if(bunch_initialization%shape(i)==4) write(*,'(A,I1,A)') 'Bunch(',i,') :: shape > cylindrical'
+         write(*,'(A,I1,A,f11.3)') 'Bunch(',i,') :: sigma_x (um) =',sqrt( calculate_nth_central_moment_bunch(i,2,1) )
+         write(*,'(A,I1,A,f11.3)') 'Bunch(',i,') :: sigma_z (um) =',sqrt( calculate_nth_central_moment_bunch(i,2,3) )
          write(*,*)
       enddo
-      write(*,*)'Plasma wavelength (um) =',plasma%lambda_p
-      write(*,*)
+      write(*,'(A,f11.3)')'Plasma wavelength   (um) =',plasma%lambda_p
+      write(*,'(A,f11.3)')'Plasma wavenumber (1/um) =',plasma%k_p
 
 
    ! Computes total charge and number of electrons
@@ -190,11 +295,8 @@
 
 
 
-	 write(*,*) "bunches initialized"
+	 write(*,'(A)') ' bunches initialized ---'
 	 write(*,*)
-
-
-
  end subroutine init_bunch
 
 
@@ -338,6 +440,49 @@ end subroutine set_twiss_parameters
 
 
 
+
+
+subroutine dimension_first_bunch
+ INTEGER :: nb,i,j
+ REAL(8) zmmedB,Zb
+ REAL(8), DIMENSION(:,:), ALLOCATABLE ::  bunch_init
+ CHARACTER :: name_file*255
+
+ write(*,'(A)')
+ write(*,'(A)') ' >>> Initialisation :: Identify dimension for the first bunch <<<'
+
+  if(bunch_initialization%l_bunch_internal_init) then !from input file
+    sim_parameters%rB0(1)    = bunch_initialization%bunch_s_x(1)
+    sim_parameters%lbunch(1) = bunch_initialization%bunch_s_z(1)
+  else !read from external file
+    name_file = bunch_initialization%inbunch(1)
+    call read_header_external_file(name_file,bunch_initialization%chargeB(1),bunch_initialization%n_particles(1))
+    bunch_initialization%chargeB(1)=-bunch_initialization%chargeB(1)
+    allocate( bunch_init(6,bunch_initialization%n_particles(1)) )
+    allocate( bunch(1)%part(bunch_initialization%n_particles(1)) )
+    call read_from_external_file(name_file,bunch_initialization%n_particles(1),bunch_init)
+    do j=1,bunch_initialization%n_particles(1)
+      bunch(1)%part(j)%cmp(1)=bunch_init(1,j)
+      bunch(1)%part(j)%cmp(2)=bunch_init(2,j)
+      bunch(1)%part(j)%cmp(3)=bunch_init(3,j)
+      bunch(1)%part(j)%cmp(4)=bunch_init(4,j)
+      bunch(1)%part(j)%cmp(5)=bunch_init(5,j)
+      bunch(1)%part(j)%cmp(6)=bunch_init(6,j)
+      bunch(1)%part(j)%cmp(7)=1.
+      bunch(1)%part(j)%cmp(8)=1.
+      bunch(1)%part(j)%cmp(9)=bunch_init(1,j)  !Xold
+      bunch(1)%part(j)%cmp(10)=bunch_init(2,j) !Yold
+      bunch(1)%part(j)%cmp(11)=bunch_init(3,j) !Zold
+    enddo
+    if (allocated(bunch_init)) deallocate(bunch_init)
+    sim_parameters%rB0(1)    = sqrt( calculate_nth_central_moment_bunch(1,2,1) )
+    sim_parameters%lbunch(1) = sqrt( calculate_nth_central_moment_bunch(1,2,3) )
+    if (allocated(bunch(1)%part)) deallocate(bunch(1)%part)
+  endif
+
+  write(*,'(A)') '>>> Initialisation :: first bunch dimension :: identified <<<'
+  write(*,*)
+end subroutine dimension_first_bunch
 
 
 

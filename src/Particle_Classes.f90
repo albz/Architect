@@ -62,21 +62,33 @@ module architect_class_structure
 
  end type particle
 
+ type static_background_ion
+  real(8) :: cmp(7)
+	! ---- cmp - background ion components ---------- !
+	! 1  : Z_coordinate
+	! 2  : R_coordinate
+	! 3  : A - Mass number
+	! 4  : Z - Atomic number
+	! 5  : Zstar - ionisation value
+  ! 6  : n_plasma : original ion density
+  ! 7  : inout - check particle Active(1) or inactive(0)
+ end type static_background_ion
+
+
  type species
   type(particle),allocatable :: part(:)
  end type species
 
-
 end module architect_class_structure
 
 
- !--------------------------
+  !--- *** ---!
+  module pstruct_data
+    use architect_class_structure
+    implicit none
 
+    type(species) :: bunch(6)
 
-module pstruct_data
- use architect_class_structure
- implicit none
+    type(static_background_ion),allocatable :: static_ion(:)
 
- type(species) :: bunch(6)
-
-end module pstruct_data
+  end module pstruct_data

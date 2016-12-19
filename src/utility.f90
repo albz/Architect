@@ -335,4 +335,25 @@ end subroutine open_file
 
 	end subroutine
 
+
+	!--- *** ---!
+		RECURSIVE FUNCTION Factorial(n)  RESULT(Fact)
+			INTEGER :: Fact
+			INTEGER, INTENT(IN) :: n
+			IF (n == 0) THEN
+			   Fact = 1
+			ELSE
+			   Fact = n * Factorial(n-1)
+			END IF
+		END FUNCTION Factorial
+	!---***
+
+	!--- *** ---!
+		real(8) FUNCTION from_dimlessE_to_dimE(E)
+			real(8), INTENT(IN) :: E
+			from_dimlessE_to_dimE = E*96. * sqrt( plasma%n0 )
+		END FUNCTION from_dimlessE_to_dimE
+	!---***
+
+
 END MODULE utilities

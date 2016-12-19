@@ -41,6 +41,10 @@ USE initialize_bunch
 USE utilities
 USE linear_algebra
 USE init_fields
+USE dump_status
+USE ion_background
+USE ionisation_module
+USE grid_diagnostics
 
 
 
@@ -62,33 +66,25 @@ INTEGER Lapl_dim
 
    sim_parameters%iter=1
 
+   call SetFileFlag('==started==')
    call read_input
+   call write_read_nml
 
-   sim_parameters%dim_Laplacian=2*bunch_initialization%init_width_z*mesh_par%Nsample_z* &
-   (bunch_initialization%init_width_r*mesh_par%Nsample_r/2)
-
-   total_run_distance = plasma%l_acc + & !in um
-   						plasma%lambda_p * (sim_parameters%distance_capillary+sim_parameters%start_ramp_length &
-                                          +sim_parameters%end_ramp_length+sim_parameters%distance_after_end_ramp )
+  !  total_run_distance = plasma%l_acc + & !in um
+  !  						plasma%lambda_p * (sim_parameters%distance_capillary+sim_parameters%start_ramp_length &
+  !                               +sim_parameters%end_ramp_length+sim_parameters%distance_after_end_ramp )
+     total_run_distance = plasma%l_acc !in um
 
    call generate_output_tree
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!            BUNCH INIT
+!    INITIALISE
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-   call init_bunch
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!            WINDOW INIT
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   ! Initializes simulation window parameters
+   call dimension_first_bunch
    call init_window
-
-   ! Creates the mesh and capillary ramp
    call Kernel_Make_a_mesh
-   call define_capillary_ramp
-
+   call init_bunch
+   call dt_calculation
 
 	! Initialize simulation time
 	sim_parameters%sim_time	= 0.
@@ -96,15 +92,11 @@ INTEGER Lapl_dim
 	! First global print
 	call first_print_at_screen
 
-	! Write Started Flag
-	!File Flags: begin
-	call SetFileFlag  ('==started==')
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !            TIME EVOLUTION
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
    ! Sets plasma background density,
    ! computes charge and fields at first iteration
 
@@ -112,52 +104,35 @@ INTEGER Lapl_dim
   if( bunch_initialization%self_consistent_field_bunch==0 ) then 		!no field initialization, only for comparison purposes
 		call init_null_EM_fields
 		call init_external_Bfields
-		call set_initial_plasma_density
+		call set_initial_background_condition
+    call initialise_ion_background
 		call Kernel_ComputeCurrent_FDTD
 	elseif( bunch_initialization%self_consistent_field_bunch==1 ) then 	!coax shells
-		call set_initial_plasma_density
+		call set_initial_background_condition
+    call initialise_ion_background
 		call Kernel_ComputeCurrent_FDTD
 		call init_EM_fields_coax_shells
 		call init_external_Bfields
 	elseif(bunch_initialization%self_consistent_field_bunch>1) then 	!LU or SOR: LU option (2), SOR option (3)
 		call init_EM_fields
-		call set_initial_plasma_density
+		call set_initial_background_condition
+    call initialise_ion_background
 		call Kernel_ComputeCurrent_FDTD
 		!call analytic_rho_only_first_bunch
 		call init_external_Bfields
 	endif
 
 
-   ! New bunch integrated diagnostic without the cut + sliced diagnostics
-   do i=1,bunch_initialization%n_total_bunches
-		mu_z    = calculate_nth_moment_bunch(i,1,3)
-		sigma_z = calculate_nth_central_moment_bunch(i,2,3)
-
-		call bunch_sliced_diagnostics(i)
-		call bunch_integrated_diagnostics(i)
-   enddo
-
-	if (sim_parameters%diagnostics_with_dcut.eq.1) then
-		call apply_Sigma_cut(sim_parameters,plasma%k_p)
-		do i=1,bunch_initialization%n_total_bunches
-			mu_z    = calculate_nth_moment_bunch_dcut(i,1,3)
-			sigma_z = calculate_nth_central_moment_bunch_dcut(i,2,3)
-
-			call bunch_sliced_diagnostics_dcut(i,mu_z,sigma_z)
-			call bunch_integrated_diagnostics_dcut(i)
-		enddo
-	endif
-
-   ! Plasma and bunch diagnostics
-   call final_data_dump
-   call dump_input_file
+  !--- Bunch Diagnostics ---!
+  call bunch_diagnostics_Integrated_AllBunches
+  ! Plasma and bunch diagnostics
+  call final_data_dump
+  call write_read_nml
 
 ! ----------- MAIN TIME LOOP -----------------------------
 ! --------------------------------------------------------
 
    main_loop: do
-
-     !write(*,'(A,100e14.5)') 'time >',sim_parameters%dt,Dt,sim_parameters%sim_time
 
 		!---check suspension flag---!
 		if(getFileFlag('==suspend==')) then
@@ -168,62 +143,68 @@ INTEGER Lapl_dim
 			stop
 		endif
 
+    call ionise
 
-    ! ---- BULK
-		! Computes plasma and beam current
-		call Kernel_ComputeCurrent_FDTD
-		! Advances electromagnetic fields
-		call Kernel_Fields_FDTD_COMB
-		! Fluid advance
-		call Kernel_FluidAdvance_FDTD
-		! Particle pusher
-		call Kernel_MoveParticle_FDTD
+    ! --- --- --- BULK --- --- --- !
+    if(sim_parameters%L_plasma_evolution) then
+      ! *** full PLASMA evolution ***!
+  		call Kernel_ComputeCurrent_FDTD ! Computes plasma and beam current
+  		call Kernel_Fields_FDTD_bck    ! Advances electromagnetic fields background
+      if(sim_parameters%L_Bunch_evolve) call Kernel_Fields_FDTD_bunch    ! Advances electromagnetic fieldd bunch(es)
+  		call Kernel_FluidAdvance_FDTD   ! Fluid advance
+  		call Kernel_MoveParticle_FDTD   ! Particle pusher (bunch electrons)
+      if(ionisation%L_ionisation) call ion_advection  ! Particle pusher: background ions
+    else
+      ! *** only Particle Tracking ***!
+  		call Kernel_ComputeCurrent_FDTD ! Computes plasma and beam current
+  		call Kernel_MoveParticle_FDTD   ! Particle pusher
+    endif
+    ! --- --- --- BULK --- --- --- !
 
-	  ! New bunch integrated diagnostic without the cut + sliced diagnostics
-	  sim_parameters%IntDeltaOutput=abs(sim_parameters%sim_time*c-sim_parameters%IntLastOutput)
-      if(mod(sim_parameters%iter,sim_parameters%output_Integrated_params_nstep).eq.0 &
-      .or. sim_parameters%IntDeltaOutput>sim_parameters%output_Integrated_params_dist) then
 
-		do i=1,bunch_initialization%n_total_bunches
-			mu_z    = calculate_nth_moment_bunch(i,1,3)
-			sigma_z = calculate_nth_central_moment_bunch(i,2,3)
+	  ! bunch integrated diagnostic
+    sim_parameters%IntDeltaOutput=abs(sim_parameters%sim_time*c-sim_parameters%IntLastOutput)
+    if(mod(sim_parameters%iter,sim_parameters%output_Integrated_params_nstep).eq.0 &
+    .or. sim_parameters%IntDeltaOutput>sim_parameters%output_Integrated_params_dist) then
+    
+      call bunch_diagnostics_Integrated_AllBunches
+      if(sim_parameters%L_lineout) call lineout
+      sim_parameters%IntLastOutput=sim_parameters%sim_time*c
+    endif
 
-			call bunch_sliced_diagnostics(i)
-			call bunch_integrated_diagnostics(i)
-		enddo
 
-		if (sim_parameters%diagnostics_with_dcut.eq.1) then
-			call apply_Sigma_cut(sim_parameters,plasma%k_p)
-			do i=1,bunch_initialization%n_total_bunches
-				mu_z    = calculate_nth_moment_bunch_dcut(i,1,3)
-				sigma_z = calculate_nth_central_moment_bunch_dcut(i,2,3)
 
-				call bunch_sliced_diagnostics_dcut(i,mu_z,sigma_z)
-				call bunch_integrated_diagnostics_dcut(i)
-			enddo
-		endif
-		sim_parameters%IntLastOutput=sim_parameters%sim_time*c
-	  endif
+    !--- un poco sporchetta da mettere a posto---!
+    if(mod(sim_parameters%iter,sim_parameters%output_Integrated_params_nstep).eq.0 &
+    .or. sim_parameters%IntDeltaOutput>sim_parameters%output_Integrated_params_dist.or.&
+    sim_parameters%iter==1) then
 
-      ! Plasma and bunch data dump
+    open(unit=19, file='file.out', form='formatted')
+    do i=1,ionisation%tot_ions
+      if(static_ion(i)%cmp(7)>0.) write(19,'(3e14.5)') static_ion(i)%cmp(1)/plasma%k_p,static_ion(i)%cmp(2)/plasma%k_p
+    enddo
+    close(19)
+  endif
+
+    ! Plasma and bunch data dump
 	  call data_dump
 
-      ! Advances simulation iteration
-      sim_parameters%iter 	= sim_parameters%iter+1
+    ! Advances simulation iteration
+    sim_parameters%iter = sim_parameters%iter+1
 
 
-      !--------------------------------------------------------!
-      !---> Re-initialise bunch density whethere necessary <---!
-      !--------------------------------------------------------!
-      call ReInitialise_EB_Bunch_fields
-      !---> <---!
+    !--------------------------------------------------------!
+    !---> Re-initialise bunch density whethere necessary <---!
+    !--------------------------------------------------------!
+    call ReInitialise_EB_Bunch_fields
+    !---> <---!
 
 	  ! Advances simulation window
 	  call control_window
 
       ! continous diagnostic
       if(mod(sim_parameters%iter,10)==0) then
-			write(*,*) 'Iteration =',sim_parameters%iter,' - Moving window position =',sim_parameters%zg
+        write(*,'(A,I10,A,f12.3)') 'Iteration =',sim_parameters%iter,'    -    Run distance =',sim_parameters%zg
       endif
 
       ! Print at screen, when data are dumped
@@ -236,8 +217,8 @@ INTEGER Lapl_dim
       sim_parameters%sim_time=sim_parameters%iter*sim_parameters%dt
 
       if(abs(calculate_nth_moment_bunch(1,1,3)).gt.total_run_distance) then
-        write(*,*) 'End of run'
-        write(*,'(A,1e14.5)') 'total distance run:',abs(calculate_nth_moment_bunch(1,1,3))
+        write(*,'(A,1e14.5)') ' > total run distance:',abs(calculate_nth_moment_bunch(1,1,3))
+        write(*,'(A)') '--- --- --- End of run --- --- ---'
         goto 123
     	endif
 
@@ -245,19 +226,18 @@ INTEGER Lapl_dim
 
 123 continue
 
-   ! Final dump
+
+   !--- Final dump ---!
    call Compute_bunch_density
    call final_data_dump
 
 
-   ! Deallocate variables
-   DEALLOCATE(x_mesh,z_mesh,mesh)
-   if(sim_parameters%order_capillary_density_r.eq.2) then
-		 DEALLOCATE(radial_factor)
-   endif
-	!end of run flags
-	call setFileFlag('==completed==')
-	call UnsetFileFlag('==started==')
+    ! Deallocate variables
+    DEALLOCATE(x_mesh,z_mesh,mesh)
+    if( allocated(mesh_util%Bphi_BC_Left) ) DEALLOCATE(mesh_util%Bphi_BC_Left)
+    !end of run flags
+    call setFileFlag('==completed==')
+    call UnsetFileFlag('==started==')
 
    stop
    END
