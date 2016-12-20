@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VisualStudioProject ProjectCreator="Intel Fortran" Keyword="Console Application" Version="11.0" ProjectIdGuid="{924FE9DF-9EEA-4DDB-A8EF-F8A87344C8B1}">
+	<Platforms>
+		<Platform Name="Win32"/></Platforms>
+	<Configurations>
+		<Configuration Name="Debug|Win32">
+				<Tool Name="VFFortranCompilerTool" SuppressStartupBanner="true" DebugInformationFormat="debugEnabled" Optimization="optimizeDisabled" WarnInterfaces="true" Traceback="true" BoundsCheck="true" StackFrameCheck="true" RuntimeLibrary="rtMultiThreadedDebugDLL"/>
+				<Tool Name="VFLinkerTool" LinkIncremental="linkIncrementalNo" SuppressStartupBanner="true" GenerateDebugInformation="true" SubSystem="subSystemConsole"/>
+				<Tool Name="VFResourceCompilerTool"/>
+				<Tool Name="VFMidlTool" SuppressStartupBanner="true"/>
+				<Tool Name="VFCustomBuildTool"/>
+				<Tool Name="VFPreLinkEventTool"/>
+				<Tool Name="VFPreBuildEventTool"/>
+				<Tool Name="VFPostBuildEventTool"/>
+				<Tool Name="VFManifestTool" SuppressStartupBanner="true"/></Configuration>
+		<Configuration Name="Release|Win32">
+				<Tool Name="VFFortranCompilerTool" SuppressStartupBanner="true" RuntimeLibrary="rtMultiThreadedDLL"/>
+				<Tool Name="VFLinkerTool" LinkIncremental="linkIncrementalNo" SuppressStartupBanner="true" SubSystem="subSystemConsole"/>
+				<Tool Name="VFResourceCompilerTool"/>
+				<Tool Name="VFMidlTool" SuppressStartupBanner="true"/>
+				<Tool Name="VFCustomBuildTool"/>
+				<Tool Name="VFPreLinkEventTool"/>
+				<Tool Name="VFPreBuildEventTool"/>
+				<Tool Name="VFPostBuildEventTool"/>
+				<Tool Name="VFManifestTool" SuppressStartupBanner="true"/></Configuration></Configurations>
+	<Files>
+		<Filter Name="Header Files" Filter="fi;fd;h;inc"/>
+		<Filter Name="Resource Files" Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"/>
+		<Filter Name="Source Files" Filter="f90;for;f;fpp;ftn;def;odl;idl">
+		<File RelativePath=".\architect.f90"/>
+		<File RelativePath=".\bunch_diagnostics.f90"/>
+		<File RelativePath=".\bunch_generation.f90"/>
+		<File RelativePath=".\bunch_initialization.f90"/>
+		<File RelativePath=".\bunch_moments.f90"/>
+		<File RelativePath=".\compute_background_current.f90"/>
+		<File RelativePath=".\compute_bunch_current.f90"/>
+		<File RelativePath=".\compute_current_manager.f90"/>
+		<File RelativePath=".\data_dump.f90"/>
+		<File RelativePath=".\dump_status.f90"/>
+		<File RelativePath=".\Fields_init.f90"/>
+		<File RelativePath=".\fileflags.f90"/>
+		<File RelativePath=".\grid_diagnostics.f90"/>
+		<File RelativePath=".\ion_background.f90"/>
+		<File RelativePath=".\ionisation.f90"/>
+		<File RelativePath=".\linear_algebra_utilities.f90"/>
+		<File RelativePath=".\mesh_generator.f90"/>
+		<File RelativePath=".\my_types.f90"/>
+		<File RelativePath=".\Particle_Classes.f90"/>
+		<File RelativePath=".\particle_pusher.f90"/>
+		<File RelativePath=".\random_numbers_functions.f90"/>
+		<File RelativePath=".\read_input.f90"/>
+		<File RelativePath=".\shapiro_wilks.f90"/>
+		<File RelativePath=".\update_EBfields_leapfrog.f90"/>
+		<File RelativePath=".\update_fluid_fct.f90"/>
+		<File RelativePath=".\update_fluid_manager.f90"/>
+		<File RelativePath=".\update_fluid_upwind.f90"/>
+		<File RelativePath=".\use_types.f90"/>
+		<File RelativePath=".\utility.f90"/>
+		<File RelativePath=".\window_shifting.f90"/></Filter></Files>
+	<Globals/></VisualStudioProject>
