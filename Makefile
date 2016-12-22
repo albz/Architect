@@ -297,7 +297,6 @@ $(OBJ_FOLDER)/data_dump.o: $(SRC_FOLDER)/data_dump.f90 \
 													 $(OBJ_FOLDER)/pstruct_data.mod \
 													 $(OBJ_FOLDER)/architect_class_structure.mod \
 													 $(OBJ_FOLDER)/ion_background.mod \
-													 $(OBJ_FOLDER)/Diagnostics_on_Bunches.mod \
 													 $(OBJ_FOLDER)/grid_diagnostics.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/data_dump.mod: $(SRC_FOLDER)/data_dump.f90 $(OBJ_FOLDER)/data_dump.o
