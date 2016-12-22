@@ -26,7 +26,8 @@ USE use_my_types
 USE pstruct_data
 USE architect_class_structure
 USE ion_background
-
+USE Diagnostics_on_Bunches
+USE grid_diagnostics
 
 
 IMPLICIT NONE
@@ -56,48 +57,37 @@ CONTAINS
 	END SUBROUTINE first_print_at_screen
 
 
-
-	SUBROUTINE print_at_screen
-
-		write(*,*)
-      	write(*,*)
-      	write(*,*)
-      	write(*,*)
-      	write(*,*) 'Step                               =',sim_parameters%iter
-      	write(*,*) 'Time                               =',sim_parameters%sim_time
-      	write(*,*) 'dt(fs)                             = ',sim_parameters%dt
-      	write(*,*) 'l_p (um)                           = ',plasma%lambda_p
-      	write(*,*) 'Z first bunch (with cut - um)      = ',sim_parameters%zg
-      	! position of first driver, with cut
-      	write(*,*)
-		write(*,*) 'Mesh points in physical half plane x > 0 : '
-		write(*,*) 'Nz_mesh =',(mesh_par%Nzm-2),'       Nx_mesh =',(mesh_par%Nxm-2)
-      	write(*,*)
-      	write(*,*) 'dz_mesh(um)    = ',mesh_par%dzm/plasma%k_p,  '       dx_mesh(um)    = ',mesh_par%dxm/plasma%k_p
-      	write(*,*) 'z_min_mesh(um) = ',maxval(z_mesh)/plasma%k_p,'       z_max_mesh(um) = ',minval(z_mesh)/plasma%k_p
-     	write(*,*) 'r_max_mesh(um) = ',maxval(x_mesh)/plasma%k_p
-      	write(*,*)
-      	write(*,*)
-      	write(*,*)
-      	write(*,*)
-
-
-	END SUBROUTINE	print_at_screen
-
-
-
-
-
-
-
-
-
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                                         !
 !                      Diagnostics Subroutines - Binary Format                            !
 !                                                                                         !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+SUBROUTINE data_dump
+		sim_parameters%gridDeltaOutput=abs(sim_parameters%sim_time*c-sim_parameters%gridLastOutput)
+		sim_parameters%PSDeltaOutput=abs(sim_parameters%sim_time*c-sim_parameters%PSLastOutput)
+
+		!--- dump of grid quantitites ---!
+		if(mod(sim_parameters%iter,sim_parameters%output_grid_nstep).eq.0 &
+				 .or. sim_parameters%gridDeltaOutput>sim_parameters%output_grid_dist) then
+								write(*,'(A,I10,A,f12.3)') 'Printing Grid quantities :: at Iteration =',sim_parameters%iter,'  -  at run distance =',sim_parameters%zg
+								call from_particleZstart_to_meshZstar
+								if (sim_parameters%Output_format.eq.0) call savedata
+								if (sim_parameters%Output_format.eq.1) call savedata_bin
+								sim_parameters%gridLastOutput=sim_parameters%sim_time*c
+	endif
+
+	!--- dump of Phase Space ---!
+		if(mod(sim_parameters%iter,sim_parameters%output_PS_nstep).eq.0 &
+				 .or. sim_parameters%PSDeltaOutput>sim_parameters%output_PS_dist) then
+						write(*,'(A,I10,A,f12.3)') 'Printing PS   quantities :: at Iteration =',sim_parameters%iter,'  -  at run distance =',sim_parameters%zg
+						if (sim_parameters%Output_format.eq.0) call save_beam
+						if (sim_parameters%Output_format.eq.1) call save_beam_bin
+						sim_parameters%PSLastOutput=sim_parameters%sim_time*c
+		endif
+END SUBROUTINE data_dump
+
 
 	SUBROUTINE final_data_dump
 
@@ -112,37 +102,6 @@ CONTAINS
 		endif
 
 	END SUBROUTINE final_data_dump
-
-
-
-	SUBROUTINE data_dump
-		sim_parameters%gridDeltaOutput=abs(sim_parameters%sim_time*c-sim_parameters%gridLastOutput)
-		sim_parameters%PSDeltaOutput=abs(sim_parameters%sim_time*c-sim_parameters%PSLastOutput)
-		! Plasma data dump
-
-			if(mod(sim_parameters%iter,sim_parameters%output_grid_nstep).eq.0 &
-		    .or. sim_parameters%gridDeltaOutput>sim_parameters%output_grid_dist) then
-
-					call from_particleZstart_to_meshZstar
-					if (sim_parameters%Output_format.eq.0) call savedata
-					if (sim_parameters%Output_format.eq.1) call savedata_bin
-			    sim_parameters%gridLastOutput=sim_parameters%sim_time*c
-
-			endif
-
-		  ! PS-Bunch data dump
-		  if(mod(sim_parameters%iter,sim_parameters%output_PS_nstep).eq.0 &
-		  .or. sim_parameters%PSDeltaOutput>sim_parameters%output_PS_dist) then
-			if (sim_parameters%Output_format.eq.0) then
-				call save_beam
-			else if (sim_parameters%Output_format.eq.1) then
-				call save_beam_bin
-				endif
-			sim_parameters%PSLastOutput=sim_parameters%sim_time*c
-		  endif
-	END SUBROUTINE data_dump
-
-
 
 	SUBROUTINE write_read_nml
 		NAMELIST / write_nml / plasma, sim_parameters, bck_plasma, bunch_initialization, &
@@ -621,10 +580,41 @@ CONTAINS
    END SUBROUTINE
 
 
+	 SUBROUTINE print_integrated_diagnostics
+		   sim_parameters%IntDeltaOutput=abs(sim_parameters%sim_time*c-sim_parameters%IntLastOutput)
+			 if(mod(sim_parameters%iter,sim_parameters%output_Integrated_params_nstep).eq.0 &
+					  .or. sim_parameters%IntDeltaOutput>sim_parameters%output_Integrated_params_dist) then
+						       call bunch_diagnostics_Integrated_AllBunches
+						       if(sim_parameters%L_lineout) call lineout
+						       sim_parameters%IntLastOutput=sim_parameters%sim_time*c
+			endif
+	 END SUBROUTINE print_integrated_diagnostics
 
 
+	SUBROUTINE print_at_screen
+			if(mod(sim_parameters%iter,10)==0) then
+						write(*,'(A,I10,A,f12.3)') 'Iteration =',sim_parameters%iter,'    -    Run distance =',sim_parameters%zg
+			endif
+	END SUBROUTINE print_at_screen
 
 
+	SUBROUTINE print_cpu_file
+			logical :: exist
+			character :: filename*99
+
+			filename=trim(sim_parameters%out_dir)//'cpu'
+
+			if(mod(sim_parameters%iter,200)==0) then
+						inquire(file=trim(filename), exist=exist)
+						if (exist) then
+								open(99, file=trim(filename), status="old", position="append", action="write")
+						else
+						    open(99, file=trim(filename), status="new", action="write")
+					  end if
+				  	write(99,'(I10,f15.3)') sim_parameters%iter, sim_parameters%zg
+						close(99)
+			endif
+	END SUBROUTINE print_cpu_file
 
 
 END MODULE

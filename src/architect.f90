@@ -25,7 +25,6 @@ USE my_types
 USE use_my_types
 USE read_input_module
 USE Make_a_Mesh
-USE Diagnostics_on_Bunches
 USE Fields_FDTD
 USE Move_Window_FDTD
 USE ComputeCurrentFDTD
@@ -44,7 +43,6 @@ USE init_fields
 USE dump_status
 USE ion_background
 USE ionisation_module
-USE grid_diagnostics
 
 
 
@@ -64,7 +62,7 @@ INTEGER Lapl_dim
 !            LOAD INPUT DATA, SET PARAMETERS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   sim_parameters%iter=1
+   sim_parameters%iter=0
 
    call SetFileFlag('==started==')
    call read_input
@@ -150,7 +148,7 @@ INTEGER Lapl_dim
       ! *** full PLASMA evolution ***!
   		call Kernel_ComputeCurrent_FDTD ! Computes plasma and beam current
   		call Kernel_Fields_FDTD_bck    ! Advances electromagnetic fields background
-      if(sim_parameters%L_Bunch_evolve) call Kernel_Fields_FDTD_bunch    ! Advances electromagnetic fieldd bunch(es)
+      if(sim_parameters%L_Bunch_evolve) call Kernel_Fields_FDTD_bunch    ! Advances electromagnetic field bunch(es)
   		call Kernel_FluidAdvance_FDTD   ! Fluid advance
   		call Kernel_MoveParticle_FDTD   ! Particle pusher (bunch electrons)
       if(ionisation%L_ionisation) call ion_advection  ! Particle pusher: background ions
@@ -162,17 +160,13 @@ INTEGER Lapl_dim
     ! --- --- --- BULK --- --- --- !
 
 
-	  ! bunch integrated diagnostic
-    sim_parameters%IntDeltaOutput=abs(sim_parameters%sim_time*c-sim_parameters%IntLastOutput)
-    if(mod(sim_parameters%iter,sim_parameters%output_Integrated_params_nstep).eq.0 &
-    .or. sim_parameters%IntDeltaOutput>sim_parameters%output_Integrated_params_dist) then
-    
-      call bunch_diagnostics_Integrated_AllBunches
-      if(sim_parameters%L_lineout) call lineout
-      sim_parameters%IntLastOutput=sim_parameters%sim_time*c
-    endif
 
-
+    ! --- --- --- OUTPUT --- --- --- !
+    call print_integrated_diagnostics
+	  call data_dump
+    call print_at_screen
+    call print_cpu_file
+    ! --- --- --- output --- --- --- !
 
     !--- un poco sporchetta da mettere a posto---!
     if(mod(sim_parameters%iter,sim_parameters%output_Integrated_params_nstep).eq.0 &
@@ -185,12 +179,7 @@ INTEGER Lapl_dim
     enddo
     close(19)
   endif
-
-    ! Plasma and bunch data dump
-	  call data_dump
-
-    ! Advances simulation iteration
-    sim_parameters%iter = sim_parameters%iter+1
+  ! --- --- --- output --- --- --- !
 
 
     !--------------------------------------------------------!
@@ -202,15 +191,6 @@ INTEGER Lapl_dim
 	  ! Advances simulation window
 	  call control_window
 
-      ! continous diagnostic
-      if(mod(sim_parameters%iter,10)==0) then
-        write(*,'(A,I10,A,f12.3)') 'Iteration =',sim_parameters%iter,'    -    Run distance =',sim_parameters%zg
-      endif
-
-      ! Print at screen, when data are dumped
-      if (mod(sim_parameters%iter,sim_parameters%output_grid_nstep).eq.0 ) then
-			call print_at_screen
-      endif
 
 	  ! Advance simulation time
       !sim_parameters%sim_time=sim_parameters%sim_time+sim_parameters%dt
@@ -221,6 +201,9 @@ INTEGER Lapl_dim
         write(*,'(A)') '--- --- --- End of run --- --- ---'
         goto 123
     	endif
+
+      !--- Advances simulation iteration ---!
+      sim_parameters%iter = sim_parameters%iter+1
 
    enddo main_loop
 

@@ -296,7 +296,9 @@ $(OBJ_FOLDER)/data_dump.o: $(SRC_FOLDER)/data_dump.f90 \
 													 $(OBJ_FOLDER)/use_types.mod \
 													 $(OBJ_FOLDER)/pstruct_data.mod \
 													 $(OBJ_FOLDER)/architect_class_structure.mod \
-													 $(OBJ_FOLDER)/ion_background.mod
+													 $(OBJ_FOLDER)/ion_background.mod \
+													 $(OBJ_FOLDER)/Diagnostics_on_Bunches.mod \
+													 $(OBJ_FOLDER)/grid_diagnostics.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/data_dump.mod: $(SRC_FOLDER)/data_dump.f90 $(OBJ_FOLDER)/data_dump.o
 	@true
@@ -316,7 +318,6 @@ $(OBJ_FOLDER)/architect.o: $(SRC_FOLDER)/architect.f90 \
 													 $(OBJ_FOLDER)/use_types.mod \
 													 $(OBJ_FOLDER)/read_input_module.mod \
 													 $(OBJ_FOLDER)/make_a_mesh.mod \
-													 $(OBJ_FOLDER)/diagnostics_on_bunches.mod \
 													 $(OBJ_FOLDER)/fields_fdtd.mod \
 													 $(OBJ_FOLDER)/move_window_fdtd.mod \
 													 $(OBJ_FOLDER)/computecurrentfdtd.mod \
@@ -334,8 +335,7 @@ $(OBJ_FOLDER)/architect.o: $(SRC_FOLDER)/architect.f90 \
 													 $(OBJ_FOLDER)/init_fields.mod \
 													 $(OBJ_FOLDER)/ion_background.mod \
 													 $(OBJ_FOLDER)/dump_status.mod \
-													 $(OBJ_FOLDER)/ionisation_module.mod \
-													 $(OBJ_FOLDER)/grid_diagnostics.mod
+													 $(OBJ_FOLDER)/ionisation_module.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/architect.mod: $(SRC_FOLDER)/architect.f90 $(OBJ_FOLDER)/architect.o
 	@true
