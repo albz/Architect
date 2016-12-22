@@ -269,7 +269,7 @@ END SUBROUTINE set_initial_velocity
         !---*** Longitudinal profile ***---!
         if(bck_plasma%order_logitudinal(k)==0) weightZ=bck_plasma%n_over_n0(k)
         if(bck_plasma%order_logitudinal(k)==1) then
-          slope=(bck_plasma%n_over_n0(k-1)-bck_plasma%n_over_n0(k))/(bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1))
+          slope=(bck_plasma%n_over_n0(k+1)-bck_plasma%n_over_n0(k-1))/(bck_plasma%z_coordinate_um(k+1)-bck_plasma%z_coordinate_um(k))
           weightZ=bck_plasma%n_over_n0(k-1)+slope*(Zposition-bck_plasma%z_coordinate_um(k))
           if(k==1) then
             slope=(0.d0-bck_plasma%n_over_n0(k+1))/(bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1))
