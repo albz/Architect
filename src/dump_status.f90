@@ -21,43 +21,177 @@
 
 MODULE dump_status
 
-USE my_types
-USE use_my_types
-USE pstruct_data
-USE architect_class_structure
+	USE my_types
+	USE use_my_types
+	USE pstruct_data
+	USE architect_class_structure
 
 IMPLICIT NONE
 
 CONTAINS
 
-
 !--- *** ---!
-! SUBROUTINE dump_status
-! 	call dump_status_particles
-! END SUBROUTINE dump_status
+SUBROUTINE print_dump_and_restart_files
+			if(dump_restart%L_onoff) then
+						if(mod(sim_parameters%iter,dump_restart%nstep).eq.0 &
+								 .or. dump_restart%distance_um <	abs(sim_parameters%sim_time*c-dump_restart%LastOutput_um)   ) then
+											 write(*,'(A,I10,A,f12.3)') 'Printing files for Dump and Restart :: at Iteration =',sim_parameters%iter,'  -  at run distance =',sim_parameters%zg
+											 call dump_whole_status
+											 dump_restart%LastOutput_um=sim_parameters%sim_time*c
+						endif
+			endif
+END SUBROUTINE print_dump_and_restart_files
 !--- *** ---!
-
-
-
 
 !---------------------------------!
 !---------------------------------!
-SUBROUTINE dump_status_particles
-	integer :: i,j,k
-	CHARACTER(255) :: filename
+SUBROUTINE dump_whole_status
+			CHARACTER(255) :: filename
+			INTEGER :: i,j,k
+						filename=TRIM(sim_parameters%path_dumprestart)//'sim_parameters.arch'
+						open(15,file=filename,status='replace',access='stream')
+						write(15) sim_parameters
+						close(15)
 
-	filename=TRIM(sim_parameters%path_dumprestart)//'particle_dump.arch'
-	open(15,file=filename,status='unknown',access='stream')
+						filename=TRIM(sim_parameters%path_dumprestart)//'plasma.arch'
+						open(15,file=filename,status='replace',access='stream')
+						write(15) plasma
+						close(15)
 
-	write(15) 1 !output-identifier-format
-	write(15) bunch_initialization%n_total_bunches
-	write(15) (bunch_initialization%n_particles(I),I=1,bunch_initialization%n_total_bunches)
-	write(15) (((bunch(i)%part(j)%cmp(k),k=1,13),J=1,size(bunch(i)%part(:))),I=1,sim_parameters%Nbunches)
-	close(15)
+						filename=TRIM(sim_parameters%path_dumprestart)//'bunch_initialization.arch'
+						open(15,file=filename,status='replace',access='stream')
+						write(15) bunch_initialization
+						close(15)
 
-END SUBROUTINE dump_status_particles
+						filename=TRIM(sim_parameters%path_dumprestart)//'OSys.arch'
+						open(15,file=filename,status='replace',access='stream')
+						write(15) OSys
+						close(15)
 
+						filename=TRIM(sim_parameters%path_dumprestart)//'twiss.arch'
+						open(15,file=filename,status='replace',access='stream')
+						write(15) twiss
+						close(15)
 
+						filename=TRIM(sim_parameters%path_dumprestart)//'Bpoloidal.arch'
+						open(15,file=filename,status='replace',access='stream')
+						write(15) Bpoloidal
+						close(15)
 
+						! filename=TRIM(sim_parameters%path_dumprestart)//'mesh_util.arch'
+						! open(15,file=filename,status='replace',access='stream')
+						! write(15) mesh_util
+						! close(15)
+
+						filename=TRIM(sim_parameters%path_dumprestart)//'bck_plasma.arch'
+						open(15,file=filename,status='replace',access='stream')
+						write(15) bck_plasma
+						close(15)
+
+						filename=TRIM(sim_parameters%path_dumprestart)//'ionisation.arch'
+						open(15,file=filename,status='replace',access='stream')
+						write(15) ionisation
+						close(15)
+
+						filename=TRIM(sim_parameters%path_dumprestart)//'particles.arch'
+						open(15,file=filename,status='replace',access='stream')
+						write(15) (((bunch(i)%part(j)%cmp(k),k=1,13),J=1,size(bunch(i)%part(:))),I=1,sim_parameters%Nbunches)
+						close(15)
+
+						! filename=TRIM(sim_parameters%path_dumprestart)//'bunch.arch'
+						! open(15,file=filename,status='replace',access='stream')
+						! write(15) bunch
+						! close(15)
+						!
+						! filename=TRIM(sim_parameters%path_dumprestart)//'static_ion.arch'
+						! open(15,file=filename,status='replace',access='stream')
+						! write(15) static_ion
+						! close(15)
+END SUBROUTINE dump_whole_status
+
+SUBROUTINE read_whole_dumped_status
+			call read_dumped_sim_parameters
+			call read_dumped_plasma
+			call read_dumped_bunch_initialization
+			call read_dumped_OSys
+			call read_dumped_twiss
+			call read_dumped_Bpoloidal
+			call read_dumped_bck_plasma
+			call read_dumped_ionisation
+			call read_dumped_particles
+END SUBROUTINE read_whole_dumped_status
+
+SUBROUTINE read_dumped_sim_parameters
+			CHARACTER(255) :: filename
+			filename='dumprestart/sim_parameters.arch'
+			open(15,file=filename,status='old',access='stream')
+			read(15) sim_parameters
+			close(15)
+END SUBROUTINE read_dumped_sim_parameters
+
+SUBROUTINE read_dumped_plasma
+			CHARACTER(255) :: filename
+			filename='dumprestart/plasma.arch'
+			open(15,file=filename,status='old',access='stream')
+			read(15) plasma
+			close(15)
+END SUBROUTINE read_dumped_plasma
+
+SUBROUTINE read_dumped_bunch_initialization
+			CHARACTER(255) :: filename
+			filename='dumprestart/bunch_initialization.arch'
+			open(15,file=filename,status='old',access='stream')
+			read(15) bunch_initialization
+			close(15)
+END SUBROUTINE read_dumped_bunch_initialization
+
+SUBROUTINE read_dumped_OSys
+			CHARACTER(255) :: filename
+			filename='dumprestart/OSys.arch'
+			open(15,file=filename,status='old',access='stream')
+			read(15) OSys
+			close(15)
+END SUBROUTINE read_dumped_OSys
+
+SUBROUTINE read_dumped_twiss
+			CHARACTER(255) :: filename
+			filename='dumprestart/twiss.arch'
+			open(15,file=filename,status='old',access='stream')
+			read(15) twiss
+			close(15)
+END SUBROUTINE read_dumped_twiss
+
+SUBROUTINE read_dumped_Bpoloidal
+			CHARACTER(255) :: filename
+			filename='dumprestart/Bpoloidal.arch'
+			open(15,file=filename,status='old',access='stream')
+			read(15) Bpoloidal
+			close(15)
+END SUBROUTINE read_dumped_Bpoloidal
+
+SUBROUTINE read_dumped_bck_plasma
+			CHARACTER(255) :: filename
+			filename='dumprestart/bck_plasma.arch'
+			open(15,file=filename,status='old',access='stream')
+			read(15) bck_plasma
+			close(15)
+END SUBROUTINE read_dumped_bck_plasma
+
+SUBROUTINE read_dumped_ionisation
+			CHARACTER(255) :: filename
+			filename='dumprestart/ionisation.arch'
+			open(15,file=filename,status='old',access='stream')
+			read(15) ionisation
+			close(15)
+END SUBROUTINE read_dumped_ionisation
+
+SUBROUTINE read_dumped_particles
+			CHARACTER(255) :: filename
+			INTEGER :: i,j,k
+			filename='dumprestart/particles.arch'
+			open(15,file=filename,status='old',access='stream')
+			read(15) (((bunch(i)%part(j)%cmp(k),k=1,13),J=1,size(bunch(i)%part(:))),I=1,sim_parameters%Nbunches)
+			close(15)
+END SUBROUTINE read_dumped_particles
 
 END MODULE

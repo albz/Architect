@@ -62,16 +62,13 @@ INTEGER Lapl_dim
 !            LOAD INPUT DATA, SET PARAMETERS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   sim_parameters%iter=0
+   sim_parameters%iter=1
 
    call SetFileFlag('==started==')
    call read_input
    call write_read_nml
 
-  !  total_run_distance = plasma%l_acc + & !in um
-  !  						plasma%lambda_p * (sim_parameters%distance_capillary+sim_parameters%start_ramp_length &
-  !                               +sim_parameters%end_ramp_length+sim_parameters%distance_after_end_ramp )
-     total_run_distance = plasma%l_acc !in um
+    total_run_distance = plasma%l_acc !in um
 
    call generate_output_tree
 
@@ -90,6 +87,15 @@ INTEGER Lapl_dim
 	! First global print
 	call first_print_at_screen
 
+  if(dump_restart%restart) then
+    write(*,'(A)') 'Starting simulation from a DUMPED STATUS'
+    call read_whole_dumped_status
+    write(*,*) sim_parameters%dt
+    write(*,*) sim_parameters%zg
+    goto 10
+    call data_dump
+    stop
+  endif
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -130,6 +136,7 @@ INTEGER Lapl_dim
 ! ----------- MAIN TIME LOOP -----------------------------
 ! --------------------------------------------------------
 
+10 continue
    main_loop: do
 
 		!---check suspension flag---!
@@ -160,12 +167,12 @@ INTEGER Lapl_dim
     ! --- --- --- BULK --- --- --- !
 
 
-
     ! --- --- --- OUTPUT --- --- --- !
     call print_integrated_diagnostics
 	  call data_dump
     call print_at_screen
     call print_cpu_file
+    call print_dump_and_restart_files
     ! --- --- --- output --- --- --- !
 
     !--- un poco sporchetta da mettere a posto---!

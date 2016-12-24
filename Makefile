@@ -306,8 +306,7 @@ $(OBJ_FOLDER)/dump_status.o: $(SRC_FOLDER)/dump_status.f90 \
 															$(OBJ_FOLDER)/my_types.mod \
 															$(OBJ_FOLDER)/use_my_types.mod \
 															$(OBJ_FOLDER)/pstruct_data.mod \
-															$(OBJ_FOLDER)/architect_class_structure.mod \
-															$(OBJ_FOLDER)/bunch_initialization.mod
+															$(OBJ_FOLDER)/architect_class_structure.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/dump_status.mod: $(SRC_FOLDER)/dump_status.f90 $(OBJ_FOLDER)/dump_status.o
 	@true

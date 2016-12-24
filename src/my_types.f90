@@ -152,6 +152,13 @@ IMPLICIT NONE
     CHARACTER  :: inbunch(6)*30
 	END TYPE
 
+  !--- dump and restart variables ---!
+	TYPE :: dump_and_restart
+		LOGICAL :: L_onoff,restart
+    INTEGER :: nstep=9999
+    REAL(8) :: distance_um=99999999.,LastOutput_um
+	END TYPE
+
 
 	TYPE(mesh_phys), DIMENSION(:,:), ALLOCATABLE :: mesh
 	REAL(8) Zmin,Xmin,Zmin_shifted,Xmin_shifted

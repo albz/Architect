@@ -96,6 +96,13 @@ subroutine read_input
 		call read_OS_nml
     !--- ---!
 
+    !--- ---!
+      write(*,*) 'preset :: read :: dump restart'
+      call preset_dump_restart
+      call read_dump_restart
+		!--- ---!
+
+
         if(sim_parameters%jump_grid.le.0) then
             write(*,*) 'jump_grid parameter lesser than 0.'
             write(*,*) 'Setting it to 1'
@@ -156,7 +163,7 @@ subroutine generate_output_tree
       sim_parameters%path_PS 	 = 'out/PS/'
 	    sim_parameters%path_grid = 'out/2D/'
       sim_parameters%path_integrated_diagnostics = 'out/integrated_diagnostics/'
-      sim_parameters%path_dumprestart = 'dumprestart'
+      sim_parameters%path_dumprestart = 'dumprestart/'
     	call system('mkdir -p out/PS')
     	call system('mkdir -p out/2D')
       call system('mkdir -p out/integrated_diagnostics')
@@ -437,6 +444,31 @@ subroutine read_nml_bunch_initialization
     close(iounit)
     if(ierr/=0) call print_at_screen_nml_error
 end subroutine read_nml_bunch_initialization
+
+
+!--- --- --- --- --- --- ---!
+!--- DUMP RESTART PARAMETERS
+!--- --- --- --- --- --- ---!
+subroutine preset_dump_restart
+  dump_restart%L_onoff=.True.
+  dump_restart%restart=.False.
+  dump_restart%nstep=99999
+  dump_restart%distance_um=1d4
+  dump_restart%LastOutput_um=1d4
+end subroutine preset_dump_restart
+
+
+subroutine read_dump_restart
+  NAMELIST / dump_and_restart / dump_restart
+  open(iounit,file='architect.nml',status='old')
+  READ(iounit,NML=dump_and_restart,iostat=ierr)
+  error_message='dump_restart parameters'
+  close(iounit)
+  if(ierr/=0) call print_at_screen_nml_error
+  ! dump_restart%LastOutput_um=dump_restart%distance_um
+end subroutine read_dump_restart
+!--- --- --- --- --- --- ---!
+
 
 
 
