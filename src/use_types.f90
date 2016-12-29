@@ -31,7 +31,7 @@ TYPE(bunch_inside_initialization) :: bunch_initialization
 TYPE(OSys_param) :: OSys
 TYPE(twiss_param) :: twiss
 TYPE(Bpoloidal_param) :: Bpoloidal
-  TYPE(mesh_utility) :: mesh_util
+TYPE(mesh_utility) :: mesh_util
 TYPE(background_plasma_profile) :: bck_plasma
 TYPE(ionisation_parameters) :: ionisation
 TYPE(dump_and_restart) :: dump_restart

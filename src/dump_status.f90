@@ -53,6 +53,16 @@ SUBROUTINE dump_whole_status
 						write(15) sim_parameters
 						close(15)
 
+						filename=TRIM(sim_parameters%path_dumprestart)//'mesh_par.arch'
+						open(15,file=filename,status='replace',access='stream')
+						write(15) mesh_par
+						close(15)
+
+						filename=TRIM(sim_parameters%path_dumprestart)//'mesh.arch'
+						open(15,file=filename,status='replace',access='stream')
+						write(15) mesh
+						close(15)
+
 						filename=TRIM(sim_parameters%path_dumprestart)//'plasma.arch'
 						open(15,file=filename,status='replace',access='stream')
 						write(15) plasma
@@ -111,6 +121,8 @@ END SUBROUTINE dump_whole_status
 
 SUBROUTINE read_whole_dumped_status
 			call read_dumped_sim_parameters
+			call read_dumped_mesh_par
+			call read_dumped_mesh
 			call read_dumped_plasma
 			call read_dumped_bunch_initialization
 			call read_dumped_OSys
@@ -128,6 +140,22 @@ SUBROUTINE read_dumped_sim_parameters
 			read(15) sim_parameters
 			close(15)
 END SUBROUTINE read_dumped_sim_parameters
+
+SUBROUTINE read_dumped_mesh_par
+			CHARACTER(255) :: filename
+			filename='dumprestart/mesh_par.arch'
+			open(15,file=filename,status='old',access='stream')
+			read(15) mesh_par
+			close(15)
+END SUBROUTINE read_dumped_mesh_par
+
+SUBROUTINE read_dumped_mesh
+			CHARACTER(255) :: filename
+			filename='dumprestart/mesh.arch'
+			open(15,file=filename,status='old',access='stream')
+			read(15) mesh
+			close(15)
+END SUBROUTINE read_dumped_mesh
 
 SUBROUTINE read_dumped_plasma
 			CHARACTER(255) :: filename

@@ -90,11 +90,8 @@ INTEGER Lapl_dim
   if(dump_restart%restart) then
     write(*,'(A)') 'Starting simulation from a DUMPED STATUS'
     call read_whole_dumped_status
-    write(*,*) sim_parameters%dt
-    write(*,*) sim_parameters%zg
+    write(*,'(A,I10,A,f12.3)') 'Simulation restarting at distance :: at Iteration =',sim_parameters%iter,'  -  at run distance =',sim_parameters%zg
     goto 10
-    call data_dump
-    stop
   endif
 
 
