@@ -463,7 +463,7 @@ subroutine read_dump_restart
   open(iounit,file='architect.nml',status='old')
   READ(iounit,NML=dump_and_restart,iostat=ierr)
   error_message='dump_restart parameters'
-  if(ierr/=0) call print_at_screen_nml_error
+  if(ierr > 0) call print_at_screen_nml_error
   close(iounit)
   ! dump_restart%LastOutput_um=dump_restart%distance_um
 end subroutine read_dump_restart
