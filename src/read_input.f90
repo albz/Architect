@@ -223,8 +223,8 @@ subroutine read_plasma_parameters
   open(iounit,file='architect.nml',status='old')
   READ(iounit,NML=plasma_parameters,iostat=ierr)
   error_message='plasma parameters'
-  close(iounit)
   if(ierr/=0) call print_at_screen_nml_error
+  close(iounit)
 end subroutine read_plasma_parameters
 !--- --- --- --- --- --- ---!
 
@@ -259,8 +259,8 @@ subroutine read_sim_parameters
     open(iounit,file='architect.nml',status='old')
     READ(iounit,NML=simulation_parameters,iostat=ierr)
     error_message='sim_parameters'
-    close(iounit)
     if(ierr/=0) call print_at_screen_nml_error
+    close(iounit)
 end subroutine read_sim_parameters
 !--- --- --- --- --- --- ---!
 
@@ -308,8 +308,8 @@ subroutine read_background_plasma_profile
     open(iounit,file='architect.nml',status='old')
     READ(iounit,NML=BACKGROUND_PLASMA_PROFILE,iostat=ierr)
     error_message='background plasma profile'
-    close(iounit)
     if(ierr/=0) call print_at_screen_nml_error
+    close(iounit)
 end subroutine read_background_plasma_profile
 
 
@@ -325,8 +325,8 @@ subroutine read_twiss_nml
     open(iounit,file='architect.nml',status='old')
     READ(iounit,NML=twiss_par,iostat=ierr)
     error_message='twiss parameters'
-    close(iounit)
     if(ierr/=0) call print_at_screen_nml_error
+    close(iounit)
 end subroutine read_twiss_nml
 
 
@@ -359,8 +359,8 @@ subroutine read_Bpoloidal_nml
     open(iounit,file='architect.nml',status='old')
     READ(iounit,NML=Bpoloidal_par,iostat=ierr)
     error_message='poloidal magnetic field'
-    close(iounit)
     if(ierr/=0) call print_at_screen_nml_error
+    close(iounit)
 end subroutine read_Bpoloidal_nml
 
 
@@ -380,8 +380,8 @@ subroutine read_ionisation_nml
   open(iounit,file='architect.nml',status='old')
   READ(iounit,NML=ionisation_parameters,iostat=ierr)
   error_message='ionisation'
-  close(iounit)
   if(ierr/=0) call print_at_screen_nml_error
+  close(iounit)
 end subroutine read_ionisation_nml
 !--- ---!
 
@@ -400,8 +400,8 @@ subroutine read_OS_nml
     open(iounit,file='architect.nml',status='old')
     READ(iounit,NML=OS,iostat=ierr)
     error_message='OS'
-    close(iounit)
     if(ierr/=0) call print_at_screen_nml_error
+    close(iounit)
 end subroutine read_OS_nml
 
 
@@ -463,8 +463,8 @@ subroutine read_dump_restart
   open(iounit,file='architect.nml',status='old')
   READ(iounit,NML=dump_and_restart,iostat=ierr)
   error_message='dump_restart parameters'
-  close(iounit)
   if(ierr/=0) call print_at_screen_nml_error
+  close(iounit)
   ! dump_restart%LastOutput_um=dump_restart%distance_um
 end subroutine read_dump_restart
 !--- --- --- --- --- --- ---!
