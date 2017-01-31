@@ -281,7 +281,7 @@ END SUBROUTINE set_initial_velocity
         if(bck_plasma%order_radial(k)==0) weightR=bck_plasma%n_over_n0(k)
         if(bck_plasma%order_radial(k)==3) weightR = cos(radius/bck_plasma%radius_um(k)*pi/2.0)**2 !COS^2 profile
         if(bck_plasma%order_radial(k)==4) weightR=1.d0+bck_plasma%perturbation_amplitude(k)*(1.d0-2.d0*cos(radius/bck_plasma%radius_um(k)*pi/2.0)**2) !1 + A (1 - 2 Cos[r/R \Pi/2]^2)
-        if(bck_plasma%order_radial(k)==5) then !Linear up to radius_internal_um, depletion in COS^2
+        if(bck_plasma%order_radial(k)==5) then !Linear up to radius_internal_um, decay in COS^2
                                               if( radius < bck_plasma%radius_internal_um(k) ) then
                                                                 weightR=1.0
                                               else
