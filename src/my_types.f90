@@ -86,7 +86,7 @@ IMPLICIT NONE
    !--- define the background plasma profile ---!
    TYPE :: background_plasma_profile   ! bck_plasma
       INTEGER :: order_logitudinal(8),order_radial(8)
-      REAL(8) :: radius_um(8),perturbation_amplitude(8)
+      REAL(8) :: radius_um(8),radius_internal_um(8),perturbation_amplitude(8)
       REAL(8) :: z_coordinate_um(8),z_coordinate(8),n_over_n0(8)
    END TYPE
 
