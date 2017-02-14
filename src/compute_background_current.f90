@@ -246,6 +246,7 @@ END SUBROUTINE set_initial_velocity
     real(8) :: background_density_value,Zposition,slope,den
     real(8) :: i_eff,j_eff, radius
     real(8) :: weightR, weightZ
+    real(8) :: delta_alpha,kappa_z,A,B,C
     integer :: i,j,k
 
     i_eff=real(i-2)+.5d0
@@ -267,18 +268,48 @@ END SUBROUTINE set_initial_velocity
       if(Zposition<=bck_plasma%z_coordinate_um(k) .and. Zposition>bck_plasma%z_coordinate_um(k+1)) then
 
         !---*** Longitudinal profile ***---!
-        if(bck_plasma%order_logitudinal(k)==0) weightZ=bck_plasma%n_over_n0(k)
-        if(bck_plasma%order_logitudinal(k)==1) then
-          slope=(bck_plasma%n_over_n0(k+1)-bck_plasma%n_over_n0(k-1))/(bck_plasma%z_coordinate_um(k+1)-bck_plasma%z_coordinate_um(k))
-          weightZ=bck_plasma%n_over_n0(k-1)+slope*(Zposition-bck_plasma%z_coordinate_um(k))
-          if(k==1) then
-            slope=(0.d0-bck_plasma%n_over_n0(k+1))/(bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1))
-            weightZ=0.d0+slope*(Zposition-bck_plasma%z_coordinate_um(k))
+        if(  bck_plasma%order_logitudinal(k)==0 .or. bck_plasma%order_logitudinal(k)==1 ) then !linear or flat-top
+            slope=(bck_plasma%n_over_n0(k)-bck_plasma%n_over_n0(k+1))/(bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1))
+            weightZ=bck_plasma%n_over_n0(k)+slope*(Zposition-bck_plasma%z_coordinate_um(k))
+            !---------------------------------------------------------------------------------------------------------!
+
+        else if( bck_plasma%order_logitudinal(k)==2 ) then !parabolic profile
+          if( bck_plasma%n_over_n0(k+1)>bck_plasma%n_over_n0(k) ) then
+            A=bck_plasma%n_over_n0(k)-bck_plasma%n_over_n0(k+1)/(bck_plasma%z_coordinate_um(k+1)-bck_plasma%z_coordinate_um(k))**2
+            B=2.0*(bck_plasma%n_over_n0(k+1)-bck_plasma%n_over_n0(k))*bck_plasma%z_coordinate_um(k+1)
+            B=B/(bck_plasma%z_coordinate_um(k+1)-bck_plasma%z_coordinate_um(k))**2
+            C=bck_plasma%n_over_n0(k+1)*bck_plasma%z_coordinate_um(k)**2
+            C=C-2.0*bck_plasma%n_over_n0(k+1)*bck_plasma%z_coordinate_um(k)*bck_plasma%z_coordinate_um(k+1)
+            C=C+bck_plasma%n_over_n0(k)*bck_plasma%z_coordinate_um(k+1)**2
+            C=C/(bck_plasma%z_coordinate_um(k+1)-bck_plasma%z_coordinate_um(k))**2
+            weightZ=A*Zposition**2+B*Zposition+C
+          else
+            A=bck_plasma%n_over_n0(k+1)-bck_plasma%n_over_n0(k)/(bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1))**2
+            B=2.0*(bck_plasma%n_over_n0(k)-bck_plasma%n_over_n0(k+1))*bck_plasma%z_coordinate_um(k)
+            B=B/(bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1))**2
+            C=bck_plasma%n_over_n0(k+1)*bck_plasma%z_coordinate_um(k)**2
+            C=C-2.0*bck_plasma%n_over_n0(k)*bck_plasma%z_coordinate_um(k)*bck_plasma%z_coordinate_um(k+1)
+            C=C+bck_plasma%n_over_n0(k)*bck_plasma%z_coordinate_um(k+1)**2
+            C=C/(bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1))**2
+            weightZ=A*Zposition**2+B*Zposition+C
           endif
-        endif
+          !---------------------------------------------------------------------------------------------------------!
+
+        else if( bck_plasma%order_logitudinal(k)==3 ) then !COS^2 profile
+          if( bck_plasma%n_over_n0(k+1)>bck_plasma%n_over_n0(k) ) then
+            delta_alpha=bck_plasma%n_over_n0(k+1)-bck_plasma%n_over_n0(k)
+            kappa_z= ( Zposition-bck_plasma%z_coordinate_um(k) ) / ( bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1) )
+            weightZ=delta_alpha*(1.d0-cos(kappa_z*pi/2.0)**2)+bck_plasma%n_over_n0(k)
+          else
+            delta_alpha=bck_plasma%n_over_n0(k)-bck_plasma%n_over_n0(k+1)
+            kappa_z= ( Zposition-bck_plasma%z_coordinate_um(k) ) / ( bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1) )
+            weightZ=delta_alpha*(cos(kappa_z*pi/2.0)**2)+bck_plasma%n_over_n0(k+1)
+          endif
+          !---------------------------------------------------------------------------------------------------------!
+        endif !endif logitudinal shaping
 
         !---*** TRansveres-Radial profile ***---!
-        if(bck_plasma%order_radial(k)==0) weightR=bck_plasma%n_over_n0(k)
+        if(bck_plasma%order_radial(k)==0) weightR=1.0!bck_plasma%n_over_n0(k)
         if(bck_plasma%order_radial(k)==3) weightR = cos(radius/bck_plasma%radius_um(k)*pi/2.0)**2 !COS^2 profile
         if(bck_plasma%order_radial(k)==4) weightR=1.d0+bck_plasma%perturbation_amplitude(k)*(1.d0-2.d0*cos(radius/bck_plasma%radius_um(k)*pi/2.0)**2) !1 + A (1 - 2 Cos[r/R \Pi/2]^2)
         if(bck_plasma%order_radial(k)==5) then !Linear up to radius_internal_um, decay in COS^2
