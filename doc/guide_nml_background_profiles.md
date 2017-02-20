@@ -1,6 +1,6 @@
-# Some (work in progress) background density tailoring
+# Guide for **background** namelist section <br/> background density tailoring
 
-## Options for the transverse profile
+## Transverse profile
 
 In order to set the radial profile of the background plasma it is possible to choose between some schemes by setting:
 
@@ -25,7 +25,7 @@ The profile has a cos<sup>2</sup> shape shrunk vertically by a factor **perturba
 ### order\_radial=5
 The profile has a flat-top with a **certain hight** from $r=0$ to $r=$**radius\_internal\_um** then, from **radius\_internal\_um** to **radius\_um** the profile decays with a $cos^2$ shape.
 
-## Options for the longitudinal density profile
+## Longitudinal profile
 In order to set the radial profile of the background plasma it is possible to choose between some schemes by setting:
 + **bck_plasma%order_logitudinal=0**
 + **bck_plasma%order_logitudinal=1**
