@@ -97,7 +97,6 @@ def read_Architect_bin_section_output_v_1(dir_path,file_name):
 			Jbckz[j,i] = struct.unpack('f', f.read(4))[0]
 
 	f.close()
-
 	return dist,r_mesh,z_mesh,rho_b,n_bck,Er,Ez,Bphi,Jbr,Jbckr,Jbz,Jbckz
 
 
@@ -211,10 +210,8 @@ def read_Architect_bin_section_output_v_2(dir_path,file_name):
 		for i in range(0,Nz):
 			Jbckz[j,i] = struct.unpack('f', f.read(4))[0]
 
-
- 	f.close()
-
- 	return dist,r_mesh,z_mesh,rho_b,n_bck,Er,Er_bck,Er_b,Ez,Ez_bck,Ez_b,Bphi,Bphi_bck,Bphi_b,Jbr,Jbckr,Jbz,Jbckz
+	f.close()
+	return dist,r_mesh,z_mesh,rho_b,n_bck,Er,Er_bck,Er_b,Ez,Ez_bck,Ez_b,Bphi,Bphi_bck,Bphi_b,Jbr,Jbckr,Jbz,Jbckz
 
 
 
@@ -335,9 +332,8 @@ def read_Architect_bin_section_output_v_3(dir_path,file_name):
 			Jbckz[j,i] = struct.unpack('f', f.read(4))[0]
 
 
- 	f.close()
-
- 	return dist,r_mesh,z_mesh,rho_b,n_bck,Er,Er_bck,Er_b,Ez,Ez_bck,Ez_b,Bphi,Bphi_bck,Bphi_b,B_ex_poloidal,Jbr,Jbckr,Jbz,Jbckz
+	f.close()
+	return dist,r_mesh,z_mesh,rho_b,n_bck,Er,Er_bck,Er_b,Ez,Ez_bck,Ez_b,Bphi,Bphi_bck,Bphi_b,B_ex_poloidal,Jbr,Jbckr,Jbz,Jbckz
 
 
 
@@ -464,4 +460,4 @@ def read_Architect_bin_section_output_v_4(dir_path,file_name):
 	var.Jz = np.zeros((var.Nr,var.Nz))
 	var.Jz = var.Jz_b+var.Jz_bck
 
- 	f.close()
+	f.close()

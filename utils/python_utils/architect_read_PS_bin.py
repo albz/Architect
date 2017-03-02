@@ -28,8 +28,8 @@ def architect_read_PS_bin(dir_path,file_name):
 	distance_travelled = struct.unpack('i', f.read(4))[0]
 	number_of_particles= struct.unpack('i', f.read(4))[0]
 
-	print 'output version of the file >',output_version
-	print 'number of particle >',number_of_particles
+	print('output version of the file >',output_version)
+	print('number of particle >',number_of_particles)
 
 	for p in range(0,number_of_particles):
 		x.append(struct.unpack('d', f.read(8))[0])
@@ -60,9 +60,9 @@ def architect_read_PS_bin_v_2(dir_path,file_name):
 	var.distance_travelled = struct.unpack('i', f.read(4))[0]
 	var.number_of_particles= struct.unpack('i', f.read(4))[0]
 
-	print 'output version of the file >',var.output_version
-	print 'number of bunches >',var.n_bunches
-	print 'number of particle >',var.number_of_particles
+	print('output version of the file >',var.output_version)
+	print('number of bunches >',var.n_bunches)
+	print('number of particle >',var.number_of_particles)
 
 	for p in range(0,var.number_of_particles):
 		var.x.append(struct.unpack('d', f.read(8))[0])
@@ -74,7 +74,7 @@ def architect_read_PS_bin_v_2(dir_path,file_name):
 		var.bunch_id.append(struct.unpack('d', f.read(8))[0])
 		var.cut.append(struct.unpack('d', f.read(8))[0])
 		var.dcut.append(struct.unpack('d', f.read(8))[0])
-		
+
 	var.x=np.array(var.x); var.y=np.array(var.y); var.z=np.array(var.z);
 	var.px=np.array(var.px); var.py=np.array(var.py); var.pz=np.array(var.pz);
 	var.bunch_id=np.array(var.bunch_id)

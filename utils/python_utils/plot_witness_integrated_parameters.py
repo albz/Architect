@@ -32,35 +32,37 @@ for root_dir, sub_dirs, files in os.walk(path):
     if '==started==' in files or '==completed==' in files:
         bunch = np.loadtxt(os.path.join(root_dir,'out','integrated_diagnostics','bunch_integrated_quantity_2.dat'))
 
+        fig = pyl.figure(1)
+        fig.set_size_inches(3.25, 3.0, forward=True)
+        ax1  = pyl.subplot(211)
+
         #--- sigma ---#
-        fig = pyl.figure(1, figsize=(3.25,6.0))
-        ax1  = pyl.subplot(111)
-        ax1.plot(bunch[:,0]/1e4,bunch[:,8], lw=2, label = root_dir )
-        pyl.ylabel('$\sigma_x$ ($\mu$m)', fontsize = 8.0)
-        pyl.subplots_adjust(bottom=0.10,left=0.230)
-        pyl.xticks(fontsize=9)
-        pyl.yticks(fontsize=9)
+        ax1.plot(bunch[:,0]/1e4,bunch[:,8], lw=2, label=r"$\sigma_x$ ($\mu$m)")
 
         #--- emittance ---#
-        fig = pyl.figure(2, figsize=(3.25,6.0))
-        ax2  = pyl.subplot(111)
-        ax2.plot(bunch[:,0]/1e4,bunch[:,13], lw=2, label = root_dir )
-        pyl.ylabel('$\epsilon_x$ ($\mu$m)', fontsize = 8.0)
-        pyl.subplots_adjust(bottom=0.10,left=0.230)
-        pyl.xticks(fontsize=9)
-        pyl.yticks(fontsize=9)
+        ax1.plot(bunch[:,0]/1e4,bunch[:,13], lw=2, label=r'$\epsilon_x$ ($\mu$m)' )
 
         #--- energy spread ---#
-        fig = pyl.figure(3, figsize=(3.25,6.0))
-        ax3  = pyl.subplot(111)
-        if int(root_dir[-2:])==56:
-            ax3.plot(bunch[:,0]/1e4,bunch[:,16], lw=9, label = root_dir )
-        else:
-            ax3.plot(bunch[:,0]/1e4,bunch[:,16], lw=2, label = root_dir )
-        pyl.ylabel('$\Delta\gamma/\gamma$', fontsize = 8.0)
-        pyl.subplots_adjust(bottom=0.10,left=0.230)
+        ax1.plot(bunch[:,0]/1e4,bunch[:,16]*1e3, lw=2, label=r'$\Delta\gamma/\gamma$' )
+        # pyl.ylabel('$\Delta\gamma/\gamma$', fontsize = 8.0)
+        # pyl.subplots_adjust(bottom=0.10,left=0.230)
+        # plt.legend()
         pyl.xticks(fontsize=9)
         pyl.yticks(fontsize=9)
+        pyl.xlim([0,10])
+        pyl.ylim([0,5])
+
+        #--- gamma plot ---#
+        ax2  = pyl.subplot(212)
+        ax2.plot(bunch[:,0]/1e4,bunch[:,15]/2., lw=2, label=r'$\Delta\gamma/\gamma$' )
+        pyl.xticks(fontsize=9)
+        pyl.yticks(fontsize=9)
+        pyl.xlim([0,10])
+        pyl.xlabel('$Z$ (cm)', fontsize = 8.0)
+        pyl.ylabel('Energy (MeV)', fontsize = 8.0)
+
+pyl.subplots_adjust(bottom=0.14,left=0.210)
+
 
 # ax1.legend(loc=9, ncol=2, prop={'size':7.5})
 # ax2.legend(loc=9, ncol=2, prop={'size':7.5})
@@ -70,5 +72,5 @@ for root_dir, sub_dirs, files in os.walk(path):
 # ax1.xaxis.set_minor_locator(MultipleLocator(.5))
 
 # pyl.savefig('im_witness_integrated_parameter.eps', format='eps')
-# pyl.savefig('im_witness_integrated_parameter.pdf', format='pdf')
+pyl.savefig(os.path.join(os.path.expanduser('~'),'Downloads','im_witness_integrated_parameter.pdf'), format='pdf')
 plt.show()

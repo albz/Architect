@@ -1,9 +1,16 @@
 FC          = gfortran
+CC         = g++
 OPTFC       = -ffree-line-length-none -fmax-stack-var-size=50000000
+OPTCC       = -O3
 SRC_FOLDER  = src
 OBJ_FOLDER  = obj
 EXE_FOLDER  = bin
 EXE         = Architect
+BOOST_LIB   = /usr/lib/
+BOOST_INC   = /usr/include/
+BOOST_FS    = -lboost_filesystem
+BOOST_S     = -lboost_system
+STDCPP_LINK = -lstdc++
 MODULE_REDIRECT = -I$(OBJ_FOLDER) -J$(OBJ_FOLDER)
 
 FILES  =  my_types.f90 \
@@ -34,6 +41,7 @@ FILES  =  my_types.f90 \
 					bunch_diagnostics.f90 \
 					grid_diagnostics.f90 \
 					data_dump.f90 \
+					data_dump_xlm.cpp \
 					dump_status.f90 \
 					architect.f90
 
@@ -71,7 +79,7 @@ gflinux_lxp : all
 gfmp45  : FC = gfortran-mp-4.5
 gfmp45  : OPTFC = -ffree-line-length-none -fmax-stack-var-size=50000000
 gfmp45  : all
-
+gfmp45  : CC = gcc-mp-4.5
 
 #--- ---#
 $(OBJ_FOLDER)/my_types.o: $(SRC_FOLDER)/my_types.f90
@@ -300,6 +308,11 @@ $(OBJ_FOLDER)/data_dump.o: $(SRC_FOLDER)/data_dump.f90 \
 													 $(OBJ_FOLDER)/grid_diagnostics.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/data_dump.mod: $(SRC_FOLDER)/data_dump.f90 $(OBJ_FOLDER)/data_dump.o
+	@true
+
+$(OBJ_FOLDER)/data_dump_xlm.o: $(SRC_FOLDER)/data_dump_xlm.cpp
+	$(CC) $(OPTCC) -I$(BOOST_INC) -c -o $@ $< $(REDIRECT)
+$(OBJ_FOLDER)/data_dump_xlm.mod: $(SRC_FOLDER)/data_dump_xlm.cpp $(OBJ_FOLDER)/data_dump_xlm.o
 	@true
 
 $(OBJ_FOLDER)/dump_status.o: $(SRC_FOLDER)/dump_status.f90 \
