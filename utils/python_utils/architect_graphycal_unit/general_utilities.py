@@ -12,7 +12,7 @@ import os, os.path, glob, sys, shutil, time
 import numpy as np
 import pylab as pyl
 import struct
-sys.path.append(os.path.join(os.path.expanduser('~'),'/Users/albz/Codes/Code_Architect/Architect/utils/python_utils'))
+sys.path.append(os.path.join(os.path.expanduser('~'),'Codes/Code_Architect/Architect/utils/python_utils/architect_graphycal_unit'))
 import global_variables as var
 ### --- ###
 
