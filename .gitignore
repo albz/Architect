@@ -9,6 +9,9 @@
 *.user
 *.swp
 
+# Compiled Python Object file
+*.pyc
+
 # Precompiled Headers
 *.gch
 *.pch
