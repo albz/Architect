@@ -34,18 +34,20 @@
  contains
  !--- --- ---!
 
- FUNCTION count_particles(number_bunch,cutnocut)
- character*6, intent(in) :: cutnocut
- integer, intent(in) :: number_bunch
- integer             :: count_particles
+!--- --- ---!
+ integer  FUNCTION number_bunch_particles(number_bunch,cutonoff)
+  character(len=*), intent(in) :: cutonoff
+  integer, intent(in) :: number_bunch
 
- if ( trim(cutnocut)=="noocut" ) then
-	 count_particles = SIZE( bunch(number_bunch)%part(:) )
- else if ( trim(cutnocut)=="yescut" ) then
-	 count_particles = int( SUM( bunch(number_bunch)%part(:)%cmp(8) ) ) ! uses dcut parameter, computed in apply_Sigma_cut routine
- endif
+  if ( trim(cutonoff)=='cutoff') then
+ 	 number_bunch_particles = SIZE( bunch(number_bunch)%part(:) )
+ else if ( trim(cutonoff)=='cuton') then
+ 	 number_bunch_particles = int( SUM( bunch(number_bunch)%part(:)%cmp(8) ) ) ! uses dcut parameter, computed in apply_Sigma_cut routine
+  endif
 
- END FUNCTION count_particles
+  END FUNCTION number_bunch_particles
+  !--- --- ---!
+
 
 
  !--- --- ---!
@@ -98,7 +100,7 @@
 		sum(       &
 			(bunch(number_bunch)%part(:)%cmp(component1)-mu_component1(1)) &
           * (bunch(number_bunch)%part(:)%cmp(component2)-mu_component2(1)) )
- corr = corr / real ( count_particles(number_bunch,"noocut") )
+ corr = corr / real ( number_bunch_particles(number_bunch,"cutoff") )
 
  calculate_central_correlation = corr
  END FUNCTION calculate_central_correlation
@@ -153,14 +155,14 @@
 		sum(  sqrt(   1.0 + bunch(number_bunch)%part(:)%cmp(4)**2 + &
 		                    bunch(number_bunch)%part(:)%cmp(5)**2 + &
 		                    bunch(number_bunch)%part(:)%cmp(6)**2 ) )
-	mu_gamma = mu_gamma / real ( count_particles(number_bunch,"noocut") )
+	mu_gamma = mu_gamma / real ( number_bunch_particles(number_bunch,"cutoff") )
 
 	s_gamma = &
 		sum( (sqrt(   1.0 + bunch(number_bunch)%part(:)%cmp(4)**2 + &
 		                    bunch(number_bunch)%part(:)%cmp(5)**2 + &
 		                    bunch(number_bunch)%part(:)%cmp(6)**2 ) - &
 		                    mu_gamma(1) )**2 )
-	s_gamma = sqrt( s_gamma/ real ( count_particles(number_bunch,"noocut") ) )
+	s_gamma = sqrt( s_gamma/ real ( number_bunch_particles(number_bunch,"cutoff") ) )
 
 	dgamma_su_gamma = s_gamma(1)/mu_gamma(1)
 
@@ -324,11 +326,11 @@
 
  !--- mean calculation
  mu_mean  = sum( bunch(number_bunch)%part(:)%cmp(component)*bunch(number_bunch)%part(:)%cmp(8) )
- mu_mean  = mu_mean / real( count_particles(number_bunch,"yescut") )
+ mu_mean  = mu_mean / real( number_bunch_particles(number_bunch,"cuton") )
 
  !--- moment calculation
  moment   = sum( ( bunch(number_bunch)%part(:)%cmp(component)*bunch(number_bunch)%part(:)%cmp(8) - mu_mean(1) )**nth )
- moment   = moment / real( count_particles(number_bunch,"yescut") )
+ moment   = moment / real( number_bunch_particles(number_bunch,"cuton") )
 
  !---
  calculate_nth_central_moment_bunch_dcut = moment(1)
@@ -345,7 +347,7 @@
 
  !--- moment calculation
  moment   = sum( ( bunch(number_bunch)%part(:)%cmp(component)*bunch(number_bunch)%part(:)%cmp(8) )**nth )
- moment   = moment / real( count_particles(number_bunch,"yescut") )
+ moment   = moment / real( number_bunch_particles(number_bunch,"cuton") )
 
  !---
  calculate_nth_moment_bunch_dcut = moment(1)
@@ -367,7 +369,7 @@
 		sum(       &
 			(bunch(number_bunch)%part(:)%cmp(component1)*bunch(number_bunch)%part(:)%cmp(8) -mu_component1(1)) &
           * (bunch(number_bunch)%part(:)%cmp(component2)*bunch(number_bunch)%part(:)%cmp(8) -mu_component2(1)) )
- corr = corr / real ( count_particles(number_bunch,"yescut") )
+ corr = corr / real ( number_bunch_particles(number_bunch,"cuton") )
 
  calculate_central_correlation_dcut = corr
  END FUNCTION calculate_central_correlation_dcut
@@ -422,14 +424,14 @@
 		sum(  sqrt(   1.0 + (bunch(number_bunch)%part(:)%cmp(4)*bunch(number_bunch)%part(:)%cmp(8))**2 + &
 		                    (bunch(number_bunch)%part(:)%cmp(5)*bunch(number_bunch)%part(:)%cmp(8))**2 + &
 		                    (bunch(number_bunch)%part(:)%cmp(6)*bunch(number_bunch)%part(:)%cmp(8))**2 ) )
-	mu_gamma = mu_gamma / real ( count_particles(number_bunch,"yescut") )
+	mu_gamma = mu_gamma / real ( number_bunch_particles(number_bunch,"cuton") )
 
 	s_gamma = &
 		sum( (sqrt(   1.0 + (bunch(number_bunch)%part(:)%cmp(4)*bunch(number_bunch)%part(:)%cmp(8))**2 + &
 		                    (bunch(number_bunch)%part(:)%cmp(5)*bunch(number_bunch)%part(:)%cmp(8))**2 + &
 		                    (bunch(number_bunch)%part(:)%cmp(6)*bunch(number_bunch)%part(:)%cmp(8))**2 ) - &
 		                    mu_gamma(1) )**2 )
-	s_gamma = sqrt( s_gamma/ real ( count_particles(number_bunch,"yescut") ) )
+	s_gamma = sqrt( s_gamma/ real ( number_bunch_particles(number_bunch,"cuton") ) )
 
 	dgamma_su_gamma = s_gamma(1)/mu_gamma(1)
 
@@ -484,7 +486,7 @@
  character*90 :: filename
 
  !---!
- np_local=count_particles(bunch_number,"noocut")
+ np_local=number_bunch_particles(bunch_number,"cutoff")
 
  !---- bunch_mask Calculation ---------!
  allocate (bunch_mask(np_local))

@@ -30,7 +30,7 @@ path = os.getcwd()
 # --- plot --- #
 for root_dir, sub_dirs, files in os.walk(path):
     if '==started==' in files or '==completed==' in files:
-        bunch = np.loadtxt(os.path.join(root_dir,'out','integrated_diagnostics','bunch_integrated_quantity_2.dat'))
+        bunch = np.loadtxt(os.path.join(root_dir,'out','integrated_diagnostics','bunch_integrated_quantity_2_dcut.dat'))
 
         fig = pyl.figure(1)
         fig.set_size_inches(3.25, 3.0, forward=True)
@@ -43,28 +43,28 @@ for root_dir, sub_dirs, files in os.walk(path):
         ax1.plot(bunch[:,0]/1e4,bunch[:,13], lw=2, label=r'$\epsilon_x$ ($\mu$m)' )
 
         #--- energy spread ---#
-        ax1.plot(bunch[:,0]/1e4,bunch[:,16]*1e3, lw=2, label=r'$\Delta\gamma/\gamma$' )
+        ax1.plot(bunch[:,0]/1e4,bunch[:,16], lw=2, label=r'$\Delta\gamma/\gamma$' )
         # pyl.ylabel('$\Delta\gamma/\gamma$', fontsize = 8.0)
         # pyl.subplots_adjust(bottom=0.10,left=0.230)
         # plt.legend()
         pyl.xticks(fontsize=9)
         pyl.yticks(fontsize=9)
-        pyl.xlim([0,10])
-        pyl.ylim([0,5])
+        # pyl.xlim([0,10])
+        # pyl.ylim([0,5])
 
         #--- gamma plot ---#
         ax2  = pyl.subplot(212)
         ax2.plot(bunch[:,0]/1e4,bunch[:,15]/2., lw=2, label=r'$\Delta\gamma/\gamma$' )
         pyl.xticks(fontsize=9)
         pyl.yticks(fontsize=9)
-        pyl.xlim([0,10])
+        # pyl.xlim([0,10])
         pyl.xlabel('$Z$ (cm)', fontsize = 8.0)
         pyl.ylabel('Energy (MeV)', fontsize = 8.0)
 
 pyl.subplots_adjust(bottom=0.14,left=0.210)
 
 
-# ax1.legend(loc=9, ncol=2, prop={'size':7.5})
+ax1.legend(loc=9, ncol=2, prop={'size':7.5})
 # ax2.legend(loc=9, ncol=2, prop={'size':7.5})
 # ax3.legend(loc=9, ncol=2, prop={'size':7.5})
 
