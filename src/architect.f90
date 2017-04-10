@@ -130,6 +130,7 @@ INTEGER Lapl_dim
   call final_data_dump
   call write_read_nml
 
+
 ! ----------- MAIN TIME LOOP -----------------------------
 ! --------------------------------------------------------
 
@@ -221,7 +222,7 @@ INTEGER Lapl_dim
 
     ! Deallocate variables
     DEALLOCATE(x_mesh,z_mesh,mesh)
-    if( allocated(mesh_util%Bphi_BC_Left) ) DEALLOCATE(mesh_util%Bphi_BC_Left)
+    if( allocated(mesh_util%Bphi_BC_Right) ) DEALLOCATE(mesh_util%Bphi_BC_Right)
     !end of run flags
     call setFileFlag('==completed==')
     call UnsetFileFlag('==started==')

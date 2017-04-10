@@ -81,6 +81,20 @@ gfmp45  : OPTFC = -ffree-line-length-none -fmax-stack-var-size=50000000
 gfmp45  : all
 gfmp45  : CC = gcc-mp-4.5
 
+gfortran48 : FC = gfortran-mp-4.8
+gfortran48 : OPTFC = -ffree-line-length-none -fmax-stack-var-size=50000000
+gfortran48 : all
+
+gfortran49 : FC = gfortran-4.9
+gfortran49 : OPTFC = -ffree-line-length-none -fmax-stack-var-size=50000000
+gfortran49 : all
+
+gfortran5 : FC = gfortran-5
+gfortran5 : OPTFC = -ffree-line-length-none -fmax-stack-var-size=50000000
+gfortran5 : all
+
+
+
 #--- ---#
 $(OBJ_FOLDER)/my_types.o: $(SRC_FOLDER)/my_types.f90
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)

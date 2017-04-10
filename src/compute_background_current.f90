@@ -203,13 +203,13 @@ CONTAINS
 
   !---***---!
   if(Bpoloidal%L_BfieldfromV) then
-    allocate(mesh_util%Bphi_BC_Left(Node_max_r))
+    allocate(mesh_util%Bphi_BC_Right(Node_max_r))
 
     !--- *** ---! calculate background velocity
     ne_m3=plasma%n0*1e6
     R_current_m=Bpoloidal%capillary_radius_um*1d-6
     sim_parameters%velocity_background = Bpoloidal%background_current_A(1) / (R_current_m**2*pi*ne_m3*electron_charge*c_SI)
-    sim_parameters%velocity_background = -1.D0*sim_parameters%velocity_background
+    sim_parameters%velocity_background = sim_parameters%velocity_background
     write(*,*) ''
     write(*,'(A)') 'Case :: with Moving Background >'
     write(*,'(A,1e11.3,A)') 'The background velocity is',sim_parameters%velocity_background,' * c'
@@ -224,7 +224,7 @@ CONTAINS
     enddo
 
     !--- *** ---! caluclate Bphi
-    i=2
+    i=Node_max_z
     do j=1,Node_max_r
       mesh(i,j)%Bphi=(mesh(i,j)%uz*mesh(i,j)%n_plasma_e)*j*mesh_par%dxm/2.
       if(j>mesh_par%NRmax_plasma) then
@@ -232,12 +232,12 @@ CONTAINS
         *(mesh_par%NRmax_plasma*mesh_par%dxm)**2/2./j/mesh_par%dxm
       endif
       !---
-      mesh_util%Bphi_BC_Left(j)=mesh(i,j)%Bphi
+      mesh_util%Bphi_BC_Right(j)=mesh(i,j)%Bphi
       !---
     enddo
     !--- now forcing the copy of i=1 to all-i
     do i=2,Node_max_z
-      mesh(i,:)%Bphi=mesh_util%Bphi_BC_Left(:)
+      mesh(i,:)%Bphi=mesh_util%Bphi_BC_Right(:)
     end do
   endif
 END SUBROUTINE set_initial_velocity
@@ -265,7 +265,7 @@ END SUBROUTINE set_initial_velocity
     weightZ=1.d0
 
     do k=1,8
-      if(Zposition<=bck_plasma%z_coordinate_um(k) .and. Zposition>bck_plasma%z_coordinate_um(k+1)) then
+      if(Zposition>=bck_plasma%z_coordinate_um(k) .and. Zposition<bck_plasma%z_coordinate_um(k+1)) then
 
         !---*** Longitudinal profile ***---!
         if(  bck_plasma%order_logitudinal(k)==0 .or. bck_plasma%order_logitudinal(k)==1 ) then !linear or flat-top

@@ -73,9 +73,9 @@ contains
 		! -- finds bunches position in order to know where to cut the partial domain
 		do b=1,bunch_initialization%n_total_bunches
 			bunches_position(b) = 1 + abs(mesh_par%z_min)/mesh_par%dzm
-			distance = calculate_nth_moment_bunch(b,1,3)-calculate_nth_moment_bunch(1,1,3)
+			distance = abs(calculate_nth_moment_bunch(b,1,3)-calculate_nth_moment_bunch(1,1,3))
 			distance = distance/mesh_par%dzm*plasma%k_p
-			bunches_position(b) = bunches_position(b) + int(distance)
+			bunches_position(b) = bunches_position(b) - int(distance)
 		enddo
 
 
@@ -116,7 +116,7 @@ contains
 			if(.not.allocated(rho_vector)) ALLOCATE(rho_vector((right-left+1)*(up-bottom+1)) )
 			if(.not.allocated(Phi_vector)) ALLOCATE(Phi_vector((right-left+1)*(up-bottom+1)) )
 			Phi_matrix(:,:)	= 0.
-			Phi_vector(:)	= 0.
+			Phi_vector(:)		= 0.
 			rho_vector(:) 	= 0.
 
 
@@ -214,10 +214,10 @@ contains
 		!--> Extra BC on axis for Ez on lower boundary (trust me it's necessary)
 		!--->mesh(:,1)%Ez = mesh(:,2)%Ez
 		mesh(:,1)%Ez_bunch = mesh(:,2)%Ez_bunch
-		mesh(1:2,:)%Ex_bunch = 0.D0
-		mesh(1:2,:)%Ez_bunch = 0.D0
-		mesh(mesh_par%Nzm-2:mesh_par%Nzm,:)%Ex_bunch = 0.D0
-		mesh(mesh_par%Nzm-2:mesh_par%Nzm,:)%Ez_bunch = 0.D0
+		mesh(Node_max_z:Node_end_z,:)%Ex_bunch = 0.D0
+		mesh(Node_max_z:Node_end_z,:)%Ez_bunch = 0.D0
+		mesh(1:3,:)%Ex_bunch = 0.D0
+		mesh(1:3,:)%Ez_bunch = 0.D0
 
 		! ----- center E fields for FDTD
 		call center_E_fields
@@ -724,35 +724,35 @@ subroutine set_external_Bfield
 
 	do i=2,(mesh_par%Nzm) !---*** ***---!
 		Zposition=(mesh_par%z_min+i*mesh_par%dzm)/plasma%k_p
-		if(Zposition < Bpoloidal%z_coordinate_um(1)) then
+		if(Zposition > Bpoloidal%z_coordinate_um(1)) then
 			do j=2,(mesh_par%Nxm)
 
 				  Select Case (Bpoloidal%Bprofile(1))
 						case (1) !---Linear+Cubic
 							Radius=r_mesh(j)/Bpoloidal%capillary_radius
 							a=Bpoloidal%a_shape(1)
-							mesh(i,j)%B_ex_poloidal = -Bfield*((1.D0-a)*Radius+a*Radius**3)
+							mesh(i,j)%B_ex_poloidal = Bfield*((1.D0-a)*Radius+a*Radius**3)
 
 						case (2) !---Linear+FlatSaturation
 							a=Bpoloidal%a_shape(1)*plasma%k_p
-							mesh(i,j)%B_ex_poloidal = -Bfield/a*r_mesh(j)
+							mesh(i,j)%B_ex_poloidal = Bfield/a*r_mesh(j)
 							if(r_mesh(j)>a) then
-								mesh(i,j)%B_ex_poloidal = -Bfield
+								mesh(i,j)%B_ex_poloidal = Bfield
 							endif
 
 						case (3) !---Exponential Profile
 							a=Bpoloidal%a_shape(1)*plasma%k_p
-							mesh(i,j)%B_ex_poloidal = -Bfield*( 1.D0-exp(-r_mesh(j)/a) )/( 1.D0-exp(-r_mesh(mesh_par%Nxm)/a) )
+							mesh(i,j)%B_ex_poloidal = Bfield*( 1.D0-exp(-r_mesh(j)/a) )/( 1.D0-exp(-r_mesh(mesh_par%Nxm)/a) )
 
 						case(4) !--- x^a
 							a=Bpoloidal%a_shape(1)
 							Radius=r_mesh(j)/Bpoloidal%capillary_radius
-							mesh(i,j)%B_ex_poloidal = -Bfield*( Radius )**a
+							mesh(i,j)%B_ex_poloidal = Bfield*( Radius )**a
 
 						case(5) !--- a^-1 + (1-a^-1) * 1/x^a
 							a=Bpoloidal%a_shape(1)
 							Radius=r_mesh(j)/Bpoloidal%capillary_radius
-							mesh(i,j)%B_ex_poloidal = -Bfield* (1.D0/a + (1.D0-1.D0/a)*Radius**a)
+							mesh(i,j)%B_ex_poloidal = Bfield* (1.D0/a + (1.D0-1.D0/a)*Radius**a)
 
 					end select !---and Shape Select
 
@@ -760,8 +760,8 @@ subroutine set_external_Bfield
 		endif
 	enddo
 	!--->BC
-  mesh(1,:)%B_ex_poloidal						=-mesh(2,:)%B_ex_poloidal
-	mesh(mesh_par%Nzm,:)%B_ex_poloidal= mesh(mesh_par%Nzm-1,:)%B_ex_poloidal
+  mesh(1,:)%B_ex_poloidal						= mesh(2,:)%B_ex_poloidal
+	mesh(mesh_par%Nzm,:)%B_ex_poloidal= -mesh(mesh_par%Nzm-1,:)%B_ex_poloidal
 	mesh(:,1)%B_ex_poloidal						= mesh(:,2)%B_ex_poloidal
 	mesh(:,mesh_par%Nxm)%B_ex_poloidal= mesh(:,mesh_par%Nxm-1)%B_ex_poloidal
 end subroutine set_external_Bfield

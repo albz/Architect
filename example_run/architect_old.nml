@@ -46,8 +46,8 @@
 	sim_parameters%output_Integrated_params_dist  = 25., !mu
 
 	!OnGrid Output (set 0 for final results only):
-	sim_parameters%output_grid_nstep = 90000, !90000!steps
-	sim_parameters%output_grid_dist  = 10., !mu
+	sim_parameters%output_grid_nstep = 900000, !steps
+	sim_parameters%output_grid_dist  = 250., !mu
 
 	!Phase Space output (set 0 for writing at the end):
 	sim_parameters%output_PS_nstep = 900000, !steps
@@ -90,8 +90,8 @@
 	mesh_par%Left_Domain_boundary= 1.0
 	mesh_par%Right_Domain_boundary=1.5
 	!Domain Boundaries in mu
-	mesh_par%Left_mesh=350.00
-	mesh_par%Right_mesh=250.00
+	mesh_par%Left_mesh=250.00
+	mesh_par%Right_mesh=350.00
 
 	!---Mesh radius in \sigma_r units---!
 	mesh_par%Rmax=13.
@@ -104,30 +104,17 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 &BACKGROUND_PLASMA_PROFILE
-bck_plasma%order_logitudinal(1)=1, !0: constant
+bck_plasma%order_logitudinal(1)=0, !0: constant
 bck_plasma%order_logitudinal(2)=0, !0: constant
-bck_plasma%order_logitudinal(3)=0, !0: constant !1: linear ramp
-bck_plasma%order_logitudinal(4)=1, !0: constant !1: linear ramp
-
+														       													!1: linear ramp
 bck_plasma%order_radial(1)=0,      !0: constant
 bck_plasma%order_radial(2)=0,      !0: constant
-bck_plasma%order_radial(3)=0,      !0: constant
-bck_plasma%order_radial(4)=0,      !0: constant
-
 bck_plasma%n_over_n0(1)=0.d0,      !n/n0
 bck_plasma%n_over_n0(2)=1.d0,      !n/n0
-bck_plasma%n_over_n0(3)=1.d0,      !n/n0
-bck_plasma%n_over_n0(4)=0.d0,      !n/n0
-
 bck_plasma%z_coordinate_um(1)=0.
-bck_plasma%z_coordinate_um(2)=100.0,
-bck_plasma%z_coordinate_um(3)=5.5e4,
-bck_plasma%z_coordinate_um(4)=6.0e4,
-
-bck_plasma%radius_um(1)=70., 
-bck_plasma%radius_um(2)=70., 
-bck_plasma%radius_um(3)=70., 
-bck_plasma%radius_um(4)=70., 
+bck_plasma%z_coordinate_um(2)=-1.0,
+bck_plasma%z_coordinate_um(3)=-5.5e4,
+bck_plasma%radius_um(1)=500., 
 /
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -138,7 +125,7 @@ bck_plasma%radius_um(4)=70.,
 	bunch_initialization%maxnorm=1e-6,
 	bunch_initialization%init_width_r=100,
 	bunch_initialization%init_width_z=3,
-	bunch_initialization%iter_max=1000,
+	bunch_initialization%iter_max=100000,
 
 	bunch_initialization%db(1)=0.,
 	bunch_initialization%db(2)=0.45,
@@ -147,7 +134,7 @@ bck_plasma%radius_um(4)=70.,
 	bunch_initialization%ChargeB(2)=0.060,
 
 	bunch_initialization%shape(1)=1,
-	bunch_initialization%n_particles(1)=10000,
+	bunch_initialization%n_particles(1)=100000,
 	bunch_initialization%bunch_s_x(1)=4.0,
 	bunch_initialization%bunch_s_y(1)=4.0,
 	bunch_initialization%bunch_s_z(1)=50.0,
@@ -159,7 +146,7 @@ bck_plasma%radius_um(4)=70.,
 	!bunch_initialization%Charge_right(1)=1.0,
 
 	bunch_initialization%shape(2)=1,
-	bunch_initialization%n_particles(2)=5000,
+	bunch_initialization%n_particles(2)=50000,
 	bunch_initialization%bunch_s_x(2)=2.300,
 	bunch_initialization%bunch_s_y(2)=2.300,
 	bunch_initialization%bunch_s_z(2)=10.0,

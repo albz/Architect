@@ -134,10 +134,20 @@
   do i=1,nparticles
     call random_number(z)
     call random_number(a)
-    Do while(a>Charge_left+(Charge_right-Charge_left)*z)
-      call random_number(z)
-      call random_number(a)
-    enddo
+
+    if (Charge_right>=Charge_left) then
+      Do while(a>Charge_left+(Charge_right-Charge_left)*z)
+        call random_number(z)
+        call random_number(a)
+      enddo
+    else
+      Do while(a>Charge_right+(Charge_left-Charge_right)*z)
+        call random_number(z)
+        call random_number(a)
+      enddo
+    endif
+
+
 
     x=random_number_range(-1.d0,1.d0)
     y=random_number_range(-1.d0,1.d0)

@@ -180,7 +180,7 @@
 				bunch(i)%part(j)%cmp(3)=bunch_init(3,j)
 				bunch(i)%part(j)%cmp(4)=bunch_init(4,j)!-bunch_init(6,j)*bunch_initialization%f0(i)*cos(atan2(bunch_init(2,j),bunch_init(1,j)))
 				bunch(i)%part(j)%cmp(5)=bunch_init(5,j)!-bunch_init(6,j)*bunch_initialization%f0(i)*sin(atan2(bunch_init(2,j),bunch_init(1,j)))
-				bunch(i)%part(j)%cmp(6)=-bunch_init(6,j) !backward velocity
+				bunch(i)%part(j)%cmp(6)=bunch_init(6,j) !backward velocity
 				bunch(i)%part(j)%cmp(7)=1.
 				bunch(i)%part(j)%cmp(8)=1.
 
@@ -207,10 +207,10 @@
                 do j=1,bunch_initialization%n_particles(i)
                     bunch(i)%part(j)%cmp(1)=bunch_init(1,j)
                     bunch(i)%part(j)%cmp(2)=bunch_init(2,j)
-                    bunch(i)%part(j)%cmp(3)=bunch_init(3,j)
+                    bunch(i)%part(j)%cmp(3)=-bunch_init(3,j)
                     bunch(i)%part(j)%cmp(4)=bunch_init(4,j)
                     bunch(i)%part(j)%cmp(5)=bunch_init(5,j)
-                    bunch(i)%part(j)%cmp(6)=bunch_init(6,j)
+                    bunch(i)%part(j)%cmp(6)=-bunch_init(6,j)
                     bunch(i)%part(j)%cmp(7)=1.
                     bunch(i)%part(j)%cmp(8)=1.
 
@@ -261,7 +261,8 @@ write(*,'(A)')
 
     do i=1,bunch_initialization%n_total_bunches
       zmmedB = calculate_nth_moment_bunch(i,1,3)
-      if (i.ge.1) Zb = Zb+bunch_initialization%db(i)*plasma%lambda_p
+
+      if (i.ge.1) Zb = Zb-bunch_initialization%db(i)*plasma%lambda_p
       if (bunch_initialization%shape(i)==3) zmmedB=0.d0
       if (bunch_initialization%shape(i)==4) zmmedB=0.d0
       ! else if (i.eq.1) then
@@ -279,6 +280,7 @@ write(*,'(A)')
         if(bunch_initialization%shape(i)==2) write(*,'(A,I1,A)') 'Bunch(',i,') :: shape > triangular (or ramped) profile along Z uniform along R'
         if(bunch_initialization%shape(i)==3) write(*,'(A,I1,A)') 'Bunch(',i,') :: shape > triangular (or ramped) profile along Z gaussian along R'
         if(bunch_initialization%shape(i)==4) write(*,'(A,I1,A)') 'Bunch(',i,') :: shape > cylindrical'
+         write(*,'(A,I1,A,f11.3)') 'Bunch(',i,') :: position (um) =', calculate_nth_central_moment_bunch(i,1,3)
          write(*,'(A,I1,A,f11.3)') 'Bunch(',i,') :: sigma_x (um) =',sqrt( calculate_nth_central_moment_bunch(i,2,1) )
          write(*,'(A,I1,A,f11.3)') 'Bunch(',i,') :: sigma_z (um) =',sqrt( calculate_nth_central_moment_bunch(i,2,3) )
          write(*,*)
