@@ -98,7 +98,7 @@ IMPLICIT NONE
    END TYPE
 
     TYPE :: mesh_utility
-      real(8), DIMENSION(:), ALLOCATABLE :: Bphi_BC_Left
+      real(8), DIMENSION(:), ALLOCATABLE :: Bphi_BC_Right
     END TYPE
 
 

@@ -55,9 +55,9 @@ CONTAINS
 
 			! Longitudinal mesh of moving window
          	do ss=1,mesh_par%Nzm
-            		z_mesh(ss) =(mesh_par%z_min-mesh_par%dzm)+mesh_par%dzm*real(ss-1)   ! mesh longitudinal lattice
+            		z_mesh(mesh_par%Nzm-ss+1) =(mesh_par%z_max+mesh_par%dzm)-mesh_par%dzm*real(ss-1)   ! mesh longitudinal lattice
          	enddo
-
+      
 			! Transverse mesh of moving window (first mesh point at -Dx/2, second at Dx/2 and so on)
          	do ss=1,mesh_par%Nxm
             		x_mesh(ss) = mesh_par%dxm*(real(ss)-1.5)	                    ! mesh transverse lattice (positive semiaxis)
