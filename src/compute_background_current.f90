@@ -244,18 +244,15 @@ END SUBROUTINE set_initial_velocity
 
   FUNCTION background_density_value(i,j)
     real(8) :: background_density_value,Zposition,slope,den
-    real(8) :: i_eff,j_eff, radius
+    real(8) :: radius
     real(8) :: weightR, weightZ
     real(8) :: delta_alpha,kappa_z,A,B,C
     integer :: i,j,k
 
-    i_eff=real(i-2)+.5d0
-    j_eff=real(j-2)+.5d0
-
-    radius = j_eff*mesh_par%dxm/plasma%k_p
+    radius = real(j)*mesh_par%dxm/plasma%k_p
 
     background_density_value=0.d0
-    Zposition=mesh_par%z_min_moving_um+i_eff*mesh_par%dzm/plasma%k_p
+    Zposition=mesh_par%z_min_moving_um+real(i)*mesh_par%dzm/plasma%k_p
 
     !--vacuum layer---!
     !if(j>=mesh_par%NRmax_plasma) return
