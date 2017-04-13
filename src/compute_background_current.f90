@@ -272,7 +272,7 @@ END SUBROUTINE set_initial_velocity
 
         else if( bck_plasma%order_logitudinal(k)==2 ) then !parabolic profile
           if( bck_plasma%n_over_n0(k+1)>bck_plasma%n_over_n0(k) ) then
-            A=bck_plasma%n_over_n0(k)-bck_plasma%n_over_n0(k+1)/(bck_plasma%z_coordinate_um(k+1)-bck_plasma%z_coordinate_um(k))**2
+            A=(bck_plasma%n_over_n0(k)-bck_plasma%n_over_n0(k+1))/(bck_plasma%z_coordinate_um(k+1)-bck_plasma%z_coordinate_um(k))**2
             B=2.0*(bck_plasma%n_over_n0(k+1)-bck_plasma%n_over_n0(k))*bck_plasma%z_coordinate_um(k+1)
             B=B/(bck_plasma%z_coordinate_um(k+1)-bck_plasma%z_coordinate_um(k))**2
             C=bck_plasma%n_over_n0(k+1)*bck_plasma%z_coordinate_um(k)**2
@@ -281,7 +281,7 @@ END SUBROUTINE set_initial_velocity
             C=C/(bck_plasma%z_coordinate_um(k+1)-bck_plasma%z_coordinate_um(k))**2
             weightZ=A*Zposition**2+B*Zposition+C
           else
-            A=bck_plasma%n_over_n0(k+1)-bck_plasma%n_over_n0(k)/(bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1))**2
+            A=(bck_plasma%n_over_n0(k+1)-bck_plasma%n_over_n0(k))/(bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1))**2
             B=2.0*(bck_plasma%n_over_n0(k)-bck_plasma%n_over_n0(k+1))*bck_plasma%z_coordinate_um(k)
             B=B/(bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1))**2
             C=bck_plasma%n_over_n0(k+1)*bck_plasma%z_coordinate_um(k)**2
