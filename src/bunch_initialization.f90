@@ -207,10 +207,10 @@
                 do j=1,bunch_initialization%n_particles(i)
                     bunch(i)%part(j)%cmp(1)=bunch_init(1,j)
                     bunch(i)%part(j)%cmp(2)=bunch_init(2,j)
-                    bunch(i)%part(j)%cmp(3)=-bunch_init(3,j)
+                    bunch(i)%part(j)%cmp(3)=bunch_init(3,j)
                     bunch(i)%part(j)%cmp(4)=bunch_init(4,j)
                     bunch(i)%part(j)%cmp(5)=bunch_init(5,j)
-                    bunch(i)%part(j)%cmp(6)=-bunch_init(6,j)
+                    bunch(i)%part(j)%cmp(6)=bunch_init(6,j)
                     bunch(i)%part(j)%cmp(7)=1.
                     bunch(i)%part(j)%cmp(8)=1.
 

@@ -210,7 +210,6 @@ END SUBROUTINE data_dump
 !--------------------------- Define positions string for filenames ------------------------------------------------------
    avgz = sum( bunch(1)%part(:)%cmp(3) * bunch(1)%part(:)%cmp(8) ) / sum(bunch(1)%part(:)%cmp(8))
    write(position,'(I7.7)') int(avgz)
-	
 
 
 !--------------------------- Saving grid defined quantities -------------------------------------------------------------
