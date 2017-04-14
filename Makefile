@@ -227,7 +227,8 @@ $(OBJ_FOLDER)/bunch_moments.o: $(SRC_FOLDER)/bunch_moments.f90 \
 															 $(OBJ_FOLDER)/my_types.mod \
 															 $(OBJ_FOLDER)/use_types.mod \
 															 $(OBJ_FOLDER)/pstruct_data.mod \
-															 $(OBJ_FOLDER)/utilities.mod
+															 $(OBJ_FOLDER)/utilities.mod \
+															 $(OBJ_FOLDER)/compute_background_current.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/bunch_moments.mod: $(SRC_FOLDER)/bunch_moments.f90 $(OBJ_FOLDER)/bunch_moments.o
 	@true
