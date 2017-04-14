@@ -129,8 +129,8 @@ END SUBROUTINE data_dump
    !SAVE n0
 
 !--------------------------- Define positions string for filenames ------------------------------------------------------
-   avgz = sum( bunch(1)%part(:)%cmp(3) * bunch(1)%part(:)%cmp(8) ) / sum(bunch(1)%part(:)%cmp(8))
-   write(position,'(I7.7)') int(avgz)
+
+   write(position,'(I7.7)') int(sim_parameters%zg)
 
 
 !--------------------------- Saving Phase Space ------------------------------------------------------------------------
@@ -147,7 +147,9 @@ END SUBROUTINE data_dump
 			write(15) bunch_initialization%ChargeB(1:bunch_initialization%n_total_bunches)
 
 	!--------------------------- Writes Z position -----------------------------------------------------------------
-    	write(15) int(avgz)
+
+  write(15) int(sim_parameters%zg)
+
 
 	!--------------------------- Writes Phase Space -----------------------------------------------------------------
 	if (sim_parameters%reduced_PS.eq.0) then
@@ -208,9 +210,8 @@ END SUBROUTINE data_dump
 
 
 !--------------------------- Define positions string for filenames ------------------------------------------------------
-   avgz = sum( bunch(1)%part(:)%cmp(3) * bunch(1)%part(:)%cmp(8) ) / sum(bunch(1)%part(:)%cmp(8))
-   write(position,'(I7.7)') int(avgz)
 
+write(position,'(I7.7)') int(sim_parameters%zg)
 
 !--------------------------- Saving grid defined quantities -------------------------------------------------------------
     filename=TRIM(sim_parameters%path_grid)//TRIM(ADJUSTL(position))//'.arch'
@@ -317,8 +318,8 @@ END SUBROUTINE data_dump
    REAL avgz,k0plasma,np
    SAVE n0
 
-   avgz = sum( bunch(1)%part(:)%cmp(3) * bunch(1)%part(:)%cmp(8) ) / sum(bunch(1)%part(:)%cmp(8))
-   write(position,'(I7.7)') int(avgz)
+
+  write(position,'(I7.7)') int(sim_parameters%zg)
 
 	filename=TRIM(sim_parameters%path_PS)//'PS_'//TRIM(ADJUSTL(position))//'_um.dat'
 
@@ -371,8 +372,9 @@ END SUBROUTINE data_dump
    REAL avgz,k0plasma,np
    SAVE n0
 
-   avgz = sum( bunch(1)%part(:)%cmp(3) * bunch(1)%part(:)%cmp(8) ) / sum(bunch(1)%part(:)%cmp(8))
-   write(position,'(I7.7)') int(avgz)
+
+  write(position,'(I7.7)') int(sim_parameters%zg)
+
 
 
 19       format(3000(1x,e14.5))
