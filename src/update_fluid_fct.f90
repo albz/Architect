@@ -258,13 +258,14 @@ do q=1,3
         		quantity_td(i,1)          = quantity_td(i,Node_min_lo_r)
    		enddo
    		! left boundary
-   		do j = Node_min_lo_r,Node_max_lo_r
-			quantity_td(1,j)              = quantity_td(Node_min_lo_z,j)
-   		enddo
-   		! right boundary
 !   		do j = Node_min_lo_r,Node_max_lo_r
-!        	quantity_td (Node_end_lo_z,j)     = quantity_td(Node_max_lo_z,j)
+!			quantity_td(1,j)              = quantity_td(Node_min_lo_z,j)
 !   		enddo
+
+   		! right boundary
+   		do j = Node_min_lo_r,Node_max_lo_r
+        	quantity_td (Node_end_lo_z,j)     = quantity_td(Node_max_lo_z,j)
+   		enddo
 	else if (q.eq.2) then
 
 		! upper boundary
@@ -278,13 +279,14 @@ do q=1,3
         		quantity_td(i,1         )     = -quantity_td(i,Node_min_lo_r)
    		enddo
    		! left boundary
-   		do j = Node_min_lo_r,Node_max_lo_r
-        		quantity_td(1,j)              =  0.
-   		enddo
-   		! right boundary
 !   		do j = Node_min_lo_r,Node_max_lo_r
-!        		quantity_td(Node_end_lo_z,j)  =  quantity_td(Node_max_lo_z,j)
+!        		quantity_td(1,j)              =  0.
 !   		enddo
+
+   		! right boundary
+   		do j = Node_min_lo_r,Node_max_lo_r
+        		quantity_td(Node_end_lo_z,j)  =  0.D0
+   		enddo
 	else if (q.eq.3) then
 
 		! upper boundary
@@ -297,13 +299,13 @@ do q=1,3
         		quantity_td(i,1         )  =  quantity_td(i,Node_min_lo_r)
    		enddo
    		! left boundary
-   		do j = Node_min_lo_r,Node_max_lo_r
-        		quantity_td(1,j)           =  0.
-   		enddo
-   		! right boundary
 !   		do j = Node_min_lo_r,Node_max_lo_r
-!        		quantity_td(Node_end_lo_z,j)  = quantity_td(Node_max_lo_z,j)
+!        		quantity_td(1,j)           =  0.
 !   		enddo
+   		! right boundary
+   		do j = Node_min_lo_r,Node_max_lo_r
+        		quantity_td(Node_end_lo_z,j)  = 0.D0
+   		enddo
 	endif
 
 
@@ -442,13 +444,13 @@ do q=1,3
         		quantity(i,1)          = quantity(i,Node_min_lo_r)
    		enddo
    		! left boundary
-   		do j = Node_min_lo_r,Node_max_lo_r
-			quantity(1,j)              = quantity(Node_min_lo_z,j)
-   		enddo
-   		! right boundary
 !   		do j = Node_min_lo_r,Node_max_lo_r
-!        	quantity (Node_end_lo_z,j)     = quantity(Node_max_lo_z,j)
+!			quantity(1,j)              = quantity(Node_min_lo_z,j)
 !   		enddo
+   		! right boundary
+   		do j = Node_min_lo_r,Node_max_lo_r
+        	quantity (Node_end_lo_z,j)     = quantity(Node_max_lo_z,j)
+   		enddo
 	else if (q.eq.2) then
 
 		! upper boundary
@@ -471,13 +473,13 @@ do q=1,3
         		quantity(i,1         )     = -quantity(i,Node_min_lo_r)
    		enddo
    		! left boundary
-   		do j = Node_min_lo_r,Node_max_lo_r
-        		quantity(1,j)              =  0.
-   		enddo
-   		! right boundary
 !   		do j = Node_min_lo_r,Node_max_lo_r
-!        		quantity(Node_end_lo_z,j)  =  quantity(Node_max_lo_z,j)
+!        		quantity(1,j)              =  0.
 !   		enddo
+   		! right boundary
+   		do j = Node_min_lo_r,Node_max_lo_r
+        		quantity(Node_end_lo_z,j)  =  0.D0
+   		enddo
 	else if (q.eq.3) then
 
 		! upper boundary
@@ -500,13 +502,13 @@ do q=1,3
         		quantity(i,1         )  =  quantity(i,Node_min_lo_r)
    		enddo
    		! left boundary
-   		do j = Node_min_lo_r,Node_max_lo_r
-        		quantity(1,j)           =  0.
-   		enddo
-   		! right boundary
 !   		do j = Node_min_lo_r,Node_max_lo_r
-!        		quantity(Node_end_lo_z,j)  = quantity(Node_max_lo_z,j)
+!        		quantity(1,j)           =  0.
 !   		enddo
+   		! right boundary
+   		do j = Node_min_lo_r,Node_max_lo_r
+        		quantity(Node_end_lo_z,j)  = 0.D0
+   		enddo
 	endif
 
     !   ------- backward substitution
@@ -556,8 +558,8 @@ enddo
   	uz_new       (i,j) = uz_temp + Dt*( Ez_f(i,j) + beta_x_halfDt*Bphi_f(i,j) )
 
 			if ((ux_new(i,j).ne.ux_new(i,j)).or.(ux_new(i,j).ne.ux_new(i,j))) then
-				write(*,*) 'bla'
-				write(*,*) i,j
+				write(*,*) 'Error in iteration ',sim_parameters%iter
+				write(*,*) 'localized on the mesh in row, col ',i,j
 				write(*,*) 'n_new',ne_new(i,j)
 				write(*,*) 'ux',ux(i,j)
 				write(*,*) 'uz',uz(i,j)
@@ -590,16 +592,16 @@ enddo
    enddo
 
    ! left boundary
-   do j = Node_min_lo_r,Node_max_lo_r
-		ux_new(1,j)             = 0.
-    uz_new(1,j)             = 0.
-   enddo
+!   do j = Node_min_lo_r,Node_max_lo_r
+!		ux_new(1,j)             = 0.
+!    uz_new(1,j)             = 0.
+!   enddo
 
    ! right boundary
-!   do j = Node_min_lo_r,Node_max_lo_r
-!        ux_new(Node_end_lo_z,j) = ux_new(Node_end_ho_z,j)
-!        uz_new(Node_end_lo_z,j) = uz_new(Node_end_ho_z,j)
-!   enddo
+   do j = Node_min_lo_r,Node_max_lo_r
+        ux_new(Node_end_lo_z,j) = 0.D0
+        uz_new(Node_end_lo_z,j) = 0.D0
+   enddo
 
 
 

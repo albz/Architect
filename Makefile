@@ -22,7 +22,6 @@ FILES  =  my_types.f90 \
 					fileflags.f90 \
 					bunch_generation.f90 \
 					utility.f90 \
-					bunch_moments.f90 \
 					bunch_initialization.f90 \
 					mesh_generator.f90 \
 					linear_algebra_utilities.f90 \
@@ -33,6 +32,7 @@ FILES  =  my_types.f90 \
 					update_fluid_fct.f90 \
 					compute_background_current.f90 \
 					compute_current_manager.f90 \
+					bunch_moments.f90 \
 					update_fluid_manager.f90 \
 					particle_pusher.f90 \
 					ion_background.f90 \
@@ -80,6 +80,20 @@ gfmp45  : FC = gfortran-mp-4.5
 gfmp45  : OPTFC = -ffree-line-length-none -fmax-stack-var-size=50000000
 gfmp45  : all
 gfmp45  : CC = gcc-mp-4.5
+
+gfortran48 : FC = gfortran-mp-4.8
+gfortran48 : OPTFC = -ffree-line-length-none -fmax-stack-var-size=50000000
+gfortran48 : all
+
+gfortran49 : FC = gfortran-4.9
+gfortran49 : OPTFC = -ffree-line-length-none -fmax-stack-var-size=50000000
+gfortran49 : all
+
+gfortran5 : FC = gfortran-5
+gfortran5 : OPTFC = -ffree-line-length-none -fmax-stack-var-size=50000000
+gfortran5 : all
+
+
 
 #--- ---#
 $(OBJ_FOLDER)/my_types.o: $(SRC_FOLDER)/my_types.f90
@@ -134,15 +148,6 @@ $(OBJ_FOLDER)/utility.o: $(SRC_FOLDER)/utility.f90 \
 												 $(OBJ_FOLDER)/architect_class_structure.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/utility.mod: $(SRC_FOLDER)/utility.f90 $(OBJ_FOLDER)/utility.o
-	@true
-
-$(OBJ_FOLDER)/bunch_moments.o: $(SRC_FOLDER)/bunch_moments.f90 \
-												 $(OBJ_FOLDER)/my_types.mod \
-												 $(OBJ_FOLDER)/use_types.mod \
-												 $(OBJ_FOLDER)/pstruct_data.mod \
-												 $(OBJ_FOLDER)/utilities.mod
-	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
-$(OBJ_FOLDER)/bunch_moments.mod: $(SRC_FOLDER)/bunch_moments.f90 $(OBJ_FOLDER)/bunch_moments.o
 	@true
 
 $(OBJ_FOLDER)/bunch_initialization.o: $(SRC_FOLDER)/bunch_initialization.f90 \
@@ -217,6 +222,16 @@ $(OBJ_FOLDER)/compute_background_current.o: $(SRC_FOLDER)/compute_background_cur
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/compute_background_current.mod: $(SRC_FOLDER)/compute_background_current.f90 $(OBJ_FOLDER)/compute_background_current.o
 	@true
+
+$(OBJ_FOLDER)/bunch_moments.o: $(SRC_FOLDER)/bunch_moments.f90 \
+															 $(OBJ_FOLDER)/my_types.mod \
+															 $(OBJ_FOLDER)/use_types.mod \
+															 $(OBJ_FOLDER)/pstruct_data.mod \
+															 $(OBJ_FOLDER)/utilities.mod
+	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
+$(OBJ_FOLDER)/bunch_moments.mod: $(SRC_FOLDER)/bunch_moments.f90 $(OBJ_FOLDER)/bunch_moments.o
+	@true
+
 
 $(OBJ_FOLDER)/compute_current_manager.o: $(SRC_FOLDER)/compute_current_manager.f90 \
 																					$(OBJ_FOLDER)/my_types.mod \

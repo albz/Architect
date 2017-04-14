@@ -203,13 +203,13 @@ CONTAINS
 
   !---***---!
   if(Bpoloidal%L_BfieldfromV) then
-    allocate(mesh_util%Bphi_BC_Left(Node_max_r))
+    allocate(mesh_util%Bphi_BC_Right(Node_max_r))
 
     !--- *** ---! calculate background velocity
     ne_m3=plasma%n0*1e6
     R_current_m=Bpoloidal%capillary_radius_um*1d-6
     sim_parameters%velocity_background = Bpoloidal%background_current_A(1) / (R_current_m**2*pi*ne_m3*electron_charge*c_SI)
-    sim_parameters%velocity_background = -1.D0*sim_parameters%velocity_background
+    sim_parameters%velocity_background = sim_parameters%velocity_background
     write(*,*) ''
     write(*,'(A)') 'Case :: with Moving Background >'
     write(*,'(A,1e11.3,A)') 'The background velocity is',sim_parameters%velocity_background,' * c'
@@ -224,7 +224,7 @@ CONTAINS
     enddo
 
     !--- *** ---! caluclate Bphi
-    i=2
+    i=Node_max_z
     do j=1,Node_max_r
       mesh(i,j)%Bphi=(mesh(i,j)%uz*mesh(i,j)%n_plasma_e)*j*mesh_par%dxm/2.
       if(j>mesh_par%NRmax_plasma) then
@@ -232,30 +232,27 @@ CONTAINS
         *(mesh_par%NRmax_plasma*mesh_par%dxm)**2/2./j/mesh_par%dxm
       endif
       !---
-      mesh_util%Bphi_BC_Left(j)=mesh(i,j)%Bphi
+      mesh_util%Bphi_BC_Right(j)=mesh(i,j)%Bphi
       !---
     enddo
     !--- now forcing the copy of i=1 to all-i
     do i=2,Node_max_z
-      mesh(i,:)%Bphi=mesh_util%Bphi_BC_Left(:)
+      mesh(i,:)%Bphi=mesh_util%Bphi_BC_Right(:)
     end do
   endif
 END SUBROUTINE set_initial_velocity
 
   FUNCTION background_density_value(i,j)
     real(8) :: background_density_value,Zposition,slope,den
-    real(8) :: i_eff,j_eff, radius
+    real(8) :: radius
     real(8) :: weightR, weightZ
     real(8) :: delta_alpha,kappa_z,A,B,C
     integer :: i,j,k
 
-    i_eff=real(i-2)+.5d0
-    j_eff=real(j-2)+.5d0
-
-    radius = j_eff*mesh_par%dxm/plasma%k_p
+    radius = real(j)*mesh_par%dxm/plasma%k_p
 
     background_density_value=0.d0
-    Zposition=mesh_par%z_min_moving_um+i_eff*mesh_par%dzm/plasma%k_p
+    Zposition=mesh_par%z_min_moving_um+real(i)*mesh_par%dzm/plasma%k_p
 
     !--vacuum layer---!
     !if(j>=mesh_par%NRmax_plasma) return
@@ -265,7 +262,7 @@ END SUBROUTINE set_initial_velocity
     weightZ=1.d0
 
     do k=1,8
-      if(Zposition<=bck_plasma%z_coordinate_um(k) .and. Zposition>bck_plasma%z_coordinate_um(k+1)) then
+      if(Zposition>=bck_plasma%z_coordinate_um(k) .and. Zposition<bck_plasma%z_coordinate_um(k+1)) then
 
         !---*** Longitudinal profile ***---!
         if(  bck_plasma%order_logitudinal(k)==0 .or. bck_plasma%order_logitudinal(k)==1 ) then !linear or flat-top
@@ -275,7 +272,7 @@ END SUBROUTINE set_initial_velocity
 
         else if( bck_plasma%order_logitudinal(k)==2 ) then !parabolic profile
           if( bck_plasma%n_over_n0(k+1)>bck_plasma%n_over_n0(k) ) then
-            A=bck_plasma%n_over_n0(k)-bck_plasma%n_over_n0(k+1)/(bck_plasma%z_coordinate_um(k+1)-bck_plasma%z_coordinate_um(k))**2
+            A=(bck_plasma%n_over_n0(k)-bck_plasma%n_over_n0(k+1))/(bck_plasma%z_coordinate_um(k+1)-bck_plasma%z_coordinate_um(k))**2
             B=2.0*(bck_plasma%n_over_n0(k+1)-bck_plasma%n_over_n0(k))*bck_plasma%z_coordinate_um(k+1)
             B=B/(bck_plasma%z_coordinate_um(k+1)-bck_plasma%z_coordinate_um(k))**2
             C=bck_plasma%n_over_n0(k+1)*bck_plasma%z_coordinate_um(k)**2
@@ -284,7 +281,7 @@ END SUBROUTINE set_initial_velocity
             C=C/(bck_plasma%z_coordinate_um(k+1)-bck_plasma%z_coordinate_um(k))**2
             weightZ=A*Zposition**2+B*Zposition+C
           else
-            A=bck_plasma%n_over_n0(k+1)-bck_plasma%n_over_n0(k)/(bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1))**2
+            A=(bck_plasma%n_over_n0(k+1)-bck_plasma%n_over_n0(k))/(bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1))**2
             B=2.0*(bck_plasma%n_over_n0(k)-bck_plasma%n_over_n0(k+1))*bck_plasma%z_coordinate_um(k)
             B=B/(bck_plasma%z_coordinate_um(k)-bck_plasma%z_coordinate_um(k+1))**2
             C=bck_plasma%n_over_n0(k+1)*bck_plasma%z_coordinate_um(k)**2

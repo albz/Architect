@@ -141,8 +141,8 @@ CONTAINS
 ! 		Bphi_bunch(1         ,j         ) = Bphi_bunch(Node_min_z,j         ) HERE HERE HERE
 	enddo
   !--- Background current Boundary Conditions ---!
-  if(Bpoloidal%L_BfieldfromV) Bphi(1,:) = mesh_util%Bphi_BC_Left(:)
-  if(Bpoloidal%L_BfieldfromV) Bphi(2,:) = mesh_util%Bphi_BC_Left(:)
+  if(Bpoloidal%L_BfieldfromV) Bphi(Node_max_z,:) = mesh_util%Bphi_BC_Right(:)
+  if(Bpoloidal%L_BfieldfromV) Bphi(Node_end_z,:) = mesh_util%Bphi_BC_Right(:)
 
 	! right boundary
 	do j = Node_min_r,Node_max_r
@@ -265,7 +265,7 @@ CONTAINS
       Bphi_new(1         ,j         ) = Bphi_new(Node_min_z,j)
     enddo
 	!--- Background current Boundary Conditions ---!
-	if(Bpoloidal%L_BfieldfromV) Bphi_new(1,:) = mesh_util%Bphi_BC_Left(:)
+	if(Bpoloidal%L_BfieldfromV) Bphi_new(Node_end_z,:) = mesh_util%Bphi_BC_Right(:)
 
 
 	! right boundary

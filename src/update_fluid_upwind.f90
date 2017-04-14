@@ -148,14 +148,14 @@ do q=1,3
     flux_lo_r (i,j) = quantity(i  ,j-1) * max(0.D0,beta_x_j_minus_halfDr(i,j)) + quantity(i  ,j  ) * min(0.D0,beta_x_j_minus_halfDr(i,j))
 	end do
 	end do
-	!--- right border ---!
-	flux_lo_z (Node_max_lo_z+1,Node_min_lo_r:Node_max_lo_r) = flux_lo_z (Node_max_lo_z,Node_min_lo_r:Node_max_lo_r)
+	!--- left border ---!
+	flux_lo_z (1,Node_min_lo_r:Node_max_lo_r) = flux_lo_z (Node_min_lo_z,Node_min_lo_r:Node_max_lo_r)
 	!--- upper border ---!
-		flux_lo_r (Node_min_lo_z:Node_max_lo_z,Node_max_lo_r+1) = flux_lo_r (Node_min_lo_z:Node_max_lo_z,Node_max_lo_r)
+	flux_lo_r (Node_min_lo_z:Node_max_lo_z,Node_max_lo_r+1) = flux_lo_r (Node_min_lo_z:Node_max_lo_z,Node_max_lo_r)
 
 
 	!--- compute the low order solution
-  do i= Node_min_lo_z,Node_max_lo_z
+    do i= Node_min_lo_z,Node_max_lo_z
 	do j= Node_min_lo_r,Node_max_lo_r
 		quantity_td(i,j)= quantity(i,j) - Dt/Vol(j) * (Sr(j+1)*flux_lo_r(i,j+1)-Sr(j)*flux_lo_r(i,j))
 	end do
@@ -178,9 +178,9 @@ do q=1,3
  		!--- lower boundary ---!
 		quantity_td(Node_min_lo_z:Node_max_lo_z,1) = quantity_td(Node_min_lo_z:Node_max_lo_z,Node_min_lo_r)
  		!--- left boundary ---!
-		quantity_td(1,Node_min_lo_r:Node_max_lo_r) = quantity_td(Node_min_lo_z,Node_min_lo_r:Node_max_lo_r)
+		!quantity_td(1,Node_min_lo_r:Node_max_lo_r) = quantity_td(Node_min_lo_z,Node_min_lo_r:Node_max_lo_r)
  		!--- right boundary ---!
-    !quantity_td (Node_end_lo_z,Node_min_lo_r:Node_max_lo_r) = quantity_td(Node_max_lo_z,Node_min_lo_r:Node_max_lo_r)
+        quantity_td (Node_end_lo_z,Node_min_lo_r:Node_max_lo_r) = quantity_td(Node_max_lo_z,Node_min_lo_r:Node_max_lo_r)
 
 	else if (q.eq.2) then
 		!--- upper boundary ---!
@@ -188,9 +188,9 @@ do q=1,3
    		!--- lower boundary ---!
   		quantity_td(Node_min_lo_z:Node_max_lo_z,1) = -quantity_td(Node_min_lo_z:Node_max_lo_z,Node_min_lo_r)
    		!--- left boundary ---!
-  		quantity_td(1,Node_min_lo_r:Node_max_lo_r) =  0.D0
+  		!quantity_td(1,Node_min_lo_r:Node_max_lo_r) =  0.D0
    		!--- right boundary ---!
-  		!quantity_td(Node_end_lo_z,Node_min_lo_r:Node_max_lo_r) = quantity_td(Node_max_lo_z,Node_min_lo_r:Node_max_lo_r)
+  		quantity_td(Node_end_lo_z,Node_min_lo_r:Node_max_lo_r) = 0.D0
 
 	else if (q.eq.3) then
 		!--- upper boundary ---!
@@ -198,10 +198,15 @@ do q=1,3
    		!--- lower boundary ---!
   		quantity_td(Node_min_lo_z:Node_max_lo_z,1) = quantity_td(Node_min_lo_z:Node_max_lo_z,Node_min_lo_r)
    		!--- left boundary ---!
-  		quantity_td(1,Node_min_lo_r:Node_max_lo_r) =  0.D0
+  		!quantity_td(1,Node_min_lo_r:Node_max_lo_r) =  0.D0
    		!--- right boundary ---!
-  		!quantity_td(Node_end_lo_z,Node_min_lo_r:Node_max_lo_r)  = quantity_td(Node_max_lo_z,Node_min_lo_r:Node_max_lo_r)
+  		quantity_td(Node_end_lo_z,Node_min_lo_r:Node_max_lo_r)  = 0.D0
+
   end if
+
+
+
+ if (quantity(i,j).ne.quantity(i,j)) write(*,*) 'Error, Nan in q,',q,'--- i,j',i,j
 
 
   do i= Node_min_lo_z,Node_max_lo_z
@@ -215,10 +220,10 @@ do q=1,3
 		quantity(i,2) = quantity_td(i,2)
 		quantity(i,3) = quantity_td(i,3)
 	end do
-	! low order scheme on the right (not ghost cell)
+	! low order scheme on the left (not ghost cell)
 	do j = Node_min_lo_r,Node_max_lo_r
-     	quantity (Node_max_ho_z,j)     = quantity_td(Node_max_ho_z,j)
-		quantity (Node_max_lo_z,j)     = quantity_td(Node_max_lo_z,j)
+        quantity (Node_min_ho_z,j)     = quantity_td(Node_min_ho_z,j)
+		quantity (Node_min_lo_z,j)     = quantity_td(Node_min_lo_z,j)
  	enddo
 
     !   ------- backward substitution
@@ -261,24 +266,30 @@ enddo
 	beta_x_halfDt = ux_temp/ sqrt(1.D0+ux_temp**2+uz_temp**2)
 	beta_z_halfDt = uz_temp/ sqrt(1.D0+ux_temp**2+uz_temp**2)
 
+
 			endif
 
   ux_new(i,j) = ux_temp + Dt*( Ex_f(i,j) - beta_z_halfDt*Bphi_f(i,j) )
 	uz_new(i,j) = uz_temp + Dt*( Ez_f(i,j) + beta_x_halfDt*Bphi_f(i,j) )
 
 			if ((ux_new(i,j).ne.ux_new(i,j)).or.(ux_new(i,j).ne.ux_new(i,j))) then
-				write(*,*) 'bla'
-				write(*,*) i,j
+
+
+				write(*,*) 'Error in iteration ',sim_parameters%iter,'after fluid EM advance'
+				write(*,*) 'localized on the mesh in row, col ',i,j
+				write(*,*) 'threshold factor',threshold_factor
+				write(*,*) 'ne*ux',ne_ux_halfDt(i,j)
+				write(*,*) 'ne*uz',ne_uz_halfDt(i,j)
 				write(*,*) 'n_new',ne_new(i,j)
 				write(*,*) 'ux',ux(i,j)
 				write(*,*) 'uz',uz(i,j)
-				write(*,*) 'n_ux_new',ux_new(i,j)
-				write(*,*) 'n_uz_new',ux_new(i,j)
-				write(*,*) 'ux_temp',ux_temp
-				write(*,*) 'uz_temp',ux_temp
+				write(*,*) 'ux_new (after EM advance) ',ux_new(i,j)
+				write(*,*) 'uz_new (after EM advance) ',ux_new(i,j)
+				write(*,*) 'ux_temp (before EM advance)',ux_temp
+				write(*,*) 'uz_temp (before EM advance) ',ux_temp
 
-				write(*,*) 'beta_x_halfDt',beta_x_halfDt
-				write(*,*) 'beta_z_halfDt',beta_z_halfDt
+				write(*,*) 'beta_x_halfDt (for Lorentz force)',beta_x_halfDt
+				write(*,*) 'beta_z_halfDt (for Lorentz force)',beta_z_halfDt
 				write(*,*) 'Ex',Ex_f(i,j)
 				write(*,*) 'Ez',Ez_f(i,j)
 				write(*,*) 'B',Bphi_f(i,j)
@@ -301,18 +312,16 @@ enddo
    enddo
 
    ! left boundary
-	do j = Node_min_lo_r,Node_max_lo_r
-		ux_new(1,j)   = 0.D0
-		uz_new(1,j)   = 0.D0
-	enddo
+!	do j = Node_min_lo_r,Node_max_lo_r
+!		ux_new(1,j)   = 0.D0
+!		uz_new(1,j)   = 0.D0
+!	enddo
 
    ! right boundary
-!   do j = Node_min_lo_r,Node_max_lo_r
-!        ux_new(Node_end_lo_z,j) = ux_new(Node_end_ho_z,j)
-!        uz_new(Node_end_lo_z,j) = uz_new(Node_end_ho_z,j)
-!   enddo
-
-
+   do j = Node_min_lo_r,Node_max_lo_r
+        ux_new(Node_end_lo_z,j) = 0.D0
+        uz_new(Node_end_lo_z,j) = 0.D0
+   enddo
 
     ! upper boundary
    do i = Node_min_lo_z,Node_max_lo_z
@@ -418,11 +427,11 @@ enddo
        		enddo
      		! left boundary
      		do j = Node_min_lo_r,Node_max_lo_r
-        		quantity(1,j)              =  0.
+        		quantity(1,j)              =  quantity(Node_min_lo_z,j)
      		enddo
      		! right boundary
     		do j = Node_min_lo_r,Node_max_lo_r
-       		quantity(Node_end_lo_z,j)  =  quantity(Node_max_lo_z,j)
+       		quantity(Node_end_lo_z,j)  =  0.
     		enddo
 
     	else if (q.eq.3) then
@@ -436,11 +445,11 @@ enddo
      		enddo
    		! left boundary
      		do j = Node_min_lo_r,Node_max_lo_r
-        		quantity(1,j)           =  0.
+        		quantity(1,j)           =  quantity(Node_min_lo_z,j)
      		enddo
    		! right boundary
     		do j = Node_min_lo_r,Node_max_lo_r
-       		quantity(Node_end_lo_z,j)  = quantity(Node_max_lo_z,j)
+       		quantity(Node_end_lo_z,j)  = 0.
     		enddo
   	endif
 
@@ -511,14 +520,16 @@ SUBROUTINE EB_forces(DeltaT)
       mesh(i,1)%ux = -mesh(i,Node_min_lo_r)%ux
    enddo
   ! left boundary
-   do j = Node_min_lo_r,Node_max_lo_r
-		mesh(1,j)%ux = 0.
-    mesh(1,j)%uz = 0.
-   enddo
+	!not necessary
+   !do j = Node_min_lo_r,Node_max_lo_r
+   !    mesh(1,j)%ux = mesh(1,j)%ux
+   !    mesh(1,j)%uz = mesh(1,j)%uz
+   !enddo
+
    ! right boundary
    do j = Node_min_lo_r,Node_max_lo_r
-        mesh(Node_end_lo_z,j)%ux = mesh(Node_end_ho_z,j)%ux
-        mesh(Node_end_lo_z,j)%uz = mesh(Node_end_ho_z,j)%uz
+        mesh(Node_end_lo_z,j)%ux = 0.
+        mesh(Node_end_lo_z,j)%uz = 0.
    enddo
   ! upper boundary
    do i = Node_min_lo_z,Node_max_lo_z

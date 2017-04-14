@@ -37,6 +37,7 @@ CONTAINS
   integer :: i, n,n1,n2,ier
   real(8) :: mu_z,sigma_z
 
+  
   do i=1,bunch_initialization%n_total_bunches
     call bunch_sliced_diagnostics(i)
     call bunch_integrated_diagnostics(i)
@@ -48,7 +49,6 @@ CONTAINS
     do i=1,bunch_initialization%n_total_bunches
       mu_z    = calculate_nth_moment_bunch_dcut(i,1,3)
       sigma_z = sqrt( calculate_nth_central_moment_bunch_dcut(i,2,3) )
-
       call bunch_sliced_diagnostics_dcut(i,mu_z,sigma_z)
       call bunch_integrated_diagnostics_dcut(i)
     enddo

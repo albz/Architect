@@ -53,13 +53,14 @@ CONTAINS
 		if (sim_parameters%window_mode.eq.0) then ! window moves with first bunch center
 			sim_parameters%zg = calculate_nth_moment_bunch(1,1,3)
 		else if (sim_parameters%window_mode.eq.1) then ! window moves with constant speed
-			sim_parameters%zg = - sim_parameters%moving_window_speed*c*sim_parameters%sim_time
+			sim_parameters%zg = sim_parameters%moving_window_speed*c*sim_parameters%sim_time
 		endif
 
 		zg_delta = abs(sim_parameters%zg-sim_parameters%zg_old)
 
 		!--- begin to shift---!
 		if ( zg_delta>dz_eff .and. zg_delta<2.*dz_eff ) then
+			!write(*,*) 'I am moving the window, iter',sim_parameters%iter
 			sim_parameters%zg_old = sim_parameters%zg
 			sim_parameters%window_shifted_cells = sim_parameters%window_shifted_cells + 1
 
@@ -194,61 +195,61 @@ endif
 	!----------------------------------------------!
 
 	do i=2,Node_max_z
-		Er_new      (i+1,:) = Er      (i,:)
-		Ez_new      (i+1,:) = Ez      (i,:)
-		Bphi_new    (i+1,:) = Bphi    (i,:)
-		Bphi_old_new(i+1,:) = Bphi_old(i,:)
+		Er_new      (i-1,:) = Er      (i,:)
+		Ez_new      (i-1,:) = Ez      (i,:)
+		Bphi_new    (i-1,:) = Bphi    (i,:)
+		Bphi_old_new(i-1,:) = Bphi_old(i,:)
 
 		if(sim_parameters%L_Bunch_evolve) then
-			Er_bunch_new(i+1,:) 			= Er_bunch(i,:)
-			Ez_bunch_new(i+1,:) 			= Ez_bunch(i,:)
-			Bphi_bunch_new(i+1,:) 		= Bphi_bunch(i,:)
-			Bphi_old_bunch_new(i+1,:) = Bphi_old_bunch(i,:)
+			Er_bunch_new(i-1,:) 			= Er_bunch(i,:)
+			Ez_bunch_new(i-1,:) 			= Ez_bunch(i,:)
+			Bphi_bunch_new(i-1,:) 		= Bphi_bunch(i,:)
+			Bphi_old_bunch_new(i-1,:) = Bphi_old_bunch(i,:)
 		endif
 
-		ux_new      (i+1,:) = ux      (i,:)
-		uz_new      (i+1,:) = uz      (i,:)
-		ne_new	    (i+1,:) = ne      (i,:)
-		ni_new	    (i+1,:) = ni      (i,:)
+		ux_new      (i-1,:) = ux      (i,:)
+		uz_new      (i-1,:) = uz      (i,:)
+		ne_new	    (i-1,:) = ne      (i,:)
+		ni_new	    (i-1,:) = ni      (i,:)
 		!---ne_new      (i+1,mesh_par%NRmax_plasma:Node_end_r) = 0.D0
 	enddo
 
-	Er_new      (1:2,:) = 0.D0
-	Ez_new      (1:2,:) = 0.D0
-	Bphi_new    (1:2,:) = 0.D0
-	Bphi_old_new(1:2,:) = 0.D0
-	ux_new      (1:2,:) = 0.D0
-	uz_new      (1:2,:) = 0.D0
+	Er_new      (Node_max_z:Node_end_z,:) = 0.D0
+	Ez_new      (Node_max_z:Node_end_z,:) = 0.D0
+	Bphi_new    (Node_max_z:Node_end_z,:) = 0.D0
+	Bphi_old_new(Node_max_z:Node_end_z,:) = 0.D0
+	ux_new      (Node_max_z:Node_end_z,:) = 0.D0
+	uz_new      (Node_max_z:Node_end_z,:) = 0.D0
 
 	if(sim_parameters%L_Bunch_evolve) then
-		Er_bunch_new	(1:2,:) = 0.
-		Ez_bunch_new	(1:2,:) = 0.
-		Bphi_bunch_new(1:2,:) = 0.
-		Bphi_old_bunch_new(1:2,:) = 0.
+		Er_bunch_new	(Node_max_z:Node_end_z,:) = 0.D0
+		Ez_bunch_new	(Node_max_z:Node_end_z,:) = 0.D0
+		Bphi_bunch_new(Node_max_z:Node_end_z,:) = 0.D0
+		Bphi_old_bunch_new(Node_max_z:Node_end_z,:) = 0.D0
 	endif
 
 
 	!---background density---!
  	do j= 2,Node_max_r
- 	 		ne_new(2,j)  = background_density_value(2,j)
-			if(.not.ionisation%L_ionisation) ni_new(2,j)=ne_new(2,j)
+ 	 		ne_new(Node_max_z,j)  = background_density_value(Node_max_z,j)
+			if(.not.ionisation%L_ionisation) ni_new(Node_max_z,j)=ne_new(Node_max_z,j)
  	enddo
  	!BC
- 	ne_new(2,Node_end_r) = ne_new(2,Node_max_r) ! upper boundary
- 	ne_new(2,1         ) = ne_new(2,2         ) ! lower boundary
- 	ne_new(1,:         ) = ne_new(2,:         ) ! left  boundary
+ 	ne_new(Node_max_z,Node_end_r) = ne_new(Node_max_z,Node_max_r) ! upper boundary
+ 	ne_new(Node_max_z,1         ) = ne_new(Node_max_z,2         ) ! lower boundary
+ 	ne_new(Node_end_z,:         ) = ne_new(Node_max_z,:         ) ! right  boundary
 	if(.not.ionisation%L_ionisation) then
-	 	ni_new(2,1         ) = ni_new(2,2         ) ! lower boundary
-	 	ni_new(1,:         ) = ni_new(2,:         ) ! left  boundary
+	 	ni_new(Node_max_z,1         ) = ni_new(Node_max_z,2         ) ! right boundary
+	 	ni_new(Node_end_z,:         ) = ni_new(Node_max_z,:         ) ! right  boundary
 	endif
  	!--- ---!
 
 
 	!--- Moving Background ---!
 	if(Bpoloidal%L_BfieldfromV) then
-		uz_new (1:2,1:mesh_par%NRmax_plasma-1) = sim_parameters%velocity_background
-		Bphi_new(1,:) = mesh_util%Bphi_BC_Left(:)
-		Bphi_old_new(1,:) = mesh_util%Bphi_BC_Left(:)
+		uz_new (Node_max_z:Node_end_z,1:mesh_par%NRmax_plasma-1) = sim_parameters%velocity_background
+		Bphi_new(Node_end_z,:) = mesh_util%Bphi_BC_Right(:)
+		Bphi_old_new(Node_end_z,:) = mesh_util%Bphi_BC_Right(:)
 	end if
 
 
@@ -282,14 +283,14 @@ endif
 
 		!--- Rigid shifting---!
 		Node_max_z 	= mesh_par%Nzm-1
-		do i=Node_max_z,2,-1
-			mesh(i+1,:)%B_ex_poloidal = mesh(i,:)%B_ex_poloidal
+		do i=2,Node_max_z
+			mesh(i-1,:)%B_ex_poloidal = mesh(i,:)%B_ex_poloidal
 		enddo
 
-		!--- Add Bfield on the LEFT-Boundary ---!
-		Do i=1,5
-			if(mesh_par%z_min_moving_um <= Bpoloidal%z_coordinate_um(i) .and. &
-			   mesh_par%z_min_moving_um >  Bpoloidal%z_coordinate_um(i+1) ) then
+		!--- Add Bfield on the RIGHT-Boundary ---!
+		Do i=Node_end_z,(Node_end_z-4),-1
+			if(mesh_par%z_min_moving_um >= Bpoloidal%z_coordinate_um(i) .and. &
+			   mesh_par%z_min_moving_um <  Bpoloidal%z_coordinate_um(i+1) ) then
 						!--- Bfield ---!
 						Bfield   = mu0*Bpoloidal%background_current_A(i)/(2.D0*pi*Bpoloidal%capillary_radius_um*1e-6) !Poloidal field from current
 						Bfield   = Bfield / (96.*sqrt(plasma%n0)/3e8) !from Dimensional to DimensionLESS
@@ -299,28 +300,28 @@ endif
 								case (1) !---Linear+Cubic
 									Radius=r_mesh(j)/Bpoloidal%capillary_radius
 				 					a=Bpoloidal%a_shape(i)
-				 					mesh(2,j)%B_ex_poloidal = -Bfield*((1.D0-a)*Radius+a*Radius**3)
+				 					mesh(Node_max_z,j)%B_ex_poloidal = Bfield*((1.D0-a)*Radius+a*Radius**3)
 
 								case (2) !---Linear+FlatSaturation
 									a=Bpoloidal%a_shape(i)*plasma%k_p
-									mesh(2,j)%B_ex_poloidal = -Bfield/a*r_mesh(j)
+									mesh(Node_max_z,j)%B_ex_poloidal = Bfield/a*r_mesh(j)
 									if(r_mesh(j)>a) then
-										mesh(2,j)%B_ex_poloidal = -Bfield
+										mesh(Node_max_z,j)%B_ex_poloidal = Bfield
 									endif
 
 								case (3) !---Exponential Profile
 									a=Bpoloidal%a_shape(i)*plasma%k_p
-									mesh(i,j)%B_ex_poloidal = -Bfield*( 1.D0-exp(-r_mesh(j)/a) )/( 1.D0-exp(-r_mesh(mesh_par%Nxm)/a) )
+									mesh(i,j)%B_ex_poloidal = Bfield*( 1.D0-exp(-r_mesh(j)/a) )/( 1.D0-exp(-r_mesh(mesh_par%Nxm)/a) )
 
 								case(4) !--- x^a
 									a=Bpoloidal%a_shape(i)
 									Radius=r_mesh(j)/Bpoloidal%capillary_radius
-									mesh(i,j)%B_ex_poloidal = -Bfield*( Radius )**a
+									mesh(i,j)%B_ex_poloidal = Bfield*( Radius )**a
 
 								case(5) !--- a^-1 + (1-a^-1) * 1/x^a
 									a=Bpoloidal%a_shape(i)
 									Radius=r_mesh(j)/Bpoloidal%capillary_radius
-									mesh(i,j)%B_ex_poloidal = -Bfield* (1.D0/a + (1.D0-1.D0/a)*Radius**a)
+									mesh(i,j)%B_ex_poloidal = Bfield* (1.D0/a + (1.D0-1.D0/a)*Radius**a)
 
 								end select
 
@@ -329,7 +330,7 @@ endif
 		enddo
 
 		!--- Boundary Conditions ---!
-		mesh(1,:)%B_ex_poloidal = mesh(2,:)%B_ex_poloidal
+		mesh(Node_end_z,:)%B_ex_poloidal = mesh(Node_max_z,:)%B_ex_poloidal
 
 	end subroutine Move_Window_Bexternal_field
 
