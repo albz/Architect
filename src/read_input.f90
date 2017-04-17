@@ -478,13 +478,13 @@ subroutine CONVERT_from_Segment_to_LabCoordinates
 
   if(ALL(bck_plasma%z_segment_length_um==-1.0)) then
     write(*,'(A)') 'The BackGround profile has been set using:'
-    write(*,'(A)') '   z_coordinate_um :: laboratory global coordinate in microns'
-    write(*,'(A)') '   This is the best choice'
+    write(*,'(A)') '                                          z_coordinate_um :: laboratory global coordinate in microns'
+    write(*,'(A)') '                                          This is the best choice'
   else
     write(*,'(A)') 'The BackGround profile has been set using:'
-    write(*,'(A)') '   z_segment_length_um :: length of each profile segment in microns'
-    write(*,'(A)') '   This is not the natice choice'
-    write(*,'(A)') '   quantity are now converted into: z_coordinate_um, pay attention to array counting'
+    write(*,'(A)') '                                          z_segment_length_um :: length of each profile segment in microns'
+    write(*,'(A)') '                                          This is not the natice choice'
+    write(*,'(A)') '                                          quantity are now converted into: z_coordinate_um, pay attention to array counting'
 
     bck_plasma%z_coordinate_um(1)=0.0d0
     do i=2,20
