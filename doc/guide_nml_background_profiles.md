@@ -1,6 +1,13 @@
 # Guide for **background** namelist section <br/> background density tailoring
 
-## Transverse profile
+## Longitudinal profile Coordinates
+To define the background *Longitudinal profile Coordinates* there are two equivalent options:
++ **z_coordinate_um**
++ **z_segment_length_um**
+
+The *z_coordinate_um* corresponds to the laboratory global coordinate. It identifies each region where the background density is changing profile. The *z_segment_length_um* defines, instead, the length of each single segment. Note the z_segment_length_um is internally converted into z_coordinate_um, the code uses this latter quantity and its dimensionless form (*z_coordinate*).
+
+## Transverse Density profile
 
 In order to set the radial profile of the background plasma it is possible to choose between some schemes by setting:
 
@@ -25,7 +32,7 @@ The profile has a cos<sup>2</sup> shape shrunk vertically by a factor **perturba
 ### order\_radial=5
 The profile has a flat-top with a **certain hight** from $r=0$ to $r=$**radius\_internal\_um** then, from **radius\_internal\_um** to **radius\_um** the profile decays with a $cos^2$ shape.
 
-## Longitudinal profile
+## Longitudinal Density profile
 In order to set the radial profile of the background plasma it is possible to choose between some schemes by setting:
 + **bck_plasma%order_logitudinal=0**
 + **bck_plasma%order_logitudinal=1**

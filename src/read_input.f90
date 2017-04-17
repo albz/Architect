@@ -492,9 +492,6 @@ subroutine CONVERT_from_Segment_to_LabCoordinates
       bck_plasma%z_coordinate_um(i+1)=-SUM(bck_plasma%z_segment_length_um(1:i))
     enddo
   endif
-
-  write(*,*) bck_plasma%z_coordinate_um
-  stop
 end subroutine CONVERT_from_Segment_to_LabCoordinates
 !--- --- --- --- --- --- ---!
 
