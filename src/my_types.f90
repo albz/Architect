@@ -87,7 +87,7 @@ IMPLICIT NONE
    TYPE :: background_plasma_profile   ! bck_plasma
       INTEGER :: order_logitudinal(20),order_radial(20)
       REAL(8) :: radius_um(20),radius_internal_um(20),perturbation_amplitude(20)
-      REAL(8) :: z_coordinate_um(20),z_coordinate(20),n_over_n0(20)
+      REAL(8) :: z_coordinate_um(20),z_coordinate(20),n_over_n0(20),z_segment_length_um(20)
    END TYPE
 
    TYPE :: mesh_phys   ! mesh

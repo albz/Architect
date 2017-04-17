@@ -299,6 +299,7 @@ subroutine preset_background_plasma_profile
   bck_plasma%n_over_n0=1.d0      !n/n0
   bck_plasma%z_coordinate_um(1)=0
   bck_plasma%z_coordinate_um(2)=plasma%l_acc
+  bck_plasma%z_segment_length_um=-1.d0
   bck_plasma%perturbation_amplitude=0.d0 !amplitude perturbation background density
   !bck_plasma%z_coordinate(8)
 end subroutine preset_background_plasma_profile
@@ -310,6 +311,7 @@ subroutine read_background_plasma_profile
     error_message='background plasma profile'
     if(ierr/=0) call print_at_screen_nml_error
     close(iounit)
+    call CONVERT_from_Segment_to_LabCoordinates
 end subroutine read_background_plasma_profile
 
 
@@ -470,6 +472,31 @@ end subroutine read_dump_restart
 !--- --- --- --- --- --- ---!
 
 
+!---*** convert z_segment_length_um >>> z_coordinate_um ***---!
+subroutine CONVERT_from_Segment_to_LabCoordinates
+  integer i
+
+  if(ALL(bck_plasma%z_segment_length_um==-1.0)) then
+    write(*,'(A)') 'The BackGround profile has been set using:'
+    write(*,'(A)') '   z_coordinate_um :: laboratory global coordinate in microns'
+    write(*,'(A)') '   This is the best choice'
+  else
+    write(*,'(A)') 'The BackGround profile has been set using:'
+    write(*,'(A)') '   z_segment_length_um :: length of each profile segment in microns'
+    write(*,'(A)') '   This is not the natice choice'
+    write(*,'(A)') '   quantity are now converted into: z_coordinate_um, pay attention to array counting'
+
+    bck_plasma%z_coordinate_um(1)=0.0d0
+    do i=2,20
+      if(bck_plasma%z_segment_length_um(i)/=-1.0) &
+      bck_plasma%z_coordinate_um(i)=-SUM(bck_plasma%z_segment_length_um(1:i))
+    enddo
+  endif
+
+  write(*,*) bck_plasma%z_coordinate_um
+  stop
+end subroutine CONVERT_from_Segment_to_LabCoordinates
+!--- --- --- --- --- --- ---!
 
 
 subroutine print_at_screen_nml_error
