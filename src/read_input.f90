@@ -483,7 +483,7 @@ subroutine CONVERT_from_Segment_to_LabCoordinates
   else
     write(*,'(A)') 'The BackGround profile has been set using:'
     write(*,'(A)') '                                          z_segment_length_um :: length of each profile segment in microns'
-    write(*,'(A)') '                                          This is not the natice choice'
+    write(*,'(A)') '                                          This is not the native choice'
     write(*,'(A)') '                                          quantity are now converted into: z_coordinate_um, pay attention to array counting'
 
     bck_plasma%z_coordinate_um(1)=0.0d0
