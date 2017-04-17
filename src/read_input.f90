@@ -487,9 +487,9 @@ subroutine CONVERT_from_Segment_to_LabCoordinates
     write(*,'(A)') '                                          quantity are now converted into: z_coordinate_um, pay attention to array counting'
 
     bck_plasma%z_coordinate_um(1)=0.0d0
-    do i=2,20
+    do i=1,20
       if(bck_plasma%z_segment_length_um(i)/=-1.0) &
-      bck_plasma%z_coordinate_um(i)=-SUM(bck_plasma%z_segment_length_um(1:i))
+      bck_plasma%z_coordinate_um(i+1)=-SUM(bck_plasma%z_segment_length_um(1:i))
     enddo
   endif
 
