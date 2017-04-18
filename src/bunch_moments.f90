@@ -179,7 +179,7 @@
   !t,<X>,<Y>,<Z>,<Px>,<Py>,<Pz>,<rmsX>,<rmsY>,<rmsZ>,<rmsPx>,<rmsPy>,<rmsPz>,<Emx>,<Emy>,<Gam>,DGam/Gam,cov<xPx>,cov<yPy>,cov<zPz>,n_over_ne
   write(11,'(100e14.5)') sim_parameters%sim_time*c,mu_x,mu_y,mu_z,mu_px,mu_py,mu_pz,s_x,s_y,s_z,s_px,s_py, &
    s_pz,emittance_x,emittance_y,mu_gamma,dgamma_su_gamma,corr_x_px,corr_y_py,corr_z_pz, &
-   background_density_value(2,1+int((mu_z(1)*plasma%k_p-mesh_par%z_min_moving)*one_over_dz))
+   background_density_value(1+int((mu_z(1)*plasma%k_p-mesh_par%z_min_moving)*one_over_dz),2)
   close(11)
 
   filename=TRIM(sim_parameters%path_integrated_diagnostics)//'kurtosis_'//b2str//'.dat'
