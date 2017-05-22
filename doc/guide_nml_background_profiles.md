@@ -36,7 +36,7 @@ The profile has a flat-top with a **certain hight** from $r=0$ to $r=$**radius\_
 In order to set the radial profile of the background plasma it is possible to choose between some schemes by setting:
 + **bck_plasma%order_logitudinal=0**
 + **bck_plasma%order_logitudinal=1**
-+ **bck_plasma%order_logitudinal=2**
++ **bck_plasma%order_logitudinal=2 (and -2)**
 + **bck_plasma%order_logitudinal=3**
 
 In the following the longitudinal coordinate is indicated with the letter $z$.
@@ -49,6 +49,9 @@ The profile is made by a liner ramp between the plasma density values which are 
 
 ### order_logitudinal=2
 Concave downward parabolic profile. The value of the plasma density set at boundaries of the subdomain (by assigning a value to bck_plasma%n_over_n0(k) and bck_plasma%n_over_n0(k+1), for the $k$-th longitudinal subdomain) are connected with a segment of parabola which is always concave downward and its vertex is on the boundary with higher density value.
+
+### order_logitudinal=-2
+Convex upward parabolic profile. The value of the plasma density set at boundaries of the subdomain (by assigning a value to bck_plasma%n_over_n0(k) and bck_plasma%n_over_n0(k+1), for the $k$-th longitudinal subdomain) are connected with a segment of parabola which is always convex upward and its vertex is on the boundary with lower density value.
 
 ### order_logitudinal=3
 The profile has a $cos^2$ shape shrunk and shifted in order to connect the value of plasma density set at the subdomain borders.
