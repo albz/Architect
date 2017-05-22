@@ -141,29 +141,29 @@
 
 
 !--- Apply Twiss Rotation ---!
-            if( twiss%L_TWISS(i)  ) then
-
-              alphaTwiss = twiss%alpha_new_factor(i)
-              betaTwiss  =	twiss%beta_new_factor(i)
-              eps_x=bunch_initialization%bunch_eps_x(i)
-              eps_y=bunch_initialization%bunch_eps_y(i)
-              s_x=bunch_initialization%bunch_s_x(i)
-              s_y=bunch_initialization%bunch_s_y(i)
-
-              ax11=sqrt( eps_x*betaTwiss/(s_x**2+s_x**2*alphaTwiss**2) )
-              ay11=sqrt( eps_y*betaTwiss/(s_y**2+s_y**2*alphaTwiss**2) )
-              ax12=-ax11*alphaTwiss*s_x**2/eps_x
-              ay12=-ay11*alphaTwiss*s_y**2/eps_y
-
-              do j=1,bunch_initialization%n_particles(i)
-                 bunch_init(1,j)=ax11*bunch_init(1,j)+ax12*bunch_init(4,j)
-                 bunch_init(2,j)=ay11*bunch_init(2,j)+ay12*bunch_init(5,j)
-                 bunch_init(3,j)=bunch_init(3,j)
-                 bunch_init(4,j)=bunch_init(4,j)/ax11
-                 bunch_init(5,j)=bunch_init(5,j)/ay11
-                 bunch_init(6,j)=bunch_init(6,j)
-             enddo
-           endif
+          !   if( twiss%L_TWISS(i)  ) then
+           !
+          !     alphaTwiss = twiss%alpha_new_factor(i)
+          !     betaTwiss  =	twiss%beta_new_factor(i)
+          !     eps_x=bunch_initialization%bunch_eps_x(i)
+          !     eps_y=bunch_initialization%bunch_eps_y(i)
+          !     s_x=bunch_initialization%bunch_s_x(i)
+          !     s_y=bunch_initialization%bunch_s_y(i)
+           !
+          !     ax11=sqrt( eps_x*betaTwiss/(s_x**2+s_x**2*alphaTwiss**2) )
+          !     ay11=sqrt( eps_y*betaTwiss/(s_y**2+s_y**2*alphaTwiss**2) )
+          !     ax12=-ax11*alphaTwiss*s_x**2/eps_x
+          !     ay12=-ay11*alphaTwiss*s_y**2/eps_y
+           !
+          !     do j=1,bunch_initialization%n_particles(i)
+          !        bunch_init(1,j)=ax11*bunch_init(1,j)+ax12*bunch_init(4,j)
+          !        bunch_init(2,j)=ay11*bunch_init(2,j)+ay12*bunch_init(5,j)
+          !        bunch_init(3,j)=bunch_init(3,j)
+          !        bunch_init(4,j)=bunch_init(4,j)/ax11
+          !        bunch_init(5,j)=bunch_init(5,j)/ay11
+          !        bunch_init(6,j)=bunch_init(6,j)
+          !    enddo
+          !  endif
 
 !--- Apply Shifting ---!
               ! do j=1,bunch_initialization%n_particles(i)
@@ -223,6 +223,39 @@
             		sim_parameters%lbunch(i) = sqrt( calculate_nth_central_moment_bunch(i,2,3) )
           	enddo
    endif
+
+!--- Apply Twiss Rotation ---!
+  do i=1,bunch_initialization%n_total_bunches
+   if( twiss%L_TWISS(i)  ) then
+
+     alphaTwiss = twiss%alpha_new_factor(i)
+     betaTwiss  =	twiss%beta_new_factor(i)
+     eps_x=bunch_initialization%bunch_eps_x(i)
+     eps_y=bunch_initialization%bunch_eps_y(i)
+     s_x=bunch_initialization%bunch_s_x(i)
+     s_y=bunch_initialization%bunch_s_y(i)
+
+     ax11=sqrt( eps_x*betaTwiss/(s_x**2+s_x**2*alphaTwiss**2) )
+     ay11=sqrt( eps_y*betaTwiss/(s_y**2+s_y**2*alphaTwiss**2) )
+     ax12=-ax11*alphaTwiss*s_x**2/eps_x
+     ay12=-ay11*alphaTwiss*s_y**2/eps_y
+
+     do j=1,bunch_initialization%n_particles(i)
+        bunch(i)%part(j)%cmp(1)=ax11*bunch(i)%part(j)%cmp(1)+ax12*bunch(i)%part(j)%cmp(4)
+        bunch(i)%part(j)%cmp(2)=ay11*bunch(i)%part(j)%cmp(2)+ay12*bunch(i)%part(j)%cmp(5)
+        bunch(i)%part(j)%cmp(3)=bunch(i)%part(j)%cmp(3)
+        bunch(i)%part(j)%cmp(4)=bunch(i)%part(j)%cmp(4)/ax11
+        bunch(i)%part(j)%cmp(5)=bunch(i)%part(j)%cmp(5)/ay11
+        bunch(i)%part(j)%cmp(6)=bunch(i)%part(j)%cmp(6)
+
+        bunch(i)%part(j)%cmp(9)=bunch_init(1,j)  !Xold
+        bunch(i)%part(j)%cmp(10)=bunch_init(2,j) !Yold
+        bunch(i)%part(j)%cmp(11)=bunch_init(3,j) !Zold
+    enddo
+  endif
+enddo
+
+
 
 !------------------------------------------------------!
 
