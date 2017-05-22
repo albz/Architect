@@ -202,8 +202,6 @@
                 allocate( bunch(i)%part(bunch_initialization%n_particles(i)) )! ,STAT=AllocStatus)
                 call read_from_external_file(name_file,bunch_initialization%n_particles(i),bunch_init)
 
-                if (twiss%L_TWISS(i)) write(*,'(A)') 'No Twiss option for externally read files'
-
                 do j=1,bunch_initialization%n_particles(i)
                     bunch(i)%part(j)%cmp(1)=bunch_init(1,j)
                     bunch(i)%part(j)%cmp(2)=bunch_init(2,j)
@@ -248,9 +246,9 @@
         bunch(i)%part(j)%cmp(5)=bunch(i)%part(j)%cmp(5)/ay11
         bunch(i)%part(j)%cmp(6)=bunch(i)%part(j)%cmp(6)
 
-        bunch(i)%part(j)%cmp(9)=bunch_init(1,j)  !Xold
-        bunch(i)%part(j)%cmp(10)=bunch_init(2,j) !Yold
-        bunch(i)%part(j)%cmp(11)=bunch_init(3,j) !Zold
+        bunch(i)%part(j)%cmp(9)=bunch(i)%part(j)%cmp(1)  !Xold
+        bunch(i)%part(j)%cmp(10)=bunch(i)%part(j)%cmp(2) !Yold
+        bunch(i)%part(j)%cmp(11)=bunch(i)%part(j)%cmp(3) !Zold
     enddo
   endif
 enddo
