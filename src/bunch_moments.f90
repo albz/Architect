@@ -86,8 +86,6 @@
  END FUNCTION calculate_nth_moment_bunch
 
 
-
-
  !--- --- ---!
  real(8) FUNCTION calculate_central_correlation(number_bunch,component1,component2)
  integer, intent(in) :: number_bunch, component1, component2
@@ -107,6 +105,30 @@
  END FUNCTION calculate_central_correlation
 
 
+ !--- --- ---!
+ real(8) FUNCTION calculate_nth_moment_maskbunch(number_bunch,nth,component,maskbunch,central)
+ integer, intent(in) :: nth, component, number_bunch
+ logical, intent(in) :: maskbunch(:)
+ character(len=*), intent(in) :: central
+ integer :: np
+ real(8) :: mu_mean(1),moment(1)
+
+ !--- mean calculation
+ mu_mean  = sum( bunch(number_bunch)%part(:)%cmp(component), mask=maskbunch )
+ mu_mean  = mu_mean / real(count(maskbunch))
+
+ !--- moment calculation
+ if ( trim(central)=='central') then
+    moment   = sum( ( bunch(number_bunch)%part(:)%cmp(component) - mu_mean(1) )**nth, mask=maskbunch )
+    moment   = moment / real(count(maskbunch))
+ else
+   moment   = sum( ( bunch(number_bunch)%part(:)%cmp(component) )**nth, mask=maskbunch )
+   moment   = moment / real(count(maskbunch))
+ endif
+
+ !---
+ calculate_nth_moment_maskbunch = moment(1)
+ END FUNCTION calculate_nth_moment_maskbunch
 
 
 
@@ -391,10 +413,10 @@
  real(8) :: mu_gamma(1),s_gamma(1),dgamma_su_gamma(1)     !gamma mean-variance
  real(8) :: corr_y_py(1),corr_z_pz(1),corr_x_px(1) !correlation transverse plane
  real(8) :: emittance_x(1),emittance_y(1) !emittance variables
+ logical, allocatable :: maskarray(:)
  character(1) :: b2str
  character*90 :: filename
  TYPE(simul_param) :: sim_par
-
 
 	mu_x(1)  = calculate_nth_moment_bunch_dcut(number_bunch,1,1)
 	mu_y(1)  = calculate_nth_moment_bunch_dcut(number_bunch,1,2)
@@ -422,20 +444,24 @@
 	corr_z_pz(1) = calculate_central_correlation_dcut(number_bunch,3,6)
 
     !---!
+  allocate(maskarray(number_bunch_particles(number_bunch,"cutoff")))
+  maskarray=.FALSE.
+  where(bunch(number_bunch)%part(:)%cmp(8)==1) maskarray=.TRUE.
 	mu_gamma = &
-		sum(  sqrt(   1.0 + (bunch(number_bunch)%part(:)%cmp(4)*bunch(number_bunch)%part(:)%cmp(8))**2 + &
-		                    (bunch(number_bunch)%part(:)%cmp(5)*bunch(number_bunch)%part(:)%cmp(8))**2 + &
-		                    (bunch(number_bunch)%part(:)%cmp(6)*bunch(number_bunch)%part(:)%cmp(8))**2 ) )
+		sum(  sqrt(   1.0 +  bunch(number_bunch)%part(:)%cmp(4)**2 + &
+		                     bunch(number_bunch)%part(:)%cmp(5)**2 + &
+		                     bunch(number_bunch)%part(:)%cmp(6)**2 ), mask=maskarray )
 	mu_gamma = mu_gamma / real ( number_bunch_particles(number_bunch,"cuton") )
 
 	s_gamma = &
-		sum( (sqrt(   1.0 + (bunch(number_bunch)%part(:)%cmp(4)*bunch(number_bunch)%part(:)%cmp(8))**2 + &
-		                    (bunch(number_bunch)%part(:)%cmp(5)*bunch(number_bunch)%part(:)%cmp(8))**2 + &
-		                    (bunch(number_bunch)%part(:)%cmp(6)*bunch(number_bunch)%part(:)%cmp(8))**2 ) - &
-		                    mu_gamma(1) )**2 )
+		sum( (sqrt(   1.0 +  bunch(number_bunch)%part(:)%cmp(4)**2 + &
+		                     bunch(number_bunch)%part(:)%cmp(5)**2 + &
+		                     bunch(number_bunch)%part(:)%cmp(6)**2 ) - &
+		                    mu_gamma(1) )**2, mask=maskarray )
 	s_gamma = sqrt( s_gamma/ real ( number_bunch_particles(number_bunch,"cuton") ) )
 
 	dgamma_su_gamma = s_gamma(1)/mu_gamma(1)
+  deallocate(maskarray)
 
 	!---!
 	emittance_x = sqrt( s_x(1)**2 *s_px(1)**2 - corr_x_px(1)**2 )
