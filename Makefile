@@ -1,5 +1,5 @@
 FC          = gfortran
-CC         = g++
+CC          = g++
 OPTFC       = -ffree-line-length-none -fmax-stack-var-size=50000000
 OPTCC       = -O3
 SRC_FOLDER  = src
@@ -51,7 +51,7 @@ OBJECTS     = $(addsuffix .o, $(addprefix $(OBJ_FOLDER)/, $(basename $(FILES))))
 MODULES     = $(addsuffix .mod, $(addprefix $(OBJ_FOLDER)/, $(basename $(FILES))))
 EXECUTABLE  = $(addprefix $(EXE_FOLDER)/, $(EXE))
 
-all: dirtree $(MODULES) $(OBJECTS)
+all: dirtree $(OBJECTS)
 	$(FC) $(OPTFC) -J$(OBJ_FOLDER) $(OBJECTS) -o $(EXECUTABLE)
 
 
@@ -314,8 +314,6 @@ $(OBJ_FOLDER)/data_dump.mod: $(SRC_FOLDER)/data_dump.f90 $(OBJ_FOLDER)/data_dump
 
 $(OBJ_FOLDER)/data_dump_xlm.o: $(SRC_FOLDER)/data_dump_xlm.cpp
 	$(CC) $(OPTCC) -I$(BOOST_INC) -c -o $@ $< $(REDIRECT)
-$(OBJ_FOLDER)/data_dump_xlm.mod: $(SRC_FOLDER)/data_dump_xlm.cpp $(OBJ_FOLDER)/data_dump_xlm.o
-	@true
 
 $(OBJ_FOLDER)/dump_status.o: $(SRC_FOLDER)/dump_status.f90 \
 															$(OBJ_FOLDER)/my_types.mod \
