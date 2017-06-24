@@ -52,7 +52,7 @@ MODULES     = $(addsuffix .mod, $(addprefix $(OBJ_FOLDER)/, $(basename $(FILES))
 EXECUTABLE  = $(addprefix $(EXE_FOLDER)/, $(EXE))
 
 all: dirtree $(OBJECTS)
-	$(FC) $(OPTFC) -J$(OBJ_FOLDER) $(OBJECTS) -o $(EXECUTABLE)
+	$(FC) $(OPTFC) -J$(OBJ_FOLDER) $(OBJECTS) -o $(EXECUTABLE) $(STDCPP_LINK)
 
 
 
