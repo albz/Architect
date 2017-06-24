@@ -53,21 +53,6 @@ INTEGER i,j,ii,ss
 REAL(8) ::  mu_z,sigma_z,total_run_distance
 INTEGER Lapl_dim
 
-real(8) :: d1, d2
-integer :: i1, i2
-   d1 = 2.0
-   d2 = 3.0
-   i1 = 0
-   i2 = 1
-   call print_double(d1, d2)
-   call print_int(i1, i2)
-   stop
-
-
-
-
-
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !            LOAD INPUT DATA, SET PARAMETERS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
