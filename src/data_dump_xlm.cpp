@@ -2,6 +2,8 @@
  // #include <string>
  // #include <sstream>
  #include <fstream>
+ #include <cstring>
+ #include <base64.h>
  // #include <climits>
  // #include <stdio.h>
 
@@ -20,7 +22,7 @@ extern "C" {
   // }
 
 
-  void print_matrix_(double * vector_fromF, int * dim1, int * dim2){
+  void print_matrix_(double * meshZ, double * meshR, double * vector_fromF, int * dim1, int * dim2){
     double value;
     int* flen = new(int);
     char* s;
@@ -69,19 +71,19 @@ extern "C" {
     outfile << "<DataArray type=\"Float64\" Name=Z_axis";
     outfile << " format=\"binary\">\n";
 
-    // long long byte_number = 8*((long long)(*dim1))+1);
-    // char bins[8+8*(*dim1+1)];
+    // long long byte_number = 8*((long long)(*dim1)+1);
+    // char bins[8+8*((*dim1)+1)];
     // memcpy(bins, (char*)&byte_number, 8);
     // for(int i=0; i<*dim1; i++){
-    //   value = (double)grid.edge(axis, i, PREVIOUS);
-    //   memcpy(bins+(8+8*(i-grid.first_physical_cell_index(axis))), (char*)&value, 8);
+    //   value = (double)meshZ[i];
+    //   memcpy(bins+(8+8*i), (char*)&value, 8);
     // }
-    // value = (double)grid.edge(axis, grid.last_physical_cell_index(axis), NEXT);
-    // memcpy(bins+(8+8*grid.physical_size_of(axis)), (char*)&value, 8);
-    // s=base64(bins, 8+8*(grid.physical_size_of(axis)+1), flen);
+    // value = value = (double)meshZ[*dim1];
+    // memcpy(bins+(8+8*(*dim1)), (char*)&value, 8);
+    // s=base64(bins, 8+8*(*dim1+1), flen);
     // outfile.write(s, *flen);
-
-
+    // outfile << endl;
+    // outfile << "</DataArray>" << endl;
 
 
     for(int i=0;i<*dim1;i++){

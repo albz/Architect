@@ -312,7 +312,8 @@ $(OBJ_FOLDER)/data_dump.o: $(SRC_FOLDER)/data_dump.f90 \
 $(OBJ_FOLDER)/data_dump.mod: $(SRC_FOLDER)/data_dump.f90 $(OBJ_FOLDER)/data_dump.o
 	@true
 
-$(OBJ_FOLDER)/data_dump_xlm.o: $(SRC_FOLDER)/data_dump_xlm.cpp
+$(OBJ_FOLDER)/data_dump_xlm.o: $(SRC_FOLDER)/data_dump_xlm.cpp \
+															 $(SRC_FOLDER)/base64.h
 	$(CC) $(OPTCC) -I$(BOOST_INC) -c -o $@ $< $(REDIRECT)
 
 $(OBJ_FOLDER)/dump_status.o: $(SRC_FOLDER)/dump_status.f90 \

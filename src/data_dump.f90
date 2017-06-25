@@ -339,7 +339,7 @@ END SUBROUTINE data_dump
 			k=k+1
 		enddo
 	enddo
-	call print_matrix(vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2)
+	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2)
 
 	! allocate(mm(3,2))
 	! allocate(mmm(6))
