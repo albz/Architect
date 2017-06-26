@@ -1,17 +1,22 @@
-FC          = gfortran
-CC          = g++
-OPTFC       = -ffree-line-length-none -fmax-stack-var-size=50000000
-OPTCC       = -O3
-SRC_FOLDER  = src
-OBJ_FOLDER  = obj
-EXE_FOLDER  = bin
-EXE         = Architect
-BOOST_LIB   = /usr/lib/
-BOOST_INC   = /usr/include/
-BOOST_FS    = -lboost_filesystem
-BOOST_S     = -lboost_system
-STDCPP_LINK = -lstdc++
+FC              = gfortran
+CC              = g++
+OPTFC           = -ffree-line-length-none -fmax-stack-var-size=50000000
+OPTCC           = -O3
+SRC_FOLDER      = src
+OBJ_FOLDER      = obj
+EXE_FOLDER      = bin
+EXE             = Architect
+BOOST_LIB       = /usr/lib/
+BOOST_INC       = /usr/include/
+BOOST_FS        = -lboost_filesystem
+BOOST_S         = -lboost_system
 MODULE_REDIRECT = -I$(OBJ_FOLDER) -J$(OBJ_FOLDER)
+MY_OS := $(shell uname -s)
+ifeq ($(MY_OS),Darwin)
+STDCPP_LINK     = -lc++
+else
+STDCPP_LINK     = -lstdc++
+endif
 
 FILES  =  my_types.f90 \
 					use_types.f90 \
