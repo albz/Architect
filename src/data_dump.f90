@@ -318,7 +318,7 @@ END SUBROUTINE data_dump
 	 REAL(8), ALLOCATABLE :: vector_fromF_toC(:),mmm(:),mm(:,:)
    SAVE n0
 
-	 call print_matrix(mmm,i)
+	!  call print_matrix(mmm,i)
 
 !--- Define utils for vtk writing ---!
    avgz = sum( bunch(1)%part(:)%cmp(3) * bunch(1)%part(:)%cmp(8) ) / sum(bunch(1)%part(:)%cmp(8))
