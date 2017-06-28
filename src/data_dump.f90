@@ -331,7 +331,7 @@ END SUBROUTINE data_dump
     ! write(15) ( x_mesh(ss)/plasma%k_p,ss=2,mesh_par%Nxm-1, sim_parameters%jump_grid)
 	  ! write(15) (z_mesh(ss)/plasma%k_p,ss=2,(mesh_par%Nzm-1),sim_parameters%jump_grid)
 
-!--- Writes bunch rho ---!
+ !--- Writes bunch rho ---!
   k=1
   do i=2,mesh_par%Nzm-1
 		do j=2,mesh_par%Nxm-1
@@ -339,34 +339,25 @@ END SUBROUTINE data_dump
 			k=k+1
 		enddo
 	enddo
-	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2)
+	call print_matrix(1,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2)
 
-	! allocate(mm(3,2))
-	! allocate(mmm(6))
-  ! k=1
-	! do i=1,3
-	! 	do j=1,2
-	! 		mm(i,j)=k
-	! 		k=k+1
-	! 	enddo
-	! enddo
-	!
-	!
-	! do i=1,3
-	! 		write(*,*) (mm(i,j),j=1,2)
-	! enddo
-	!
-	!
-	! k=1
-  ! do i=1,3
-	! 	do j=1,2
-	! 		mmm(k)=mm(i,j)
-	! 		k=k+1
-	! 	enddo
-	! enddo
-	!
-	! call print_matrix(mmm,3,2)
-	stop
+	k=1
+  do i=2,mesh_par%Nzm-1
+		do j=2,mesh_par%Nxm-1
+			vector_fromF_toC(k)=mesh(i,j)%n_plasma_e
+			k=k+1
+		enddo
+	enddo
+	call print_matrix(2,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2)
+
+	k=1
+  do i=2,mesh_par%Nzm-1
+		do j=2,mesh_par%Nxm-1
+			vector_fromF_toC(k)=mesh(i,j)%rho+mesh(i,j)%n_plasma_e
+			k=k+1
+		enddo
+	enddo
+	call print_matrix(3,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2)
 
 
 	deallocate(vector_fromF_toC)
