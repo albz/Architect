@@ -28,9 +28,19 @@ USE architect_class_structure
 USE ion_background
 USE Diagnostics_on_Bunches
 USE grid_diagnostics
-
+USE ISO_C_BINDING
 
 IMPLICIT NONE
+
+
+
+!interface
+!    function print_matrix(meshZ, meshR, vector_fromF, dim1, dim2, filename) bind(C)
+!        integer        :: dim1, dim2
+!        real(8)        :: meshZ, meshR, vector_fromF
+!        character(255) :: filename
+!    end function print_matrix
+!end interface
 
 CONTAINS
 
@@ -75,6 +85,10 @@ SUBROUTINE data_dump
 								call from_particleZstart_to_meshZstar
 								if (sim_parameters%Output_format.eq.0) call savedata
 								if (sim_parameters%Output_format.eq.1) call savedata_bin
+								if (sim_parameters%Output_format.eq.2) then
+																								call savedata_bin
+																								call savedata_vtk
+								endif
 								sim_parameters%gridLastOutput=sim_parameters%sim_time*c
 	endif
 
@@ -84,6 +98,10 @@ SUBROUTINE data_dump
 						write(*,'(A,I10,A,f12.3)') 'Printing PS   quantities :: at Iteration =',sim_parameters%iter,'  -  at run distance =',sim_parameters%zg
 						if (sim_parameters%Output_format.eq.0) call save_beam
 						if (sim_parameters%Output_format.eq.1) call save_beam_bin
+						if (sim_parameters%Output_format.eq.2) then
+																									 call save_beam_bin
+																									! call save_beam_vtk
+					  endif
 						sim_parameters%PSLastOutput=sim_parameters%sim_time*c
 		endif
 END SUBROUTINE data_dump
@@ -195,7 +213,6 @@ END SUBROUTINE data_dump
 
 
    ! Grid quantities
-
    SUBROUTINE savedata_bin
 
    IMPLICIT NONE
@@ -296,6 +313,152 @@ END SUBROUTINE data_dump
    return
 
    END SUBROUTINE
+
+
+!--- Savedata_bin subroutine with cpp call to write VTK output ---!
+	 SUBROUTINE savedata_vtk
+   IMPLICIT NONE
+   INTEGER vector_dim,i,j,k
+   CHARACTER :: filename*255,position*7
+   REAL avgz
+   REAL(8), ALLOCATABLE :: vector_fromF_toC(:),mmm(:),mm(:,:)
+
+!--- Define utils for vtk writing ---!
+   write(position,'(I7.7)') NINT(sum(bunch(1)%part(:)%cmp(3)*bunch(1)%part(:)%cmp(8))/sum(bunch(1)%part(:)%cmp(8)))
+	 vector_dim = (mesh_par%Nxm-2) * (mesh_par%Nzm-2)
+	 allocate(vector_fromF_toC(vector_dim))
+
+ !--- Writes bunch rho ---!
+  k=1
+  do i=2,mesh_par%Nzm-1
+		do j=2,mesh_par%Nxm-1
+			vector_fromF_toC(k)=mesh(i,j)%rho
+			k=k+1
+		enddo
+	enddo
+	filename=TRIM(sim_parameters%path_vtk)//'rho_bunch_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+
+	k=1
+  do i=2,mesh_par%Nzm-1
+		do j=2,mesh_par%Nxm-1
+			vector_fromF_toC(k)=mesh(i,j)%n_plasma_e
+			k=k+1
+		enddo
+	enddo
+	filename=TRIM(sim_parameters%path_vtk)//'rho_bck_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+
+	k=1
+  do i=2,mesh_par%Nzm-1
+		do j=2,mesh_par%Nxm-1
+			vector_fromF_toC(k)=mesh(i,j)%rho+mesh(i,j)%n_plasma_e
+			k=k+1
+		enddo
+	enddo
+	filename=TRIM(sim_parameters%path_vtk)//'rho_tot_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+
+	k=1
+  do i=2,mesh_par%Nzm-1
+		do j=2,mesh_par%Nxm-1
+			vector_fromF_toC(k)=mesh(i,j)%Ex
+			k=k+1
+		enddo
+	enddo
+	filename=TRIM(sim_parameters%path_vtk)//'Er_bck_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+
+	k=1
+  do i=2,mesh_par%Nzm-1
+		do j=2,mesh_par%Nxm-1
+			vector_fromF_toC(k)=mesh(i,j)%Ex_bunch
+			k=k+1
+		enddo
+	enddo
+	filename=TRIM(sim_parameters%path_vtk)//'Er_bunch_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+
+	k=1
+  do i=2,mesh_par%Nzm-1
+		do j=2,mesh_par%Nxm-1
+			vector_fromF_toC(k)=mesh(i,j)%Ex+mesh(i,j)%Ex_bunch
+			k=k+1
+		enddo
+	enddo
+	filename=TRIM(sim_parameters%path_vtk)//'Er_tot_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+
+
+	k=1
+  do i=2,mesh_par%Nzm-1
+		do j=2,mesh_par%Nxm-1
+			vector_fromF_toC(k)=mesh(i,j)%Ez
+			k=k+1
+		enddo
+	enddo
+	filename=TRIM(sim_parameters%path_vtk)//'Ez_bck_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+
+	k=1
+  do i=2,mesh_par%Nzm-1
+		do j=2,mesh_par%Nxm-1
+			vector_fromF_toC(k)=mesh(i,j)%Ez_bunch
+			k=k+1
+		enddo
+	enddo
+	filename=TRIM(sim_parameters%path_vtk)//'Ez_bunch_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+
+	k=1
+  do i=2,mesh_par%Nzm-1
+		do j=2,mesh_par%Nxm-1
+			vector_fromF_toC(k)=mesh(i,j)%Ez+mesh(i,j)%Ez_bunch
+			k=k+1
+		enddo
+	enddo
+	filename=TRIM(sim_parameters%path_vtk)//'Ez_tot_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+
+	deallocate(vector_fromF_toC)
+
+	!Still missing as quantities in the vtk format
+	!
+	!
+	! mesh(i,j)%Bphi
+	! mesh(i,j)%Bphi_bunch
+	! mesh(i,j)%Bphi
+	! mesh(i,j)%B_ex_poloidal
+
+! !--------------------------- Writes Bphi --------------------------------------------------------------------------------
+! !--------------------------- Writes bunch Jr ----------------------------------------------------------------------------
+! 	write(15) ( mesh(1:(mesh_par%Nzm-2),ss)%Jr , ss=mesh_par%Nxm-2,1,  -sim_parameters%jump_grid )
+! 	write(15) ( mesh(1:(mesh_par%Nzm-2),ss)%Jr , ss=1,(mesh_par%Nxm-2),sim_parameters%jump_grid  )
+!
+! !--------------------------- Writes plasma Jr ---------------------------------------------------------------------------
+! 	write(15) ( mesh(2:(mesh_par%Nzm-1),ss)%Jpe_r , ss=mesh_par%Nxm-2,1,  -sim_parameters%jump_grid )
+! 	write(15) ( mesh(2:(mesh_par%Nzm-1),ss)%Jpe_r , ss=2,(mesh_par%Nxm-1),sim_parameters%jump_grid  )
+!
+! !--------------------------- Writes bunch Jz ----------------------------------------------------------------------------
+! 	write(15) ( mesh(2:(mesh_par%Nzm-1),ss)%Jz , ss=mesh_par%Nxm-1,2,  -sim_parameters%jump_grid )
+! 	write(15) ( mesh(2:(mesh_par%Nzm-1),ss)%Jz , ss=2,(mesh_par%Nxm-1),sim_parameters%jump_grid  )
+!
+! !--------------------------- Writes plasma Jz ---------------------------------------------------------------------------
+! 	write(15) ( mesh(2:(mesh_par%Nzm-1),ss)%Jpe_z , ss=mesh_par%Nxm-1,2,  -sim_parameters%jump_grid )
+! 	write(15) ( mesh(2:(mesh_par%Nzm-1),ss)%Jpe_z , ss=2,(mesh_par%Nxm-1),sim_parameters%jump_grid  )
+!
+! !--------------------------- Writes plasma Zstar ---------------------------------------------------------------------------
+! 	write(15) ( mesh(2:(mesh_par%Nzm-1),ss)%Zstar , ss=mesh_par%Nxm-1,2,  -sim_parameters%jump_grid )
+! 	write(15) ( mesh(2:(mesh_par%Nzm-1),ss)%Zstar , ss=2,(mesh_par%Nxm-1),sim_parameters%jump_grid  )
+!
+! !--------------------------- Writes n_plasma_i ---------------------------------------------------------------------------
+! 	write(15) ( mesh(2:(mesh_par%Nzm-1),ss)%n_plasma_i , ss=mesh_par%Nxm-1,2,  -sim_parameters%jump_grid )
+! 	write(15) ( mesh(2:(mesh_par%Nzm-1),ss)%n_plasma_i , ss=2,(mesh_par%Nxm-1),sim_parameters%jump_grid  )
+!
+!     close(15)
+!
+   return
+   END SUBROUTINE savedata_vtk
 
 
 

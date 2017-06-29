@@ -67,5 +67,7 @@ packages
 *.pdb
 bin/
 obj/
+.vs/
+.vscode/
 
 Architect

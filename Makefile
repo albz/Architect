@@ -1,17 +1,22 @@
-FC          = gfortran
-CC         = g++
-OPTFC       = -ffree-line-length-none -fmax-stack-var-size=50000000
-OPTCC       = -O3
-SRC_FOLDER  = src
-OBJ_FOLDER  = obj
-EXE_FOLDER  = bin
-EXE         = Architect
-BOOST_LIB   = /usr/lib/
-BOOST_INC   = /usr/include/
-BOOST_FS    = -lboost_filesystem
-BOOST_S     = -lboost_system
-STDCPP_LINK = -lstdc++
+FC              = gfortran
+CC              = g++
+OPTFC           = -ffree-line-length-none -fmax-stack-var-size=50000000
+OPTCC           = -O3
+SRC_FOLDER      = src
+OBJ_FOLDER      = obj
+EXE_FOLDER      = bin
+EXE             = Architect
+BOOST_LIB       = /usr/lib/
+BOOST_INC       = /usr/include/
+BOOST_FS        = -lboost_filesystem
+BOOST_S         = -lboost_system
 MODULE_REDIRECT = -I$(OBJ_FOLDER) -J$(OBJ_FOLDER)
+MY_OS := $(shell uname -s)
+ifeq ($(MY_OS),Darwin)
+STDCPP_LINK     = -lc++
+else
+STDCPP_LINK     = -lstdc++
+endif
 
 FILES  =  my_types.f90 \
 					use_types.f90 \
@@ -51,8 +56,8 @@ OBJECTS     = $(addsuffix .o, $(addprefix $(OBJ_FOLDER)/, $(basename $(FILES))))
 MODULES     = $(addsuffix .mod, $(addprefix $(OBJ_FOLDER)/, $(basename $(FILES))))
 EXECUTABLE  = $(addprefix $(EXE_FOLDER)/, $(EXE))
 
-all: dirtree $(MODULES) $(OBJECTS)
-	$(FC) $(OPTFC) -J$(OBJ_FOLDER) $(OBJECTS) -o $(EXECUTABLE)
+all: dirtree $(OBJECTS)
+	$(FC) $(OPTFC) -J$(OBJ_FOLDER) $(OBJECTS) -o $(EXECUTABLE) $(STDCPP_LINK)
 
 
 
@@ -312,10 +317,9 @@ $(OBJ_FOLDER)/data_dump.o: $(SRC_FOLDER)/data_dump.f90 \
 $(OBJ_FOLDER)/data_dump.mod: $(SRC_FOLDER)/data_dump.f90 $(OBJ_FOLDER)/data_dump.o
 	@true
 
-$(OBJ_FOLDER)/data_dump_xlm.o: $(SRC_FOLDER)/data_dump_xlm.cpp
+$(OBJ_FOLDER)/data_dump_xlm.o: $(SRC_FOLDER)/data_dump_xlm.cpp \
+															 $(SRC_FOLDER)/base64.h
 	$(CC) $(OPTCC) -I$(BOOST_INC) -c -o $@ $< $(REDIRECT)
-$(OBJ_FOLDER)/data_dump_xlm.mod: $(SRC_FOLDER)/data_dump_xlm.cpp $(OBJ_FOLDER)/data_dump_xlm.o
-	@true
 
 $(OBJ_FOLDER)/dump_status.o: $(SRC_FOLDER)/dump_status.f90 \
 															$(OBJ_FOLDER)/my_types.mod \
