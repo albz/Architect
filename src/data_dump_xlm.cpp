@@ -24,35 +24,26 @@
 //
 
  #include <iostream>
- // #include <string>
- // #include <sstream>
+ #include <string>
  #include <fstream>
  #include <cstring>
  #include "base64.h"
- // #include <climits>
- // #include <stdio.h>
 
  using namespace std;
 
 extern "C" {
-  // remember that in fortran values are passed by reference, so we need to receive them
-  // using pointers in C/C++
+  // remember that in fortran values are passed by reference, so we need to receive them using pointers in C/C++
 
-  void print_matrix_(int * quantity_to_print, double * meshZ, double * meshR, double * vector_fromF, int * dim1, int * dim2){
+  void print_matrix_(double * meshZ, double * meshR, double * vector_fromF, int * dim1, int * dim2, char * filename, int * filename_length ){
     double value;
     int* flen = new(int);
     char* s,file_name;
     float val = 0.0;
     int dimension1= *dim1;
     int dimension2= *dim2;
-
+    
     //--- open file ---//
-    ofstream outfile;
-    switch (*quantity_to_print) {
-      case 1: outfile.open("rho_bun.vtr"); break;
-      case 2: outfile.open("rho_bck.vtr"); break;
-      case 3: outfile.open("rho_tot.vtr"); break;
-    }
+    ofstream outfile(filename);
 
     //--- header ---//
     outfile << "<?xml version=\"1.0\"?>" << endl;
@@ -97,8 +88,8 @@ extern "C" {
     char bins[8+8*(dimension1)];
     memcpy(bins, (char*)&byte_number, 8);
     for(int i=0; i<dimension1; i++){
-    value = meshZ[i];
-    memcpy(bins+(8+8*i), (char*)&value, 8);
+      value = meshZ[i];
+      memcpy(bins+(8+8*i), (char*)&value, 8);
     }
     s=base64(bins, 8+8*(dimension1), flen);
     outfile.write(s, *flen);
@@ -127,8 +118,8 @@ extern "C" {
     char bins2[8+8*(dimension2)];
     memcpy(bins2, (char*)&byte_number, 8);
     for(int i=0; i<dimension2; i++){
-    value = (double)meshR[i];
-    memcpy(bins2+(8+8*i), (char*)&value, 8);
+      value = (double)meshR[i];
+      memcpy(bins2+(8+8*i), (char*)&value, 8);
     }
     s=base64(bins2, 8+8*(dimension2), flen);
     outfile.write(s, *flen);

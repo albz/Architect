@@ -28,9 +28,19 @@ USE architect_class_structure
 USE ion_background
 USE Diagnostics_on_Bunches
 USE grid_diagnostics
-
+USE ISO_C_BINDING 
 
 IMPLICIT NONE
+
+
+
+!interface
+!    function print_matrix(meshZ, meshR, vector_fromF, dim1, dim2, filename) bind(C)
+!        integer        :: dim1, dim2
+!        real(8)        :: meshZ, meshR, vector_fromF
+!        character(255) :: filename
+!    end function print_matrix
+!end interface
 
 CONTAINS
 
@@ -312,13 +322,13 @@ END SUBROUTINE data_dump
    IMPLICIT NONE
 
    INTEGER ss,delta_z,n0,n0_w,nf_w,n_w,n_act,n_trasv,n_long,Output_version
-	 INTEGER vector_dim,i,j,k
-   CHARACTER :: variable*150,filename*255,positions*6,frmt*4,pas*1,position*10
+   INTEGER vector_dim,i,j,k
+   CHARACTER :: variable*150,positions*6,frmt*4,pas*1,position*10
    REAL avgz,k0plasma,sigma_x,sigma_y,sigma_w,mu_z_witness,zmed,np
-	 REAL(8), ALLOCATABLE :: vector_fromF_toC(:),mmm(:),mm(:,:)
+   REAL(8), ALLOCATABLE :: vector_fromF_toC(:),mmm(:),mm(:,:)
+   CHARACTER(255) :: filename
+   !TYPE(C_PTR), DIMENSION(255) :: filename
    SAVE n0
-
-	!  call print_matrix(mmm,i)
 
 !--- Define utils for vtk writing ---!
    avgz = sum( bunch(1)%part(:)%cmp(3) * bunch(1)%part(:)%cmp(8) ) / sum(bunch(1)%part(:)%cmp(8))
@@ -339,7 +349,8 @@ END SUBROUTINE data_dump
 			k=k+1
 		enddo
 	enddo
-	call print_matrix(1,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2)
+	filename=TRIM(sim_parameters%path_PS)//'rho_bun_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	k=1
   do i=2,mesh_par%Nzm-1
@@ -348,7 +359,8 @@ END SUBROUTINE data_dump
 			k=k+1
 		enddo
 	enddo
-	call print_matrix(2,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2)
+	filename=TRIM(sim_parameters%path_PS)//'rho_bck_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	k=1
   do i=2,mesh_par%Nzm-1
@@ -357,7 +369,8 @@ END SUBROUTINE data_dump
 			k=k+1
 		enddo
 	enddo
-	call print_matrix(3,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2)
+	filename=TRIM(sim_parameters%path_PS)//'rho_tot_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,vector_fromF_toC,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 
 	deallocate(vector_fromF_toC)

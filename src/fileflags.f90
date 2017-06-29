@@ -41,7 +41,7 @@
 
 	call getlun(lun)
 	open(lun,file=trim(fname))
-	if(trim(fname).eq.'==started==') then
+	if(trim(fname).eq.'__started__') then
 		write(lun,*) getPID()
 	endif
 	close(lun,status='keep')
