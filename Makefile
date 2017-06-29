@@ -81,10 +81,18 @@ gflinux_lxp : FC = gfortran44
 gflinux_lxp : OPTFC = -ffree-line-length-none -fmax-stack-var-size=50000000
 gflinux_lxp : all
 
-gfmp45  : FC = gfortran-mp-4.5
-gfmp45  : OPTFC = -ffree-line-length-none -fmax-stack-var-size=50000000
-gfmp45  : all
-gfmp45  : CC = gcc-mp-4.5
+gf45  : FC = gfortran-mp-4.5
+gf45  : OPTFC = -ffree-line-length-none -fmax-stack-var-size=50000000
+gf45  : all
+
+gf48  : FC = gfortran-mp-4.8
+gf48  : OPTFC = -ffree-line-length-none -fmax-stack-var-size=50000000
+gf48  : all
+
+gf49  : FC = gfortran-mp-4.9
+gf49  : OPTFC = -ffree-line-length-none -fmax-stack-var-size=50000000
+gf49  : all
+
 
 #--- ---#
 $(OBJ_FOLDER)/my_types.o: $(SRC_FOLDER)/my_types.f90
