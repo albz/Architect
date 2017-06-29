@@ -1,4 +1,4 @@
-# Architect
+# Architect ![Architect Logo](./logo/logo.png)
 
 [![Build Status Master](https://travis-ci.org/albz/Architect.svg?branch=master)](https://travis-ci.org/albz/Architect "master")
 
@@ -11,3 +11,7 @@ releases:
 v1.0.0-alpha: [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.49572.svg)](http://dx.doi.org/10.5281/zenodo.49572)
 
 Copyright on the code is by A. Marocchino, F. Massimo
+
+
+Please refer to this image as the Architect's logo:
+![Architect Logo](./logo/logo.png)
