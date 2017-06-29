@@ -162,10 +162,12 @@ subroutine generate_output_tree
 	    sim_parameters%out_root  = ''
       sim_parameters%path_PS 	 = 'out/PS/'
 	    sim_parameters%path_grid = 'out/2D/'
+      sim_parameters%path_vtk  = 'out/vtk/'
       sim_parameters%path_integrated_diagnostics = 'out/integrated_diagnostics/'
       sim_parameters%path_dumprestart = 'dumprestart/'
     	call system('mkdir -p out/PS')
     	call system('mkdir -p out/2D')
+      call system('mkdir -p out/vtk')
       call system('mkdir -p out/integrated_diagnostics')
       call system('mkdir -p dumprestart')
 

@@ -48,7 +48,7 @@ IMPLICIT NONE
 	  INTEGER :: I_parabola_length_in_window,I_parabola_start,I_parabola_end,I_origin_z_axis
 	  REAL(8)    :: I_parabola_normalization_factor
 
-	  CHARACTER :: path_PS*255,path_grid*255,path_dumprestart*255,path_integrated_diagnostics*255
+	  CHARACTER :: path_PS*255,path_grid*255,path_vtk*255,path_dumprestart*255,path_integrated_diagnostics*255
     CHARACTER :: out_dir*100,path_1D*100,out_root*100
 
 	  INTEGER :: init_width_r,init_width_z

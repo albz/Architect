@@ -58,7 +58,7 @@ INTEGER Lapl_dim
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    sim_parameters%iter=1
 
-   call SetFileFlag('__started__')
+   call SetFileFlag('==started==')
    call read_input
    call write_read_nml
 
@@ -131,10 +131,10 @@ INTEGER Lapl_dim
    main_loop: do
 
 		!---check suspension flag---!
-		if(getFileFlag('__suspend__')) then
-			call SetFileFlag('__suspended__')
-			call UnsetFileFlag('__suspend__')
-			call UnsetFileFlag('__started__')
+		if(getFileFlag('==suspend==')) then
+			call SetFileFlag('==suspended==')
+			call UnsetFileFlag('==suspend==')
+			call UnsetFileFlag('==started==')
 			write(*,*) 'Simulation suspended, at:',sim_parameters%zg
 			stop
 		endif
@@ -217,8 +217,8 @@ INTEGER Lapl_dim
     DEALLOCATE(x_mesh,z_mesh,mesh)
     if( allocated(mesh_util%Bphi_BC_Left) ) DEALLOCATE(mesh_util%Bphi_BC_Left)
     !end of run flags
-    call setFileFlag('__completed__')
-    call UnsetFileFlag('__started__')
+    call setFileFlag('==completed==')
+    call UnsetFileFlag('==started==')
 
    stop
    END

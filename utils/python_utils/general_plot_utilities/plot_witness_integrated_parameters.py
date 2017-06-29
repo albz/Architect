@@ -29,7 +29,7 @@ path = os.getcwd()
 
 # --- plot --- #
 for root_dir, sub_dirs, files in os.walk(path):
-    if '__started__' in files or '__completed__' in files:
+    if '==started==' in files or '==completed==' in files:
         bunch = np.loadtxt(os.path.join(root_dir,'out','integrated_diagnostics','bunch_integrated_quantity_2_dcut.dat'))
 
         fig = pyl.figure(1)
