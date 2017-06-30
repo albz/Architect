@@ -56,7 +56,7 @@ INTEGER Lapl_dim
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !            LOAD INPUT DATA, SET PARAMETERS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   sim_parameters%iter=1
+   sim_parameters%iter=0
 
    call SetFileFlag('==started==')
    call read_input

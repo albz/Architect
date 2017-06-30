@@ -137,10 +137,10 @@ extern "C" {
     outfile << "\"" << "rho_tot" << "\"";
     outfile << " format=\"binary\">\n";
     int byte_count=0;
-    for(int k=0; k<dimension2-1; k++){
-      for(int j=0; j<2; j++){
-        for(int i=0; i<dimension1-1; i++){
-          value = (double)vector_fromF[i*dimension2+k];
+    for(int j=0; j<2; j++){
+    for(int i=0; i<dimension1-1; i++){
+        for(int k=0; k<dimension2-1; k++){
+          value = (double)vector_fromF[i*(dimension2-1)+k];
           memcpy(binsS+(8+8*byte_count), (char*)&value, 8);
           byte_count++;
         }
