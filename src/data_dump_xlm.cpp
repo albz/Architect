@@ -56,9 +56,9 @@ extern "C" {
 
     //rectilinear grid
     int x_left=0; int y_left=0; int z_left=0;
-    int x_right= dimension1-1;
-    int y_right= 1;
-    int z_right= dimension2-1;
+    int z_right= dimension1-1;
+    int y_right= dimension2-1;
+    int x_right= 1;
 
     outfile << "<RectilinearGrid WholeExtent=\"";
     outfile << x_left << " ";
@@ -80,26 +80,11 @@ extern "C" {
 
     // This writes the point coordinates on the three axis
     outfile << "<Coordinates>" << endl;
-    outfile << "<DataArray type=\"Float64\" Name=\"Z_axis\"";
-    outfile << " format=\"binary\">\n";
-
-    //--- first axis ---//
-    long long byte_number = 8*((long long)dimension1);
-    char bins[8+8*(dimension1)];
-    memcpy(bins, (char*)&byte_number, 8);
-    for(int i=0; i<dimension1; i++){
-      value = meshZ[i];
-      memcpy(bins+(8+8*i), (char*)&value, 8);
-    }
-    s=base64(bins, 8+8*(dimension1), flen);
-    outfile.write(s, *flen);
-    outfile << "</DataArray>" << endl;
-
 
     //--- second 2 points dimension ---//
     outfile << "<DataArray type=\"Float64\" Name=\"T_axis\"";
     outfile << " format=\"binary\">\n";
-    byte_number = 8*((long long)2);
+    long long byte_number = 8*((long long)2);
     char bins3[8+8*(2)];
     memcpy(bins3, (char*)&byte_number, 8);
     value = 0.0;
@@ -111,7 +96,8 @@ extern "C" {
     outfile << endl;
     outfile << "</DataArray>" << endl;
 
-    //--- third dimension ---//
+
+    //--- R axis ---//
     outfile << "<DataArray type=\"Float64\" Name=\"R_axis\"";
     outfile << " format=\"binary\">\n";
     byte_number = 8*((long long)dimension2);
@@ -126,6 +112,21 @@ extern "C" {
     outfile << endl;
     outfile << "</DataArray>" << endl;
 
+    //--- Z axis ---//
+    outfile << "<DataArray type=\"Float64\" Name=\"Z_axis\"";
+    outfile << " format=\"binary\">\n";
+    byte_number = 8*((long long)dimension1);
+    char bins[8+8*(dimension1)];
+    memcpy(bins, (char*)&byte_number, 8);
+    for(int i=0; i<dimension1; i++){
+      value = meshZ[i];
+      memcpy(bins+(8+8*i), (char*)&value, 8);
+    }
+    s=base64(bins, 8+8*(dimension1), flen);
+    outfile.write(s, *flen);
+    outfile << "</DataArray>" << endl;
+
+
     outfile << "</Coordinates>" << endl;
 
     //---scalar quantity---//
@@ -138,9 +139,9 @@ extern "C" {
     outfile << " format=\"binary\">\n";
     int byte_count=0;
     for(int j=0; j<2; j++){
-    for(int i=0; i<dimension1-1; i++){
+      for(int i=0; i<dimension1-1; i++){
         for(int k=0; k<dimension2-1; k++){
-          value = (double)vector_fromF[i*(dimension2-1)+k];
+          value = (double)vector_fromF[k*(dimension1-1)+i];
           memcpy(binsS+(8+8*byte_count), (char*)&value, 8);
           byte_count++;
         }
