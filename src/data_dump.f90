@@ -324,31 +324,31 @@ END SUBROUTINE data_dump
    write(position,'(I7.7)') NINT(-sum(bunch(1)%part(:)%cmp(3)*bunch(1)%part(:)%cmp(8))/sum(bunch(1)%part(:)%cmp(8)))
 
  !--- Writes bunch rho ---!
-	filename=TRIM(sim_parameters%path_vtk)//'rho_bunch_'//position//'_um.vtr'//C_NULL_CHAR
+	filename=TRIM(sim_parameters%path_vtk)//'rho_bunch_um_'//position//'.vtr'//C_NULL_CHAR
 	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%rho,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
-	filename=TRIM(sim_parameters%path_vtk)//'rho_bck_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	filename=TRIM(sim_parameters%path_vtk)//'rho_bck_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
 	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%n_plasma_e,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
-	filename=TRIM(sim_parameters%path_vtk)//'rho_tot_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	filename=TRIM(sim_parameters%path_vtk)//'rho_tot_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
 	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%rho+mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%n_plasma_e,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
-	filename=TRIM(sim_parameters%path_vtk)//'Er_bck_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	filename=TRIM(sim_parameters%path_vtk)//'Er_bck_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
 	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
-	filename=TRIM(sim_parameters%path_vtk)//'Er_bunch_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	filename=TRIM(sim_parameters%path_vtk)//'Er_bunch_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
 	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
-	filename=TRIM(sim_parameters%path_vtk)//'Er_tot_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	filename=TRIM(sim_parameters%path_vtk)//'Er_tot_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
 	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex+mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
-	filename=TRIM(sim_parameters%path_vtk)//'Ez_bck_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	filename=TRIM(sim_parameters%path_vtk)//'Ez_bck_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
 	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
-	filename=TRIM(sim_parameters%path_vtk)//'Ez_bunch_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	filename=TRIM(sim_parameters%path_vtk)//'Ez_bunch_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
 	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
-	filename=TRIM(sim_parameters%path_vtk)//'Ez_tot_'//TRIM(ADJUSTL(position))//'_um.vtr'//C_NULL_CHAR
+	filename=TRIM(sim_parameters%path_vtk)//'Ez_tot_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
 	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez+mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	!Still missing as quantities in the vtk format
