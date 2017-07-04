@@ -34,7 +34,7 @@
 extern "C" {
   // remember that in fortran values are passed by reference, so we need to receive them using pointers in C/C++
 
-  void print_matrix_(double * meshZ, double * meshR, double * vector_fromF, int * dim1, int * dim2, char * filename, int * filename_length ){
+  void print_matrix_(int * idvariable, double * meshZ, double * meshR, double * vector_fromF, int * dim1, int * dim2, char * filename, int * filename_length ){
     double value;
     int* flen = new(int);
     char* s,file_name;
@@ -130,12 +130,28 @@ extern "C" {
     outfile << "</Coordinates>" << endl;
 
     //---scalar quantity---//
-    outfile << "<CellData Scalars=\"" << "rho_tot" << "\">\n";
+    if(*idvariable==1){outfile << "<CellData Scalars=\"" << "rho_bunch" << "\">\n";};
+    if(*idvariable==2){outfile << "<CellData Scalars=\"" << "rho_bck" << "\">\n";};
+    if(*idvariable==3){outfile << "<CellData Scalars=\"" << "rho_tot" << "\">\n";};
+    if(*idvariable==4){outfile << "<CellData Scalars=\"" << "Er_bck" << "\">\n";};
+    if(*idvariable==5){outfile << "<CellData Scalars=\"" << "Er_bunch" << "\">\n";};
+    if(*idvariable==6){outfile << "<CellData Scalars=\"" << "Er_tot" << "\">\n";};
+    if(*idvariable==7){outfile << "<CellData Scalars=\"" << "Ez_bck" << "\">\n";};
+    if(*idvariable==8){outfile << "<CellData Scalars=\"" << "Ez_bunch" << "\">\n";};
+    if(*idvariable==9){outfile << "<CellData Scalars=\"" << "Ez_tot" << "\">\n";};
     byte_number = 8*((long long)(dimension1*2*dimension2));
     char binsS[8+8*(dimension1*2*dimension2)];
     memcpy(binsS, (char*)&byte_number, 8);
     outfile << "<DataArray type=\"Float64\" Name=";
-    outfile << "\"" << "rho_tot" << "\"";
+    if(*idvariable==1){outfile << "\"" << "rho_bunch" << "\"";};
+    if(*idvariable==2){outfile << "\"" << "rho_bck" << "\"";};
+    if(*idvariable==3){outfile << "\"" << "rho_tot" << "\"";};
+    if(*idvariable==4){outfile << "\"" << "Er_bck" << "\"";};
+    if(*idvariable==5){outfile << "\"" << "Er_bunch" << "\"";};
+    if(*idvariable==6){outfile << "\"" << "Er_tot" << "\"";};
+    if(*idvariable==7){outfile << "\"" << "Ez_bck" << "\"";};
+    if(*idvariable==8){outfile << "\"" << "Ez_bunch" << "\"";};
+    if(*idvariable==9){outfile << "\"" << "Ez_tot" << "\"";};
     outfile << " format=\"binary\">\n";
     int byte_count=0;
     for(int j=0; j<2; j++){

@@ -325,31 +325,31 @@ END SUBROUTINE data_dump
 
  !--- Writes bunch rho ---!
 	filename=TRIM(sim_parameters%path_vtk)//'rho_bunch_um_'//position//'.vtr'//C_NULL_CHAR
-	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%rho,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call print_matrix(1,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%rho,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	filename=TRIM(sim_parameters%path_vtk)//'rho_bck_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
-	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%n_plasma_e,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call print_matrix(2,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%n_plasma_e,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	filename=TRIM(sim_parameters%path_vtk)//'rho_tot_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
-	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%rho+mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%n_plasma_e,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call print_matrix(3,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%rho+mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%n_plasma_e,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	filename=TRIM(sim_parameters%path_vtk)//'Er_bck_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
-	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call print_matrix(4,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	filename=TRIM(sim_parameters%path_vtk)//'Er_bunch_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
-	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call print_matrix(5,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	filename=TRIM(sim_parameters%path_vtk)//'Er_tot_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
-	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex+mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call print_matrix(6,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex+mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	filename=TRIM(sim_parameters%path_vtk)//'Ez_bck_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
-	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call print_matrix(7,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	filename=TRIM(sim_parameters%path_vtk)//'Ez_bunch_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
-	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call print_matrix(8,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	filename=TRIM(sim_parameters%path_vtk)//'Ez_tot_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
-	call print_matrix(z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez+mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call print_matrix(9,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez+mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	!Still missing as quantities in the vtk format
 	!
