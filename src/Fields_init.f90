@@ -65,6 +65,14 @@ contains
 			if(.not.allocated(Laplacian_matrix_sparse_vector)) ALLOCATE(Laplacian_matrix_sparse_vector			( 5*dim_Lapl ) )
 			if(.not.allocated(Laplacian_matrix_sparse_vector_row)) ALLOCATE(Laplacian_matrix_sparse_vector_row		( 5*dim_Lapl ) )
 			if(.not.allocated(Laplacian_matrix_sparse_vector_column)) ALLOCATE(Laplacian_matrix_sparse_vector_column	( 5*dim_Lapl ) )
+		else if(bunch_initialization%self_consistent_field_bunch==4) then
+			dim_Lapl_r			=	bunch_initialization%init_width_r*mesh_par%Nsample_r/2
+			dim_Lapl_half_z	=	bunch_initialization%init_width_z*mesh_par%Nsample_z
+			dim_Lapl			  = 2*dim_Lapl_half_z*dim_Lapl_r
+			sim_parameters%dim_Laplacian = dim_Lapl
+			if(.not.allocated(Laplacian_matrix_sparse_vector)) ALLOCATE(Laplacian_matrix_sparse_vector			( 5*dim_Lapl ) )
+			if(.not.allocated(Laplacian_matrix_sparse_vector_row)) ALLOCATE(Laplacian_matrix_sparse_vector_row		( 5*dim_Lapl ) )
+			if(.not.allocated(Laplacian_matrix_sparse_vector_column)) ALLOCATE(Laplacian_matrix_sparse_vector_column	( 5*dim_Lapl ) )
 		endif
 
 		ALLOCATE(Phi_whole_domain(mesh_par%Nzm,mesh_par%Nxm))
@@ -102,6 +110,12 @@ contains
 				call Laplacian_sparse(Laplacian_matrix_sparse_vector,Laplacian_matrix_sparse_vector_row, &
 				Laplacian_matrix_sparse_vector_column,count_non_null_elements)
 				write(*,'(A)') 'Sparse Laplacian matrix generated'
+			else if(bunch_initialization%self_consistent_field_bunch==4) then
+				! ---- Laplacian matrix for the Poisson problem
+				write(*,'(A)') 'generating sparse Laplacian matrix'
+				call Laplacian_sparse(Laplacian_matrix_sparse_vector,Laplacian_matrix_sparse_vector_row, &
+				Laplacian_matrix_sparse_vector_column,count_non_null_elements)
+				write(*,'(A)') 'Sparse Laplacian matrix generated'
 			endif
 
 			! ---- The part of the domain involved is around the bunch
@@ -109,7 +123,6 @@ contains
 			right =  min(mesh_par%Nzm-1, (bunches_position(b)+dim_Lapl_half_z-1))
 			bottom = 2
 			up     = (dim_Lapl_r+1)
-
 
 
 			if(.not.allocated(Phi_matrix)) ALLOCATE(Phi_matrix((right-left+1),(up-bottom+1)) )
@@ -121,8 +134,11 @@ contains
 
 
 
-
-			call from_M_to_v(mesh(left:right,bottom:up)%rho,rho_vector)
+			if(bunch_initialization%self_consistent_field_bunch==3) then
+					call from_M_to_v(mesh(left:right,bottom:up)%rho,rho_vector)
+			else if(bunch_initialization%self_consistent_field_bunch==4) then
+					call from_M_to_v2(mesh(left:right,bottom:Node_max_r)%rho,rho_vector)
+			endif
 
 			! ---- Source for Poisson Problem
 			Phi_vector = -1.*rho_vector
@@ -133,6 +149,13 @@ contains
 				call GaussEliminationLU(Laplacian_matrix,Phi_vector)
 				write(*,*) 'Laplacian matrix solved with LU'
 			else if(bunch_initialization%self_consistent_field_bunch==3) then
+				write(*,*) 'solving Laplacian matrix with SOR technique'
+				call SOR_sparse_Matrix_sparse(Laplacian_matrix_sparse_vector,Phi_vector, &
+					     Laplacian_matrix_sparse_vector_row,Laplacian_matrix_sparse_vector_column, &
+					     bunch_initialization%maxnorm,bunch_initialization%iter_max, &
+					     bunch_initialization%wsor,count_non_null_elements,(right-left+1)*(up-bottom+1))
+				write(*,'(A)') 'Laplacian matrix solved with SOR'
+			else if(bunch_initialization%self_consistent_field_bunch==4) then
 				write(*,*) 'solving Laplacian matrix with SOR technique'
 				call SOR_sparse_Matrix_sparse(Laplacian_matrix_sparse_vector,Phi_vector, &
 					     Laplacian_matrix_sparse_vector_row,Laplacian_matrix_sparse_vector_column, &
@@ -478,6 +501,25 @@ contains
 		enddo
 
 	end subroutine from_M_to_v
+
+	subroutine from_M_to_v2(rho_matrix,rho_vector)
+		REAL(8), DIMENSION(2*dim_Lapl_half_z,Node_max_r-1):: rho_matrix
+		REAL(8), DIMENSION(dim_Lapl), intent(out) :: rho_vector
+		INTEGER k,i,j
+		k=1
+		do j=1,dim_Lapl_r
+		do i=1,(2*dim_Lapl_half_z)
+				if(j<Node_max_r) then
+					rho_vector(k)= rho_matrix(i,j)
+				else
+					rho_vector(k)=0.0
+				endif
+				k=k+1
+		enddo
+		enddo
+	end subroutine from_M_to_v2
+
+
 
 	subroutine from_v_to_M(Phi_vector,Phi_matrix)
 		REAL(8), DIMENSION(2*dim_Lapl_half_z,dim_Lapl_r), intent(out) :: Phi_matrix
