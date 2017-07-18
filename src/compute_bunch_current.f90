@@ -75,6 +75,7 @@ CONTAINS
 	endif
 
 
+  if(L_dump_particle_ongrid .or. L_dump_particle_ongrid .or. sim_parameters%L_Bunch_evolve) then
 	do j  = 1,sim_parameters%Nbunches
     do ip = 1,bunch_initialization%n_particles(j)
 
@@ -135,6 +136,7 @@ CONTAINS
 
 	enddo
 	enddo
+endif
 
    return
 
