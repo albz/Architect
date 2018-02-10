@@ -216,7 +216,8 @@ if(strcmp(kind,'PS'))
     fclose('all');
     if(output_version == 1) [dist,x,y,z,px,py,pz,bunch_id,cut,dcut] = architect_read_bin_ps(full_name); end
     if(output_version == 2) [dist,x,y,z,px,py,pz,bunch_id,cut,dcut,bunch_charges] = architect_read_bin_ps_v2(full_name); end
-
+    if(output_version == 3) [dist,x,y,z,px,py,pz,bunch_id,cut,dcut,bunch_charges,macro_particle_charge,macro_particle_nume] = architect_read_bin_ps_v3(full_name); end
+    
     assignin('base', 'dist', dist);
     assignin('base', 'x', x);
     assignin('base', 'y', y);
@@ -228,4 +229,8 @@ if(strcmp(kind,'PS'))
     assignin('base', 'cut', cut);
     assignin('base', 'dcut', dcut);
     if(output_version == 2) assignin('base', 'bunch_charges', bunch_charges); end
+    if(output_version == 3) 
+        assignin('base', 'macro_particle_charge', macro_particle_charge);
+        assignin('base', 'macro_particle_nume', macro_particle_nume); 
+    end
 end

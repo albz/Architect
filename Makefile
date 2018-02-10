@@ -25,9 +25,10 @@ FILES  =  my_types.f90 \
 					Particle_Classes.f90 \
 					read_input.f90 \
 					fileflags.f90 \
-					bunch_generation.f90 \
 					utility.f90 \
 					bunch_initialization.f90 \
+					bunch_moments.f90 \
+					external_background_density.f90 \
 					mesh_generator.f90 \
 					linear_algebra_utilities.f90 \
 					compute_bunch_current.f90 \
@@ -37,7 +38,7 @@ FILES  =  my_types.f90 \
 					update_fluid_fct.f90 \
 					compute_background_current.f90 \
 					compute_current_manager.f90 \
-					bunch_moments.f90 \
+					bunch_generation.f90 \
 					update_fluid_manager.f90 \
 					particle_pusher.f90 \
 					ion_background.f90 \
@@ -135,7 +136,10 @@ $(OBJ_FOLDER)/fileflags.mod: $(SRC_FOLDER)/fileflags.f90 $(OBJ_FOLDER)/fileflags
 	@true
 
 $(OBJ_FOLDER)/bunch_generation.o: $(SRC_FOLDER)/bunch_generation.f90 \
-																	$(OBJ_FOLDER)/random_numbers_functions.mod
+																	$(OBJ_FOLDER)/random_numbers_functions.mod \
+																	$(OBJ_FOLDER)/pstruct_data.mod \
+																	$(OBJ_FOLDER)/architect_class_structure.mod \
+																	$(OBJ_FOLDER)/moments.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/bunch_generation.mod: $(SRC_FOLDER)/bunch_generation.f90 $(OBJ_FOLDER)/bunch_generation.o
 	@true
@@ -160,9 +164,18 @@ $(OBJ_FOLDER)/bunch_initialization.o: $(SRC_FOLDER)/bunch_initialization.f90 \
 $(OBJ_FOLDER)/bunch_initialization.mod: $(SRC_FOLDER)/bunch_initialization.f90 $(OBJ_FOLDER)/bunch_initialization.o
 	@true
 
+$(OBJ_FOLDER)/external_background_density.o: $(SRC_FOLDER)/external_background_density.f90 \
+																			$(OBJ_FOLDER)/my_types.mod \
+																			$(OBJ_FOLDER)/use_types.mod
+	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
+$(OBJ_FOLDER)/external_background_density.mod: $(SRC_FOLDER)/external_background_density.f90 $(OBJ_FOLDER)/external_background_density.o
+	@true
+
+
 $(OBJ_FOLDER)/mesh_generator.o: $(SRC_FOLDER)/mesh_generator.f90 \
 																$(OBJ_FOLDER)/my_types.mod \
-																$(OBJ_FOLDER)/use_types.mod
+																$(OBJ_FOLDER)/use_types.mod \
+																$(OBJ_FOLDER)/external_background_density.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/mesh_generator.mod: $(SRC_FOLDER)/mesh_generator.f90 $(OBJ_FOLDER)/mesh_generator.o
 	@true
@@ -217,7 +230,8 @@ $(OBJ_FOLDER)/update_fluid_fct.mod: $(SRC_FOLDER)/update_fluid_fct.f90 $(OBJ_FOL
 
 $(OBJ_FOLDER)/compute_background_current.o: $(SRC_FOLDER)/compute_background_current.f90 \
 																						$(OBJ_FOLDER)/my_types.mod \
-																						$(OBJ_FOLDER)/use_types.mod
+																						$(OBJ_FOLDER)/use_types.mod \
+																						$(OBJ_FOLDER)/external_background_density.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/compute_background_current.mod: $(SRC_FOLDER)/compute_background_current.f90 $(OBJ_FOLDER)/compute_background_current.o
 	@true

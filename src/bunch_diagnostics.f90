@@ -69,35 +69,47 @@ USE my_types
 USE pstruct_data
 USE architect_class_structure
 
-   TYPE(simul_param), INTENT(IN) :: sim_par
-   INTEGER :: ss, npc, ni, nf, ii
-   REAL(8) avgz,plasma_k_0,radius,drelZ,max_ellipsoidal
+  TYPE(simul_param), INTENT(IN) :: sim_par
+  INTEGER :: ss, npc, ni, nf, ibunch, iparticle
+  REAL(8) avgz,plasma_k_0,radius,drelZ,max_ellipsoidal
+  REAL(8) :: s_x(1),s_y(1),s_z(1)
+  REAL(8) :: mu_x(1),mu_y(1),mu_z(1)
 
+  do ibunch=1,sim_par%Nbunches
+    mu_x(1)  = calculate_nth_moment(ibunch,1,1,'nocentral')
+  	mu_y(1)  = calculate_nth_moment(ibunch,1,2,'nocentral')
+  	mu_z(1)  = calculate_nth_moment(ibunch,1,3,'nocentral')
+    s_x(1)  = sqrt(calculate_nth_moment(ibunch,2,1,'central'))
+  	s_y(1)  = sqrt(calculate_nth_moment(ibunch,2,2,'central'))
+  	s_z(1)  = sqrt(calculate_nth_moment(ibunch,2,3,'central'))
 
+    do iparticle=1,size(bunch(ibunch)%part(:))
+ 			if( bunch(ibunch)%part(iparticle)%cmp(8) .eq. 1.) then
+        if( abs(bunch(ibunch)%part(iparticle)%cmp(1)-mu_x(1)) > 4.*s_x(1)  ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
+        if( abs(bunch(ibunch)%part(iparticle)%cmp(2)-mu_y(1)) > 4.*s_y(1)  ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
+        if( abs(bunch(ibunch)%part(iparticle)%cmp(3)-mu_z(1)) > 4.*s_z(1)  ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
+ 			endif
+ 		enddo
 
-	! --- --- --- !
-	! bunch(es) diagnostic
-	! --- --- --- !
-	do ii=1,sim_par%Nbunches
-		npc=sum(bunch(ii)%part(:)%cmp(8))
-		avgz=0.
-		avgz=sum(bunch(ii)%part(:)%cmp(3)*bunch(ii)%part(:)%cmp(8))
-		avgz=avgz/npc
+ 	enddo
 
-
-		max_ellipsoidal = max( sim_par%rB0(ii) , sim_par%lbunch(ii) )
-		max_ellipsoidal = max_ellipsoidal * sim_par%sigma_cut
-
-		do ss=1,size(bunch(ii)%part(:))
-			if( bunch(ii)%part(ss)%cmp(8) .eq. 1.) then
-				radius = sqrt(bunch(ii)%part(ss)%cmp(1)**2+bunch(ii)%part(ss)%cmp(2)**2+(bunch(ii)%part(ss)%cmp(3)-avgz)**2)
-				if( radius > max_ellipsoidal ) bunch(ii)%part(ss)%cmp(8)=0.
-			endif
-		enddo
-	enddo
-
-
-
+	! do ii=1,sim_par%Nbunches
+	! 	npc=sum(bunch(ii)%part(:)%cmp(8))
+	! 	avgz=0.
+	! 	avgz=sum(bunch(ii)%part(:)%cmp(3)*bunch(ii)%part(:)%cmp(8))
+	! 	avgz=avgz/npc
+  !
+  !
+	! 	max_ellipsoidal = max( sim_par%rB0(ii) , sim_par%lbunch(ii) )
+	! 	max_ellipsoidal = max_ellipsoidal * sim_par%sigma_cut
+  !
+	! 	do ss=1,size(bunch(ii)%part(:))
+	! 		if( bunch(ii)%part(ss)%cmp(8) .eq. 1.) then
+	! 			radius = sqrt(bunch(ii)%part(ss)%cmp(1)**2+bunch(ii)%part(ss)%cmp(2)**2+(bunch(ii)%part(ss)%cmp(3)-avgz)**2)
+	! 			if( radius > max_ellipsoidal ) bunch(ii)%part(ss)%cmp(8)=0.
+	! 		endif
+	! 	enddo
+	! enddo
 END SUBROUTINE
 
 
@@ -224,34 +236,6 @@ close(11)
 
 DEALLOCATE( x, a, order, selected, randuniform )
 end subroutine bunch_shapiro_wilks
-
-
-
-
-!---bunch mask creation ---!
-!---select a specific bunch family---!
-! mask_type :: 1 = slices
-! SUBROUTINE bunch_mask_definition(bunch_number,component,slice_number,mask_type,len,selected)
-!   integer, intent(in) :: bunch_number,component,slice_number,mask_type
-!   integer, intent(out) :: len
-!   real(8), intent(out) :: selected(len)
-!   logical, intent(inout) :: bunch_mask
-!   real(8) :: mu_z,sigma_z,nSigmaCut=5.0
-!   integer :: np,np_inside=0
-!
-! if(mask_type==1) then
-!     mu_z      = calculate_nth_moment_bunch(bunch_number,1,3)
-!     sigma_z = sqrt(calculate_nth_central_moment_bunch(bunch_number,2,3))
-!     np       = size(bunch(bunch_number)%part(:))
-!     !---count particle---!
-!     do ip=1,np_local
-!      bunch_mask(ip)=( (bunch(bunch_number)%part(ip)%cmp(3)- mu_z ) >( real(slice_number)-nSigmaCut)*sigma_z  ) &
-!       .and.( (bunch(bunch_number)%part(ip)%cmp(3)- mu_z ) <(real(islslice_numberice+1)-nSigmaCut)*sigma_z )
-!      if (bunch_mask(ip)) np_inside=np_inside+1
-!     enddo
-!   endif
-!
-! END SUBROUTINE bunch_mask_creation
 
 
 END MODULE Diagnostics_on_Bunches

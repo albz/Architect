@@ -58,3 +58,4 @@ bunch_charges=[]
 x=[]; y=[]; z=[];
 px=[]; py=[]; pz=[]
 bunch_id=[]; cut=[];  dcut=[]
+macro_particle_charge=[]; macro_particle_nume=[];

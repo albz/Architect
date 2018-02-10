@@ -64,9 +64,9 @@ end subroutine open_file
 			pos_z = plasma%k_p * pos_z
 			pos_r = plasma%k_p * pos_r
 
-			if( pos_z .le. (minval(z_mesh_shifted)+7.*mesh_par%dzm) )  	bunch(j)%part(ip)%cmp(7)=0.
-			if( pos_z .ge. (maxval(z_mesh)-7.*mesh_par%dzm) )  			bunch(j)%part(ip)%cmp(7)=0.
-			if( pos_r .ge. (maxval(x_mesh)-7.*mesh_par%dxm) )  			bunch(j)%part(ip)%cmp(7)=0.
+			if( pos_z .le. (minval(z_mesh_shifted)+25.*mesh_par%dzm) ) bunch(j)%part(ip)%cmp(7)=0.
+			if( pos_z .ge. (maxval(z_mesh)-25.*mesh_par%dzm) )         bunch(j)%part(ip)%cmp(7)=0.
+			if( pos_r .ge. (maxval(x_mesh)-25.*mesh_par%dxm) )         bunch(j)%part(ip)%cmp(7)=0.
 	    endif
 
 	end subroutine
@@ -119,12 +119,12 @@ end subroutine open_file
 
 		case (2) !--> grid_choice=2 - rho
 			if (idrs.eq.1) then !onaxis
-				w00=Wz_s	 *fraz*Wr_s		  *2./mesh_par%dxm*4. 	!*inv_R_shifted(idrs)
+				w00=Wz_s	 *fraz_s*Wr_s		  *2./mesh_par%dxm*4. 	!*inv_R_shifted(idrs)
 				w01=Wz_s	 *(1.-fraz_s*Wr_s)*inv_R_shifted(idrs+1)
 				w10=(1.-Wz_s)*fraz_s*Wr_s	  *2./mesh_par%dxm*4.	!*inv_R_shifted(idrs)
 				w11=(1.-Wz_s)*(1.-fraz_s*Wr_s)*inv_R_shifted(idrs+1)
 			else
-				w00=Wz_s	 *fraz*Wr_s		  *inv_R_shifted(idrs)
+				w00=Wz_s	 *fraz_s*Wr_s		  *inv_R_shifted(idrs)
 				w01=Wz_s	 *(1.-fraz_s*Wr_s)*inv_R_shifted(idrs+1)
 				w10=(1.-Wz_s)*fraz_s*Wr_s	  *inv_R_shifted(idrs)
 				w11=(1.-Wz_s)*(1.-fraz_s*Wr_s)*inv_R_shifted(idrs+1)

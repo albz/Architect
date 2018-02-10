@@ -34,13 +34,13 @@ IMPLICIT NONE
     REAL(8) :: r0,lbunch(6),zg,zg_old,z0_first_driver,output_distance,ramp_length
     REAL(8) :: xb0(6),yb0(6),zb0(6),rB0(6)
     REAL(8) :: sigma_cut
+    REAL(8) :: moving_window_speed
+  	real(8) :: velocity_background
     INTEGER :: FDTD_version
     INTEGER :: Fluid_Scheme
     INTEGER :: Output_format,reduced_PS
     INTEGER :: window_shifted_cells,I_distance_capillary
-	INTEGER :: window_mode, diagnostics_with_dcut
-	REAL(8) :: moving_window_speed
-	real(8) :: velocity_background
+  	INTEGER :: window_mode=1, diagnostics_with_dcut
 
     REAL(8)    :: start_n_peak_in_window,start_ramp_length_in_window,start_ramp_peak_position
 	  INTEGER :: I_start_ramp_length_out_window,I_start_ramp_length_in_window,I_start_ramp_length,I_start_ramp_peak_position
@@ -66,10 +66,11 @@ IMPLICIT NONE
     LOGICAL :: L_SW_test,L_lineout
     INTEGER :: SW_sample_dimension,SW_sub_iter
 
-	  REAL(8) :: lastInWindowCheck=0.,InWindoWCheckDelta=25.0
+	  REAL(8) :: lastInWindowCheck=0.,InWindoWCheckDelta=5.0
 
     LOGICAL :: L_BunchREinit=.false.,L_plasma_evolution=.true.,L_Bunch_evolve
     REAL(8) :: lastBunchREinit=0.,bunch_reinit_distance_um=1000000.
+
    END TYPE
 
    TYPE :: mesh_param   ! mesh_par
@@ -85,9 +86,12 @@ IMPLICIT NONE
 
    !--- define the background plasma profile ---!
    TYPE :: background_plasma_profile   ! bck_plasma
+      LOGICAL :: external_density
       INTEGER :: order_logitudinal(20),order_radial(20)
       REAL(8) :: radius_um(20),radius_internal_um(20),perturbation_amplitude(20)
       REAL(8) :: z_coordinate_um(20),z_coordinate(20),n_over_n0(20),z_segment_length_um(20)
+      REAL(8) :: threshold_suppression,shift_um
+      CHARACTER  :: filename*30
    END TYPE
 
    TYPE :: mesh_phys   ! mesh
@@ -99,6 +103,7 @@ IMPLICIT NONE
 
     TYPE :: mesh_utility
       real(8), DIMENSION(:), ALLOCATABLE :: Bphi_BC_Left
+      real(8), DIMENSION(:,:), allocatable :: ne_ext
     END TYPE
 
 
@@ -145,11 +150,12 @@ IMPLICIT NONE
 		INTEGER :: n_total_bunches=1,n_particles(7)=0,self_consistent_field_bunch
 		REAL(8)    :: bunch_s_x(7)=0.,bunch_s_y(7)=0.,bunch_s_z(7)=0.
 		REAL(8)    :: bunch_gamma_m(7)=0.,bunch_eps_x(7)=0.,bunch_eps_y(7)=0.,bunch_dgamma(7)=0.
-    real(8)    :: Charge_right(7),Charge_left(7)
+    real(8)    :: Charge_right(7),Charge_left(7),sigma_cut(7)
 		REAL(8)    :: maxnorm,wsor
 		INTEGER    :: init_width_r, init_width_z, iter_max, shape(7)
+    INTEGER    :: npZ(8), npR(8)
 		REAL(8)    :: ChargeB(7)=0., db(7)=0.
-    CHARACTER  :: inbunch(6)*30
+    CHARACTER  :: inbunch(7)*30,PWeights(7)*30
 	END TYPE
 
   !--- dump and restart variables ---!

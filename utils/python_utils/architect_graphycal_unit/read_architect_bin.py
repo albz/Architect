@@ -25,5 +25,7 @@ def read_architect_bin(*argv):
     read_argv(argv)
     list_outputs(var.path)
     read_output_version(var.path,var.list_outputs[var.frm_number])
+    print('output version ::',var.output_version)
     if(var.output_version==4 and var.what == 'section'): read_Architect_bin_section_output_v_4(var.path,var.list_outputs[var.frm_number])
     if(var.output_version==2 and var.what == 'PS'): architect_read_PS_bin_v_2(var.path,var.list_outputs[var.frm_number])
+    if(var.output_version==3 and var.what == 'PS'): architect_read_PS_bin_v_3(var.path,var.list_outputs[var.frm_number])

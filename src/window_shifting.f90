@@ -51,9 +51,10 @@ CONTAINS
 
    		dz_eff=mesh_par%dzm/plasma%k_p
 		if (sim_parameters%window_mode.eq.0) then ! window moves with first bunch center
-			sim_parameters%zg = calculate_nth_moment_bunch(1,1,3)
+			bunch(1)%part(:)%cmp(14)=1.
+			sim_parameters%zg = calculate_nth_moment(1,1,3,'nocentral')
 		else if (sim_parameters%window_mode.eq.1) then ! window moves with constant speed
-			sim_parameters%zg = - sim_parameters%moving_window_speed*c*sim_parameters%sim_time
+			sim_parameters%zg = - sim_parameters%moving_window_speed*c*(sim_parameters%iter+1.)*sim_parameters%dt
 		endif
 
 		zg_delta = abs(sim_parameters%zg-sim_parameters%zg_old)
@@ -87,193 +88,74 @@ CONTAINS
    END SUBROUTINE control_window
 
 
-
-   SUBROUTINE Move_Window_FDTD_version_COMB
+	 SUBROUTINE Move_Window_FDTD_version_COMB
    IMPLICIT NONE
-   INTEGER cells_advanced,i,im	,iter,nn,j
-   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: Ez,Er,Bphi,Ez_new,Er_new,Bphi_new,Bphi_old,Bphi_old_new
-   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: ux,uz,gam,ux_new,uz_new,gam_new,ne,ne_new,ni,ni_new
-	 REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: Ez_bunch,Er_bunch,Bphi_bunch,Bphi_old_bunch
-	 REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: Ez_bunch_new,Er_bunch_new,Bphi_bunch_new,Bphi_old_bunch_new
-   INTEGER :: Nz,Nr,Node_min_z,Node_max_z,Node_min_r,Node_max_r,Node_end_z,Node_end_r
-   REAL :: DeltaR,DeltaZ, test_ne
-
-	Er         	= 0.D0
-	Ez         	= 0.D0
-	Bphi 	   	  = 0.D0
-	Bphi_old   	= 0.D0
-
-	Er_bunch   	= 0.
-	Ez_bunch   	= 0.
-	Bphi_bunch  = 0.
-	Bphi_old_bunch 	= 0
-
-	Er_new     	= 0.D0
-	Ez_new     	= 0.D0
-	Bphi_new   	= 0.D0
-	Bphi_old_new   	= 0.D0
-
-	Er_bunch_new     	= 0.
-	Ez_bunch_new     	= 0.
-	Bphi_bunch_new   	= 0.
-	Bphi_old_bunch_new   	= 0.
-
-	ux  	   	= 0.D0
-	uz  	   	= 0.D0
-	ne  		  = 0.D0
-	ni  		  = 0.D0
-
-	ux_new 	   	= 0.D0
-	uz_new 	   	= 0.D0
-	ne_new		  = 0.D0
-	ni_new		  = 0.D0
-
-	Nz         	= mesh_par%Nzm
-	Nr         	= mesh_par%Nxm
-
-	Node_min_z 	= 2
-	Node_max_z 	= Nz-1
-
-	Node_min_r 	= 2
-	Node_max_r 	= Nr-1
-
-	Node_end_z 	= Nz
-	Node_end_r 	= Nr
-
-	DeltaR     	= mesh_par%dxm
-	DeltaZ     	= mesh_par%dzm
-
-	!------------------------------------------------------------------------!
-	!                           Z axis
-	!
-	!    ghost cell        physical domain         ghost cell
-	!  |______________|__________________________|______________|
-	!  |              |                          |              |
-	!  1         Node_min_z                 Node_max_z       Node_end_z
-	!
-	!------------------------------------------------------------------------!
-
-	!------------------------------------------------------------------------!
-	!                           R axis
-	!
-	!      Axis    physical domain                   ghost cell
-	!  |________|________________________________|______________|
-	!  |        |                                |              |
-	!  1     Node_min_r=2                    Node_max_r       Node_end_r
-	!
-	!  Bphi at j=1 is physical (it is on the r axis), Ez at j=1 is at -DeltaR/2
-	!  (ghost space); Ez at j=Node_end_r is physical, Ez at j=j=Node_end_r is
-	!  in ghost space
-	!
-	!------------------------------------------------------------------------!
-
-
-	!----------------------------------------------!
-	!  Initial conditions from old moving window   !
-	!----------------------------------------------!
-
-	Bphi    (1:Node_end_z,1:Node_end_r)  =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Bphi
-	Ez      (1:Node_end_z,1:Node_end_r)  =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ez
-	Er      (1:Node_end_z,1:Node_end_r)  =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ex
-	Bphi_old(1:Node_end_z,1:Node_end_r)  =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Bphi_old
-
-	if(sim_parameters%L_Bunch_evolve) then
-		Bphi_bunch    (1:Node_end_z,1:Node_end_r)  =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Bphi_bunch
-		Ez_bunch      (1:Node_end_z,1:Node_end_r)  =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ez_bunch
-		Er_bunch      (1:Node_end_z,1:Node_end_r)  =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ex_bunch
-		Bphi_old_bunch(1:Node_end_z,1:Node_end_r)  =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Bphi_old_bunch
-endif
-
-	uz  (1:Node_end_z,1:Node_end_r)	     =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%uz
-	ux  (1:Node_end_z,1:Node_end_r)      =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%ux
-	ne  (1:Node_end_z,1:Node_end_r)	     =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%n_plasma_e
-	ni  (1:Node_end_z,1:Node_end_r)	     =	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%n_plasma_i
+   INTEGER cells_advanced,i,j
+   REAL(8) :: DeltaR,DeltaZ
 
 	!----------------------------------------------!
 	!       Longitudinal shift by one cell         !
 	!----------------------------------------------!
 
-	do i=2,Node_max_z
-		Er_new      (i+1,:) = Er      (i,:)
-		Ez_new      (i+1,:) = Ez      (i,:)
-		Bphi_new    (i+1,:) = Bphi    (i,:)
-		Bphi_old_new(i+1,:) = Bphi_old(i,:)
+	do i=mesh_par%Nzm,2,-1
+		mesh(i,:)%Ex=mesh(i-1,:)%Ex
+		mesh(i,:)%Ez=mesh(i-1,:)%Ez
+		mesh(i,:)%Bphi=mesh(i-1,:)%Bphi
+		mesh(i,:)%Bphi_old=mesh(i-1,:)%Bphi_old
+
+		mesh(i,:)%uz         = mesh(i-1,:)%uz
+		mesh(i,:)%ux         = mesh(i-1,:)%ux
+		mesh(i,:)%n_plasma_e = mesh(i-1,:)%n_plasma_e
+		mesh(i,:)%n_plasma_i = mesh(i-1,:)%n_plasma_i
 
 		if(sim_parameters%L_Bunch_evolve) then
-			Er_bunch_new(i+1,:) 			= Er_bunch(i,:)
-			Ez_bunch_new(i+1,:) 			= Ez_bunch(i,:)
-			Bphi_bunch_new(i+1,:) 		= Bphi_bunch(i,:)
-			Bphi_old_bunch_new(i+1,:) = Bphi_old_bunch(i,:)
+			mesh(i,:)%Ex_bunch			  = mesh(i-1,:)%Ex_bunch
+			mesh(i,:)%Ez_bunch			  = mesh(i-1,:)%Ez_bunch
+			mesh(i,:)%Bphi_bunch		  = mesh(i-1,:)%Bphi_bunch
+			mesh(i,:)%Bphi_old_bunch	= mesh(i-1,:)%Bphi_old_bunch
 		endif
-
-		ux_new      (i+1,:) = ux      (i,:)
-		uz_new      (i+1,:) = uz      (i,:)
-		ne_new	    (i+1,:) = ne      (i,:)
-		ni_new	    (i+1,:) = ni      (i,:)
-		!---ne_new      (i+1,mesh_par%NRmax_plasma:Node_end_r) = 0.D0
 	enddo
 
-	Er_new      (1:2,:) = 0.D0
-	Ez_new      (1:2,:) = 0.D0
-	Bphi_new    (1:2,:) = 0.D0
-	Bphi_old_new(1:2,:) = 0.D0
-	ux_new      (1:2,:) = 0.D0
-	uz_new      (1:2,:) = 0.D0
+	mesh(1:2,:)%Ex = 0.D0
+	mesh(1:2,:)%Ez = 0.D0
+	mesh(1:2,:)%Bphi = 0.D0
+  mesh(1:2,:)%Bphi_old= 0.D0
+	mesh(1:2,:)%uz= 0.D0
+	mesh(1:2,:)%ux= 0.D0
 
 	if(sim_parameters%L_Bunch_evolve) then
-		Er_bunch_new	(1:2,:) = 0.
-		Ez_bunch_new	(1:2,:) = 0.
-		Bphi_bunch_new(1:2,:) = 0.
-		Bphi_old_bunch_new(1:2,:) = 0.
+		mesh(1:2,:)%Ex_bunch			  = 0.D0
+		mesh(1:2,:)%Ez_bunch			  = 0.D0
+		mesh(1:2,:)%Bphi_bunch		  = 0.D0
+		mesh(1:2,:)%Bphi_old_bunch	= 0.D0
 	endif
 
 
 	!---background density---!
- 	do j= 2,Node_max_r
- 	 		ne_new(2,j)  = background_density_value(2,j)
-			if(.not.ionisation%L_ionisation) ni_new(2,j)=ne_new(2,j)
+ 	do j= 2,mesh_par%Nxm-1
+ 	 		mesh(2,j)%n_plasma_e = background_density_value(2,j)
+			mesh(1,j)%n_plasma_e = background_density_value(1,j)
+			if(.not.ionisation%L_ionisation) mesh(2,j)%n_plasma_i=mesh(2,j)%n_plasma_e
  	enddo
  	!BC
- 	ne_new(2,Node_end_r) = ne_new(2,Node_max_r) ! upper boundary
- 	ne_new(2,1         ) = ne_new(2,2         ) ! lower boundary
- 	ne_new(1,:         ) = ne_new(2,:         ) ! left  boundary
+ 	mesh(2,mesh_par%Nxm-1)%n_plasma_e = mesh(2,mesh_par%Nxm-1)%n_plasma_e ! upper boundary
+ 	mesh(2,1             )%n_plasma_e = mesh(2,2             )%n_plasma_e ! lower boundary
+ 	mesh(1,:             )%n_plasma_e = mesh(2,:             )%n_plasma_e ! left  boundary
 	if(.not.ionisation%L_ionisation) then
-	 	ni_new(2,1         ) = ni_new(2,2         ) ! lower boundary
-	 	ni_new(1,:         ) = ni_new(2,:         ) ! left  boundary
+	 	mesh(2,1)%n_plasma_i = mesh(2,2)%n_plasma_i ! lower boundary
+	 	mesh(1,:)%n_plasma_i = mesh(2,:)%n_plasma_i ! left  boundary
 	endif
  	!--- ---!
 
-
 	!--- Moving Background ---!
 	if(Bpoloidal%L_BfieldfromV) then
-		uz_new (1:2,1:mesh_par%NRmax_plasma-1) = sim_parameters%velocity_background
-		Bphi_new(1,:) = mesh_util%Bphi_BC_Left(:)
-		Bphi_old_new(1,:) = mesh_util%Bphi_BC_Left(:)
+		mesh(1,:)%uz = sim_parameters%velocity_background
+		mesh(1,:)%Bphi     = mesh_util%Bphi_BC_Left(:)
+		mesh(1,:)%Bphi_old = mesh_util%Bphi_BC_Left(:)
 	end if
+ END SUBROUTINE
 
 
-	!----------------------------!
-	! Substitution of new fields !
-	!----------------------------!
-	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Bphi_old   =      Bphi_old_new(1:Node_end_z,1:Node_end_r)
-	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Bphi       =      Bphi_new    (1:Node_end_z,1:Node_end_r)
-	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ez         =      Ez_new      (1:Node_end_z,1:Node_end_r)
-	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ex         =      Er_new      (1:Node_end_z,1:Node_end_r)
-
-	if(sim_parameters%L_Bunch_evolve) then
-		mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ex_bunch				    = Er_bunch_new			(1:Node_end_z,1:Node_end_r)
-		mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Ez_bunch				    = Ez_bunch_new			(1:Node_end_z,1:Node_end_r)
-		mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Bphi_bunch			   = Bphi_bunch_new		(1:Node_end_z,1:Node_end_r)
-		mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%Bphi_old_bunch	= Bphi_old_bunch_new(1:Node_end_z,1:Node_end_r)
-	endif
-
-	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%uz         =      uz_new      (1:Node_end_z,1:Node_end_r)
-	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%ux         =      ux_new      (1:Node_end_z,1:Node_end_r)
-	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%n_plasma_e =      ne_new      (1:Node_end_z,1:Node_end_r)
-	mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%n_plasma_i =      ni_new      (1:Node_end_z,1:Node_end_r)
-
-   return
-   END SUBROUTINE
 
 
 	SUBROUTINE Move_Window_Bexternal_field

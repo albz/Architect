@@ -24,6 +24,7 @@ MODULE Compute_plasma_current
 
 USE my_types
 USE use_my_types
+USE external_background_density
 
 IMPLICIT NONE
 
@@ -116,6 +117,32 @@ CONTAINS
 
       Jpe_r(i,j) = mesh(i,j)%n_plasma_e*beta_x(i,j) !face centered
       Jpe_z(i,j) = mesh(i,j)%n_plasma_e*beta_z(i,j) !face centered
+
+      !--- with smoothing ---!
+      ! if(i.ge.2 .and. j.ge.3 .and. i.le.Node_end_z-1 .and. j.le.Node_end_r-1) then
+      ! Jpe_r(i,j) = &
+      !              ( mesh(i  ,j  )%n_plasma_e*beta_x(i  ,j  )*((j-1)**2-(j-2)**2) &
+      !              ! + mesh(i-1,j  )%n_plasma_e*beta_x(i-1,j  )*((j-1)**2-(j-2)**2) &
+      !              ! + mesh(i+1,j  )%n_plasma_e*beta_x(i+1,j  )*((j-1)**2-(j-2)**2) &
+      !              + mesh(i  ,j+1)%n_plasma_e*beta_x(i  ,j+1)*((j+0)**2-(j-1)**2) &
+      !              ! + mesh(i-1,j+1)%n_plasma_e*beta_x(i-1,j+1)*((j+0)**2-(j-1)**2) &
+      !              ! + mesh(i+1,j+1)%n_plasma_e*beta_x(i+1,j+1)*((j+0)**2-(j-1)**2) &
+      !              + mesh(i  ,j-1)%n_plasma_e*beta_x(i  ,j-1)*((j-2)**2-(j-3)**2) &
+      !              ! + mesh(i+1,j-1)%n_plasma_e*beta_x(i+1,j-1)*((j-2)**2-(j-3)**2) &
+      !              ! + mesh(i-1,j-1)%n_plasma_e*beta_x(i-1,j-1)*((j-2)**2-(j-3)**2) ) &
+      !              ) / (((j+0)**2-(j-3)**2)*1.)
+      ! endif
+      ! if(j.eq.2 .and. i.ge.2 .and. i.le.Node_end_z-1) then
+      !   Jpe_r(i,j) = &
+      !             ( mesh(i  ,j  )%n_plasma_e*beta_x(i  ,j  )*((j-1)**2-(j-2)**2) &
+      !             ! + mesh(i-1,j  )%n_plasma_e*beta_x(i-1,j  )*((j-1)**2-(j-2)**2) &
+      !             ! + mesh(i+1,j  )%n_plasma_e*beta_x(i+1,j  )*((j-1)**2-(j-2)**2) &
+      !             + mesh(i  ,j+1)%n_plasma_e*beta_x(i  ,j+1)*((j+0)**2-(j-1)**2) &
+      !             ! + mesh(i-1,j+1)%n_plasma_e*beta_x(i-1,j+1)*((j+0)**2-(j-1)**2) &
+      !             ! + mesh(i+1,j+1)%n_plasma_e*beta_x(i+1,j+1)*((j+0)**2-(j-1)**2) ) &
+      !             ) / (((j+0)**2-(j-2)**2)*1.) ! (((2+0)**2-(0)**2)*3.)
+      ! endif
+      !--- end smoothing ---!
     endif
 
   enddo
@@ -128,11 +155,15 @@ CONTAINS
 	! Jr, Jz for FDTD are centered as in the Yee cell
     do i= 2,Node_max_z
     do j= 2,Node_max_r
+        !--- Jpe_r centering with 1/4 of cell weighting ---!
+        !Jpe_r_for_FDTD(i,j) = &
+        !         ( Jpe_r(i-1,j)*( (j-1)**2-(j-1.5)**2 )+Jpe_r(i-1,j+1)*( (j-0.5)**2-(j-1)**2 ) ) / (4.*(j-1)) &
+        !  +      ( Jpe_r(i+0,j)*( (j-1)**2-(j-1.5)**2 )+Jpe_r(i+0,j+1)*( (j-0.5)**2-(j-1)**2 ) ) / (4.*(j-1))
+        !--- Jpe_r centering with full cells weighting ---!
       Jpe_r_for_FDTD(i,j) = &
-                 ( Jpe_r(i  ,j)*(j-2+0.5)+Jpe_r(i  ,j+1)*(j+1-2+0.5) ) / (4.*(j+1-2)) &
-            +    ( Jpe_r(i+1,j)*(j-2+0.5)+Jpe_r(i+1,j+1)*(j+1-2+0.5) ) / (4.*(j+1-2))
-            !Surfaces are at: inner-surface (DeltaR*(j-2)+DeltaR/2.)
-            !                 outer-surface (DeltaR*(j+1-2)+DeltaR/2.)
+                  ( Jpe_r(i-1,j)*( (j-1)**2-(j-2)**2 )+Jpe_r(i-1,j+1)*( (j+0)**2-(j-1)**2 ) ) / (8.*(j-1)) &
+             +    ( Jpe_r(i+0,j)*( (j-1)**2-(j-2)**2 )+Jpe_r(i+0,j+1)*( (j+0)**2-(j-1)**2 ) ) / (8.*(j-1))
+
       Jpe_z_for_FDTD(i,j) =  Jpe_z(i,j)
     enddo
     enddo
@@ -147,6 +178,9 @@ CONTAINS
 	do i= Node_min_z,Node_max_z
 		Jpe_r_for_FDTD(i,1)  = 0.
 		Jpe_z_for_FDTD(i,1)  = Jpe_z_for_FDTD(i,Node_min_r)
+    !--- ---!
+    ! Jpe_r_for_FDTD(i,2)  = 0.5*(Jpe_r_for_FDTD(i,1)+Jpe_r_for_FDTD(i,3))
+    !--- ---!
 		mesh(i,1)%n_plasma_e = mesh(i,Node_min_r)%n_plasma_e
   enddo
   ! upper boundary
@@ -242,19 +276,33 @@ CONTAINS
   endif
 END SUBROUTINE set_initial_velocity
 
-  FUNCTION background_density_value(i,j)
-    real(8) :: background_density_value,Zposition,slope,den
+
+!--- master function that select the background generation strategy ---!
+real(8) FUNCTION background_density_value(i,j)
+  integer, intent(in) :: i,j
+  if(bck_plasma%external_density) then
+    background_density_value = background_density_value_external(i,j)
+  else
+    background_density_value = background_density_value_analytical(i,j)
+  endif
+END FUNCTION background_density_value
+!--- *** ---!
+
+  ! subroutine background_density_value_analytical(i,j,background_density_value_analyticalAAA)
+  real(8) FUNCTION background_density_value_analytical(i,j)
+    integer, intent(IN) :: i,j
+    real(8) :: Zposition,slope,den
     real(8) :: i_eff,j_eff, radius
     real(8) :: weightR, weightZ
     real(8) :: delta_alpha,kappa_z,A,B,C
-    integer :: i,j,k
+    integer :: k
 
     i_eff=real(i-2)+.5d0
     j_eff=real(j-2)+.5d0
 
     radius = j_eff*mesh_par%dxm/plasma%k_p
 
-    background_density_value=0.d0
+    background_density_value_analytical=0.d0
     Zposition=mesh_par%z_min_moving_um+i_eff*mesh_par%dzm/plasma%k_p
 
     !--vacuum layer---!
@@ -344,11 +392,11 @@ END SUBROUTINE set_initial_velocity
         endif
         if(radius >   bck_plasma%radius_um(k)) weightR=0.0
 
-        background_density_value=weightZ*weightR
+        background_density_value_analytical=weightZ*weightR
 
       endif !Zposition
     enddo
 
-  END FUNCTION background_density_value
+  END FUNCTION background_density_value_analytical
 
 END MODULE

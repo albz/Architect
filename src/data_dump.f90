@@ -80,7 +80,8 @@ SUBROUTINE data_dump
 
 		!--- dump of grid quantitites ---!
 		if(mod(sim_parameters%iter,sim_parameters%output_grid_nstep).eq.0 &
-				 .or. sim_parameters%gridDeltaOutput>sim_parameters%output_grid_dist) then
+				 .or. sim_parameters%gridDeltaOutput>sim_parameters%output_grid_dist)then
+				 if(sim_parameters%iter>30) then
 								write(*,'(A,I10,A,f12.3)') 'Printing Grid quantities :: at Iteration =',sim_parameters%iter,'  -  at run distance =',sim_parameters%zg
 								call from_particleZstart_to_meshZstar
 								if (sim_parameters%Output_format.eq.0) call savedata
@@ -91,10 +92,12 @@ SUBROUTINE data_dump
 								endif
 								sim_parameters%gridLastOutput=sim_parameters%sim_time*c
 	endif
+endif
 
 	!--- dump of Phase Space ---!
 		if(mod(sim_parameters%iter,sim_parameters%output_PS_nstep).eq.0 &
-				 .or. sim_parameters%PSDeltaOutput>sim_parameters%output_PS_dist) then
+				 .or. sim_parameters%PSDeltaOutput>sim_parameters%output_PS_dist ) then
+				 if(sim_parameters%iter>30) then
 						write(*,'(A,I10,A,f12.3)') 'Printing PS   quantities :: at Iteration =',sim_parameters%iter,'  -  at run distance =',sim_parameters%zg
 						if (sim_parameters%Output_format.eq.0) call save_beam
 						if (sim_parameters%Output_format.eq.1) call save_beam_bin
@@ -104,6 +107,7 @@ SUBROUTINE data_dump
 					  endif
 						sim_parameters%PSLastOutput=sim_parameters%sim_time*c
 		endif
+	endif
 END SUBROUTINE data_dump
 
 
@@ -152,7 +156,7 @@ END SUBROUTINE data_dump
 
 !--------------------------- Saving Phase Space ------------------------------------------------------------------------
 	filename=TRIM(sim_parameters%path_PS)//TRIM(ADJUSTL(position))//'.arch'
-	Output_version = 2
+	Output_version = 3
 
 	open(15,file=filename,status='unknown',access='stream')
 
@@ -179,7 +183,8 @@ END SUBROUTINE data_dump
 		do ss=1,size(bunch(i)%part(:)),sim_parameters%jump_PS
 			write(15) bunch(i)%part(ss)%cmp(1), bunch(i)%part(ss)%cmp(2),bunch(i)%part(ss)%cmp(3), &
 			          bunch(i)%part(ss)%cmp(4), bunch(i)%part(ss)%cmp(5),bunch(i)%part(ss)%cmp(6), &
-			          1.D0*i, bunch(i)%part(ss)%cmp(7), bunch(i)%part(ss)%cmp(8)
+			          1.D0*i, bunch(i)%part(ss)%cmp(7), bunch(i)%part(ss)%cmp(8), &
+								bunch(i)%part(ss)%cmp(12), bunch(i)%part(ss)%cmp(13)
 		enddo
 		enddo
 	else if (sim_parameters%reduced_PS.eq.1) then
@@ -196,7 +201,8 @@ END SUBROUTINE data_dump
 	 		if( bunch(i)%part(ss)%cmp(8) .eq. 1. ) then
 				write(15) bunch(i)%part(ss)%cmp(1), bunch(i)%part(ss)%cmp(2),bunch(i)%part(ss)%cmp(3), &
 						  bunch(i)%part(ss)%cmp(4), bunch(i)%part(ss)%cmp(5),bunch(i)%part(ss)%cmp(6), &
-						  1.D0*i, bunch(i)%part(ss)%cmp(7), bunch(i)%part(ss)%cmp(8)
+						  1.D0*i, bunch(i)%part(ss)%cmp(7), bunch(i)%part(ss)%cmp(8), &
+							bunch(i)%part(ss)%cmp(12), bunch(i)%part(ss)%cmp(13)
 			endif
 		enddo
 		enddo

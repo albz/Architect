@@ -253,6 +253,9 @@ subroutine preset_sim_parameters
   sim_parameters%L_BunchREinit=.false.
   sim_parameters%L_plasma_evolution=.true.
   sim_parameters%L_Bunch_evolve=.false.
+
+  !--- moving window ---!
+  sim_parameters%window_mode=1
 end subroutine preset_sim_parameters
 
 
@@ -304,6 +307,10 @@ subroutine preset_background_plasma_profile
   bck_plasma%z_segment_length_um=-1.d0
   bck_plasma%perturbation_amplitude=0.d0 !amplitude perturbation background density
   !bck_plasma%z_coordinate(8)
+  bck_plasma%external_density=.FALSE. !by default DO NOT read any external density Profile
+                                      !otherwise read the input density profile
+  bck_plasma%threshold_suppression=1.d-8 !remove normalised density values below this threshold
+  bck_plasma%shift_um=0.0D0              !initial shifting for the background density profile
 end subroutine preset_background_plasma_profile
 
 subroutine read_background_plasma_profile
@@ -423,7 +430,7 @@ subroutine preset_bunch_initialization
 
 		!just one driver
 		bunch_initialization%n_total_bunches=1
-    bunch_initialization%shape(:)= 1 !1: gaussian, 2: cylinder
+    bunch_initialization%shape(:)= 1 !1: gaussian, 2: hollow bunch ets. see bunch_init.f90
     bunch_initialization%chargeB(:)= 0.200
 		bunch_initialization%n_particles(:)= 50000
 		bunch_initialization%bunch_s_x(:)=8.0
@@ -437,6 +444,11 @@ subroutine preset_bunch_initialization
     !--- for triangular shape ---!
     bunch_initialization%Charge_right(:)=0.d0
     bunch_initialization%Charge_left(:)=1.d0
+    !--- weight selection ---!
+    bunch_initialization%PWeights(:)='equal'
+    bunch_initialization%sigma_cut(:)=5.0
+    bunch_initialization%npZ(:)=2
+    bunch_initialization%npR(:)=2
 end subroutine preset_bunch_initialization
 
 

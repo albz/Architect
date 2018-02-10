@@ -71,65 +71,100 @@
 
 
 
- !--- --- ---!
- real(8) FUNCTION calculate_nth_moment_bunch(number_bunch,nth,component)
+ !--- weighted moments ---!
+ real(8) FUNCTION calculate_nth_moment(number_bunch,nth,component,central)
  integer, intent(in) :: nth, component, number_bunch
- integer :: np
- real(8) :: moment(1)
-
- !--- moment calculation
- moment   = sum( ( bunch(number_bunch)%part(:)%cmp(component) )**nth )
- moment   = moment / real( SIZE( bunch(number_bunch)%part(:) ) )
-
- !---
- calculate_nth_moment_bunch = moment(1)
- END FUNCTION calculate_nth_moment_bunch
-
-
- !--- --- ---!
- real(8) FUNCTION calculate_central_correlation(number_bunch,component1,component2)
- integer, intent(in) :: number_bunch, component1, component2
- real(8) :: mu_component1(1),mu_component2(1)
- real(8) :: corr
-
- mu_component1(1) = calculate_nth_moment_bunch(number_bunch,1,component1)
- mu_component2(1) = calculate_nth_moment_bunch(number_bunch,1,component2)
-
- corr = &
-		sum(       &
-			(bunch(number_bunch)%part(:)%cmp(component1)-mu_component1(1)) &
-          * (bunch(number_bunch)%part(:)%cmp(component2)-mu_component2(1)) )
- corr = corr / real ( number_bunch_particles(number_bunch,"cutoff") )
-
- calculate_central_correlation = corr
- END FUNCTION calculate_central_correlation
-
-
- !--- --- ---!
- real(8) FUNCTION calculate_nth_moment_maskbunch(number_bunch,nth,component,maskbunch,central)
- integer, intent(in) :: nth, component, number_bunch
- logical, intent(in) :: maskbunch(:)
  character(len=*), intent(in) :: central
- integer :: np
- real(8) :: mu_mean(1),moment(1)
+ integer :: np,i
+ real(8) :: mu_mean(1),moment(1),weight(1)
+ logical, allocatable, dimension(:) :: maskbunch
+
+ !--- create logical mask---!
+ np = size(bunch(number_bunch)%part(:))
+ allocate(maskbunch(np))
+ maskbunch=.true.
+ DO i=1,np
+   if(bunch(number_bunch)%part(i)%cmp(14)<1.) maskbunch(i)=.false.
+ enddo
+ !--- ---!
 
  !--- mean calculation
- mu_mean  = sum( bunch(number_bunch)%part(:)%cmp(component), mask=maskbunch )
- mu_mean  = mu_mean / real(count(maskbunch))
+ if(component<7) then
+   mu_mean  = sum( bunch(number_bunch)%part(:)%cmp(component)*bunch(number_bunch)%part(:)%cmp(13), mask=maskbunch )
+   weight   = sum( bunch(number_bunch)%part(:)%cmp(13),                                            mask=maskbunch )
+   mu_mean  = mu_mean / weight
+ else if(component==7) then !---gamma
+   mu_mean  = sum( &
+   sqrt(1. + bunch(number_bunch)%part(:)%cmp(4)**2  &
+           + bunch(number_bunch)%part(:)%cmp(5)**2  &
+           + bunch(number_bunch)%part(:)%cmp(6)**2) &
+           * bunch(number_bunch)%part(:)%cmp(13), mask=maskbunch )
+   weight   = sum( bunch(number_bunch)%part(:)%cmp(13),           mask=maskbunch )
+   mu_mean  = mu_mean / weight
+ endif
 
  !--- moment calculation
- if ( trim(central)=='central') then
-    moment   = sum( ( bunch(number_bunch)%part(:)%cmp(component) - mu_mean(1) )**nth, mask=maskbunch )
-    moment   = moment / real(count(maskbunch))
- else
-   moment   = sum( ( bunch(number_bunch)%part(:)%cmp(component) )**nth, mask=maskbunch )
-   moment   = moment / real(count(maskbunch))
+ if     ( trim(central)=='central' .and. component<7) then
+   moment = sum( (bunch(number_bunch)%part(:)%cmp(component)-mu_mean(1))**nth *bunch(number_bunch)%part(:)%cmp(13), mask=maskbunch )
+   moment = moment / weight
+ elseif ( trim(central)=='central' .and. component==7) then
+   moment  = sum( &
+   (sqrt(1. + bunch(number_bunch)%part(:)%cmp(4)**2  &
+          + bunch(number_bunch)%part(:)%cmp(5)**2   &
+          + bunch(number_bunch)%part(:)%cmp(6)**2)  &
+          - mu_mean(1))**nth                        &
+          * bunch(number_bunch)%part(:)%cmp(13), mask=maskbunch )
+   moment  = moment / weight
+ elseif ( trim(central)=='nocentral' .and. component<7) then
+   moment = sum( bunch(number_bunch)%part(:)%cmp(component)**nth *bunch(number_bunch)%part(:)%cmp(13), mask=maskbunch )
+   moment = moment / weight
+ elseif ( trim(central)=='nocentral' .and. component==7) then
+   moment  = sum( &
+   (sqrt(1. + bunch(number_bunch)%part(:)%cmp(4)**2   &
+            + bunch(number_bunch)%part(:)%cmp(5)**2   &
+            + bunch(number_bunch)%part(:)%cmp(6)**2)  &
+            )**nth                                    &
+            * bunch(number_bunch)%part(:)%cmp(13), mask=maskbunch )
+   moment  = moment / weight
  endif
 
  !---
- calculate_nth_moment_maskbunch = moment(1)
- END FUNCTION calculate_nth_moment_maskbunch
+ deallocate(maskbunch)
+ calculate_nth_moment = moment(1)
+ END FUNCTION calculate_nth_moment
 
+
+ !--- weighted correlation ---!
+ real(8) FUNCTION calculate_correlation(number_bunch,component1,component2)
+ integer, intent(in) :: number_bunch, component1, component2
+ real(8) :: mu_component1(1),mu_component2(1)
+ real(8) :: corr,weight
+ integer :: np,i
+ logical, allocatable, dimension(:) :: maskbunch
+
+ !--- create logical mask---!
+ np = size(bunch(number_bunch)%part(:))
+ allocate(maskbunch(np))
+ maskbunch=.true.
+ DO i=1,np
+   if(bunch(number_bunch)%part(i)%cmp(14)<1.) maskbunch(i)=.false.
+ enddo
+ !--- ---!
+
+ mu_component1(1) = calculate_nth_moment(number_bunch,1,component1,'nocentral')
+ mu_component2(1) = calculate_nth_moment(number_bunch,1,component2,'nocentral')
+ weight           = sum( bunch(number_bunch)%part(:)%cmp(13), mask=maskbunch )
+
+ corr = sum(                                                     &
+ (bunch(number_bunch)%part(:)%cmp(component1)-mu_component1(1))* &
+ (bunch(number_bunch)%part(:)%cmp(component2)-mu_component2(1))* &
+  bunch(number_bunch)%part(:)%cmp(13), mask=maskbunch)
+ corr = corr / weight
+
+ !---
+ deallocate(maskbunch)
+ calculate_correlation = corr
+ END FUNCTION calculate_correlation
 
 
  !--- --- ---!
@@ -143,56 +178,48 @@
  real(8) :: mu_gamma(1),s_gamma(1),dgamma_su_gamma(1)     !gamma mean-variance
  real(8) :: corr_y_py(1),corr_z_pz(1),corr_x_px(1) !correlation transverse plane
  real(8) :: emittance_x(1),emittance_y(1) !emittance variables
+ real(8) :: u1(1),u2(1),u3(1),u4(1),u5(1)
  character(1) :: b2str
  character*90 :: filename
  TYPE(simul_param) :: sim_par
 
+  !---mask :: particle selection---!
+  bunch(number_bunch)%part(:)%cmp(14)=1.
+  !--- *** ---!
 
-	mu_x(1)  = calculate_nth_moment_bunch(number_bunch,1,1)
-	mu_y(1)  = calculate_nth_moment_bunch(number_bunch,1,2)
-	mu_z(1)  = calculate_nth_moment_bunch(number_bunch,1,3)
-	mu_px(1) = calculate_nth_moment_bunch(number_bunch,1,4)
-	mu_py(1) = calculate_nth_moment_bunch(number_bunch,1,5)
-	mu_pz(1) = calculate_nth_moment_bunch(number_bunch,1,6)
+	mu_x(1)  = calculate_nth_moment(number_bunch,1,1,'nocentral')
+	mu_y(1)  = calculate_nth_moment(number_bunch,1,2,'nocentral')
+	mu_z(1)  = calculate_nth_moment(number_bunch,1,3,'nocentral')
+	mu_px(1) = calculate_nth_moment(number_bunch,1,4,'nocentral')
+	mu_py(1) = calculate_nth_moment(number_bunch,1,5,'nocentral')
+	mu_pz(1) = calculate_nth_moment(number_bunch,1,6,'nocentral')
 
-	s_x(1)  = sqrt( calculate_nth_central_moment_bunch(number_bunch,2,1) )
-	s_y(1)  = sqrt( calculate_nth_central_moment_bunch(number_bunch,2,2) )
-	s_z(1)  = sqrt( calculate_nth_central_moment_bunch(number_bunch,2,3) )
-	s_px(1) = sqrt( calculate_nth_central_moment_bunch(number_bunch,2,4) )
-	s_py(1) = sqrt( calculate_nth_central_moment_bunch(number_bunch,2,5) )
-	s_pz(1) = sqrt( calculate_nth_central_moment_bunch(number_bunch,2,6) )
+	s_x(1)  = sqrt(calculate_nth_moment(number_bunch,2,1,'central'))
+	s_y(1)  = sqrt(calculate_nth_moment(number_bunch,2,2,'central'))
+	s_z(1)  = sqrt(calculate_nth_moment(number_bunch,2,3,'central'))
+	s_px(1) = sqrt(calculate_nth_moment(number_bunch,2,4,'central'))
+	s_py(1) = sqrt(calculate_nth_moment(number_bunch,2,5,'central'))
+	s_pz(1) = sqrt(calculate_nth_moment(number_bunch,2,6,'central'))
 
-  m4_x(1)  = calculate_nth_central_moment_bunch(number_bunch,4,1)
-	m4_y(1)  = calculate_nth_central_moment_bunch(number_bunch,4,2)
-	m4_z(1)  = calculate_nth_central_moment_bunch(number_bunch,4,3)
-	m4_px(1) = calculate_nth_central_moment_bunch(number_bunch,4,4)
-	m4_py(1) = calculate_nth_central_moment_bunch(number_bunch,4,5)
-	m4_pz(1) = calculate_nth_central_moment_bunch(number_bunch,4,6)
+  m4_x(1)  = calculate_nth_moment(number_bunch,4,1,'central')
+	m4_y(1)  = calculate_nth_moment(number_bunch,4,1,'central')
+	m4_z(1)  = calculate_nth_moment(number_bunch,4,1,'central')
+	m4_px(1) = calculate_nth_moment(number_bunch,4,1,'central')
+	m4_py(1) = calculate_nth_moment(number_bunch,4,1,'central')
+	m4_pz(1) = calculate_nth_moment(number_bunch,4,1,'central')
 
-	corr_x_px(1) = calculate_central_correlation(number_bunch,1,4)
-	corr_y_py(1) = calculate_central_correlation(number_bunch,2,5)
-	corr_z_pz(1) = calculate_central_correlation(number_bunch,3,6)
+	corr_x_px(1) = calculate_correlation(number_bunch,1,4)
+	corr_y_py(1) = calculate_correlation(number_bunch,2,5)
+	corr_z_pz(1) = calculate_correlation(number_bunch,3,6)
 
-    !---!
-	mu_gamma = &
-		sum(  sqrt(   1.0 + bunch(number_bunch)%part(:)%cmp(4)**2 + &
-		                    bunch(number_bunch)%part(:)%cmp(5)**2 + &
-		                    bunch(number_bunch)%part(:)%cmp(6)**2 ) )
-	mu_gamma = mu_gamma / real ( number_bunch_particles(number_bunch,"cutoff") )
-
-	s_gamma = &
-		sum( (sqrt(   1.0 + bunch(number_bunch)%part(:)%cmp(4)**2 + &
-		                    bunch(number_bunch)%part(:)%cmp(5)**2 + &
-		                    bunch(number_bunch)%part(:)%cmp(6)**2 ) - &
-		                    mu_gamma(1) )**2 )
-	s_gamma = sqrt( s_gamma/ real ( number_bunch_particles(number_bunch,"cutoff") ) )
-
+  !---!
+  mu_gamma(1) = calculate_nth_moment(number_bunch,1,7,'nocentral')
+	s_gamma(1)  = sqrt(calculate_nth_moment(number_bunch,2,7,'central'))
 	dgamma_su_gamma = s_gamma(1)/mu_gamma(1)
 
 	!---!
 	emittance_x = sqrt( s_x(1)**2 *s_px(1)**2 - corr_x_px(1)**2 )
 	emittance_y = sqrt( s_y(1)**2 *s_py(1)**2 - corr_y_py(1)**2 )
-
 
   write(b2str,'(I1.1)') number_bunch
   filename=TRIM(sim_parameters%path_integrated_diagnostics)//'bunch_integrated_quantity_'//b2str//'.dat'
@@ -246,8 +273,9 @@
  allocate (bunch_mask(np_local))
 
  !--- bunch position and variance
- avgz=calculate_nth_moment_bunch(bunch_number,1,3)
- sigmaz=sqrt(calculate_nth_central_moment_bunch(bunch_number,2,3))
+ bunch(bunch_number)%part(:)%cmp(14)=1.
+ avgz   =      calculate_nth_moment(bunch_number,1,3,'nocentral')
+ sigmaz = sqrt(calculate_nth_moment(bunch_number,2,3,'central'))
 
  !---  -5sigma   -4sigma   -3sigma   -2sigma  -1sigma     0sigma   +1sigma   +2sigma    +3sigma   +4sigma   +5sigma
  !---  | slice 0  |    1     |    2    |     3   |     4    |    5    |     6   |     7    |   8    |     9    |   ----!
@@ -399,6 +427,19 @@
  END FUNCTION calculate_central_correlation_dcut
 
 
+ !--- --- ---!
+ real(8) FUNCTION calculate_nth_moment_bunch(number_bunch,nth,component)
+ integer, intent(in) :: nth, component, number_bunch
+ integer :: np
+ real(8) :: moment(1)
+
+ !--- moment calculation
+ moment   = sum( ( bunch(number_bunch)%part(:)%cmp(component) )**nth )
+ moment   = moment / real( SIZE( bunch(number_bunch)%part(:) ) )
+
+ !---
+ calculate_nth_moment_bunch = moment(1)
+ END FUNCTION calculate_nth_moment_bunch
 
 
 
@@ -625,6 +666,55 @@
  deallocate (bunch_mask)
  END SUBROUTINE bunch_sliced_diagnostics_dcut
 
+ !----------------------------------------------------------!
+ !--- functions to calculate emittance and energy spread ---!
+ !----------------------------------------------------------!
+ real(8) FUNCTION calculate_energy_spread(number_bunch)
+ integer, intent(in) :: number_bunch
+ real(8) :: mu_gamma(1),s_gamma(1),dgamma_su_gamma(1)
+
+  !---mask :: particle selection---!
+  bunch(number_bunch)%part(:)%cmp(14)=1.
+  !--- *** ---!
+ mu_gamma(1) = calculate_nth_moment(number_bunch,1,7,'nocentral')
+ s_gamma(1)  = sqrt(calculate_nth_moment(number_bunch,2,7,'central'))
+ dgamma_su_gamma = s_gamma(1)/mu_gamma(1)
+ !--- *** ---!
+ calculate_energy_spread = dgamma_su_gamma(1)
+END FUNCTION calculate_energy_spread
+
+
+real(8) FUNCTION calculate_emittance_x(number_bunch)
+integer, intent(in) :: number_bunch
+real(8) :: s_x(1),s_px(1),corr_x_px(1),emittance_x(1)
+
+ !---mask :: particle selection---!
+ bunch(number_bunch)%part(:)%cmp(14)=1.
+ !--- *** ---!
+
+s_x(1)  = sqrt(calculate_nth_moment(number_bunch,2,1,'central'))
+s_px(1) = sqrt(calculate_nth_moment(number_bunch,2,4,'central'))
+corr_x_px(1) = calculate_correlation(number_bunch,1,4)
+!---!
+emittance_x = sqrt( s_x(1)**2 *s_px(1)**2 - corr_x_px(1)**2 )
+calculate_emittance_x = emittance_x(1)
+END FUNCTION calculate_emittance_x
+
+
+real(8) FUNCTION calculate_emittance_y(number_bunch)
+integer, intent(in) :: number_bunch
+real(8) :: s_y(1),s_py(1),corr_y_py(1),emittance_y(1)
+
+ !---mask :: particle selection---!
+ bunch(number_bunch)%part(:)%cmp(14)=1.
+ !--- *** ---!
+s_y(1)  = sqrt(calculate_nth_moment(number_bunch,2,2,'central'))
+s_py(1) = sqrt(calculate_nth_moment(number_bunch,2,5,'central'))
+corr_y_py(1) = calculate_correlation(number_bunch,2,5)
+!---!
+emittance_y = sqrt( s_y(1)**2 *s_py(1)**2 - corr_y_py(1)**2 )
+calculate_emittance_y = emittance_y(1)
+END FUNCTION calculate_emittance_y
 
 
  !--- --- ---!

@@ -24,6 +24,7 @@ MODULE Make_a_Mesh
 
 USE my_types
 USE use_my_types
+USE external_background_density
 
 IMPLICIT NONE
 
@@ -300,6 +301,11 @@ CONTAINS
           write(*,'(A,I1,A,I5)') 'Bunch(',k,') :: sigma_z/Delta_Z (points) =',int(bunch_initialization%bunch_s_z(k)/mesh_par%dzm*plasma%k_p)
           write(*,'(A)')
          enddo
+
+
+         !--- if an external density file is given and required the code goes through this piece of code ---!
+         if(bck_plasma%external_density) call load_background_external_density_profile()
+
       return
    END SUBROUTINE define_mesh_par
 

@@ -29,7 +29,7 @@ USE Compute_beam_current_FDTD
 USE moments
 
 INTEGER :: dim_Lapl_r, dim_Lapl_half_z, dim_Lapl
-
+real(8), dimension(:,:), allocatable :: a0,a1,a2,a3,a4,rhoR
 !implicit none
 
 contains
@@ -42,7 +42,7 @@ contains
 	INTEGER, DIMENSION(:), ALLOCATABLE::Laplacian_matrix_sparse_vector_row,Laplacian_matrix_sparse_vector_column
 	REAL(8), DIMENSION(:), ALLOCATABLE  :: rho_vector,Phi_vector
 	INTEGER, DIMENSION(7) :: bunches_position
-	INTEGER:: b,dim,i,j
+	INTEGER:: b,dim,i,j,ierr
 	INTEGER :: left,right,bottom,up
 	INTEGER :: dim_Laplacian, count_non_null_elements
 	REAL(8), DIMENSION(3,3) :: A
@@ -56,7 +56,14 @@ contains
 		dim_Lapl			  = 2*dim_Lapl_half_z*dim_Lapl_r
 		sim_parameters%dim_Laplacian = dim_Lapl
 
-
+		!--- allocate ---!
+		allocate(a0(mesh_par%Nzm,mesh_par%Nxm))
+		allocate(a1(mesh_par%Nzm,mesh_par%Nxm))
+		allocate(a2(mesh_par%Nzm,mesh_par%Nxm))
+		allocate(a3(mesh_par%Nzm,mesh_par%Nxm))
+		allocate(a4(mesh_par%Nzm,mesh_par%Nxm))
+		allocate(rhoR(mesh_par%Nzm,mesh_par%Nxm))
+		!--- *** ---!
 
 
 		if(bunch_initialization%self_consistent_field_bunch==2) then
@@ -81,7 +88,10 @@ contains
 		! -- finds bunches position in order to know where to cut the partial domain
 		do b=1,bunch_initialization%n_total_bunches
 			bunches_position(b) = 1 + abs(mesh_par%z_min)/mesh_par%dzm
-			distance = calculate_nth_moment_bunch(b,1,3)-calculate_nth_moment_bunch(1,1,3)
+			! distance = calculate_nth_moment_bunch(b,1,3)-calculate_nth_moment_bunch(1,1,3)
+			bunch(b)%part(:)%cmp(14)=1.
+			distance = calculate_nth_moment(b,1,3,'nocentral') &
+			         - calculate_nth_moment(1,1,3,'nocentral')
 			distance = distance/mesh_par%dzm*plasma%k_p
 			bunches_position(b) = bunches_position(b) + int(distance)
 		enddo
@@ -116,14 +126,19 @@ contains
 				call Laplacian_sparse(Laplacian_matrix_sparse_vector,Laplacian_matrix_sparse_vector_row, &
 				Laplacian_matrix_sparse_vector_column,count_non_null_elements)
 				write(*,'(A)') 'Sparse Laplacian matrix generated'
+			else if(bunch_initialization%self_consistent_field_bunch==5) then
+				! ---- Laplacian matrix for the Poisson problem
+				write(*,'(A)') 'generating sparse Laplacian matrix for the SOR cleaner version'
+				call Laplacian_sparse_SOR_new(ierr)
+				write(*,'(A)') 'Sparse Laplacian matrix generated'
 			endif
 
 			! ---- The part of the domain involved is around the bunch
 			left  =  max(2,(bunches_position(b)-dim_Lapl_half_z))
 			right =  min(mesh_par%Nzm-1, (bunches_position(b)+dim_Lapl_half_z-1))
 			bottom = 2
+			if(bunch_initialization%self_consistent_field_bunch==5) bottom=1
 			up     = (dim_Lapl_r+1)
-
 
 			if(.not.allocated(Phi_matrix)) ALLOCATE(Phi_matrix((right-left+1),(up-bottom+1)) )
 			if(.not.allocated(rho_vector)) ALLOCATE(rho_vector((right-left+1)*(up-bottom+1)) )
@@ -162,10 +177,30 @@ contains
 					     bunch_initialization%maxnorm,bunch_initialization%iter_max, &
 					     bunch_initialization%wsor,count_non_null_elements,(right-left+1)*(up-bottom+1))
 				write(*,'(A)') 'Laplacian matrix solved with SOR'
+			! else if(bunch_initialization%self_consistent_field_bunch==3) then
+			! 	write(*,*) 'solving Laplacian with Conjugate-Gradient technique'
+			! 	call CG_sparse(Laplacian_matrix_sparse_vector,Phi_vector, &
+			! 		     Laplacian_matrix_sparse_vector_row,Laplacian_matrix_sparse_vector_column, &
+			! 		     bunch_initialization%maxnorm,bunch_initialization%iter_max, &
+			! 		     bunch_initialization%wsor,count_non_null_elements,(right-left+1)*(up-bottom+1))
+			! 	write(*,'(A)') 'Laplacian matrix solved with CG'
+		else if(bunch_initialization%self_consistent_field_bunch==5) then
+			write(*,*) 'solving Laplacian matrix with the SOR technique (clean code version)'
+			write(*,*) shape(a1(left:right,bottom:up))
+			call sor_homo( &
+			a1(left:right,bottom:up), &
+			a3(left:right,bottom:up), &
+			a2(left:right,bottom:up), &
+			a4(left:right,bottom:up), &
+			a0(left:right,bottom:up), &
+			rhoR(left:right,bottom:up), & !right-hand-side
+			Phi_matrix, &
+			2, bunch_initialization%wsor, 0.8d0, bunch_initialization%maxnorm, bunch_initialization%iter_max, &
+			100, .TRUE., .FALSE.)
+			write(*,'(A)') 'Laplacian matrix solved with SOR'
 			endif
 
-			call from_v_to_M(Phi_vector,Phi_matrix)
-
+			if(bunch_initialization%self_consistent_field_bunch<5) call from_v_to_M(Phi_vector,Phi_matrix)
 			! ----- Put partial domain potential in its place in the whole domain, summing to the computed potentials
 
 			Phi_whole_domain(left:right,bottom:up) = Phi_whole_domain(left:right,bottom:up) + Phi_matrix(:,:)
@@ -241,11 +276,16 @@ contains
 		mesh(1:2,:)%Ez_bunch = 0.D0
 		mesh(mesh_par%Nzm-2:mesh_par%Nzm,:)%Ex_bunch = 0.D0
 		mesh(mesh_par%Nzm-2:mesh_par%Nzm,:)%Ez_bunch = 0.D0
+		mesh(:,mesh_par%Nxm-2:mesh_par%Nxm)%Ex_bunch = 0.D0
+		mesh(:,mesh_par%Nxm-2:mesh_par%Nxm)%Ez_bunch = 0.D0
+		mesh(:,:)%Bphi = 0.D0
+		mesh(:,:)%Bphi_bunch = 0.D0
 
 		! ----- center E fields for FDTD
 		call center_E_fields
 		! ----- Boundary conditions
 		call BC_Efield
+		call BC_Bfield
 
 	end subroutine init_E_field
 
@@ -487,6 +527,47 @@ contains
 	end subroutine Laplacian_sparse
 
 
+	subroutine Laplacian_sparse_SOR_new(ierr)
+		integer, intent(out) :: ierr
+		integer :: i,j
+		real :: radius1,radius2
+	! 	real(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm), intent(inout) :: a0,a1,a2,a3,a4,rhoR
+  !
+		!--- allocate ---!
+		a0=0.d0
+		a1=0.d0
+		a2=0.d0
+		a3=0.d0
+		a4=0.d0
+		rhoR=0.d0
+
+		!--- matrix filling  ---!
+		do i=2,mesh_par%Nzm
+			do j=2,mesh_par%Nxm
+				a1(i,j)=mesh_par%dxm/mesh_par%dzm * (j-.5)*mesh_par%dxm
+				a2(i,j)=mesh_par%dzm/mesh_par%dxm * (j-1)*mesh_par%dxm
+				a3(i,j)=mesh_par%dxm/mesh_par%dzm * (j-.5)*mesh_par%dxm
+				a4(i,j)=mesh_par%dzm/mesh_par%dxm * (j-2)*mesh_par%dxm
+				a0(i,j)=-(a1(i,j)+a2(i,j)+a3(i,j)+a4(i,j))
+				radius1 = (j-1.5) * mesh_par%dxm
+				rhoR(i,j)=-mesh(i,j)%rho * radius1 * mesh_par%dzm*mesh_par%dxm
+			enddo
+			!--- adding a ghost cell at the bottom layer as a boundary condition ---!
+			j=1
+			a1(i,j)=a1(i,j+1)
+			a2(i,j)=a2(i,j+1)
+			a3(i,j)=a3(i,j+1)
+			a4(i,j)=a4(i,j+1)
+			a0(i,j)=a0(i,j+1)
+			rhoR(i,j)=rhoR(i,j+1)
+		enddo
+
+		!--- boundary conditions ---!
+		!set directly inside the SOR method
+		ierr=0
+	end subroutine Laplacian_sparse_SOR_new
+
+
 	subroutine from_M_to_v(rho_matrix,rho_vector)
 		REAL(8), DIMENSION(2*dim_Lapl_half_z,dim_Lapl_r):: rho_matrix
 		REAL(8), DIMENSION(dim_Lapl), intent(out) :: rho_vector
@@ -576,8 +657,8 @@ contains
 		!enddo
 
 		!---> using 3points stencil
-		do i=2,(mesh_par%Nzm-2)
-			do j=2,(mesh_par%Nxm-2)
+		do i=1,(mesh_par%Nzm-1)
+			do j=1,(mesh_par%Nxm-1)
 				mesh(i,j)%Ex_bunch = 0.5*(Ex_not_centered(i,j) + Ex_not_centered(i,j+1) )
 				mesh(i,j)%Ez_bunch = 0.5*(Ez_not_centered(i,j) + Ez_not_centered(i,j+1) )
 			enddo
@@ -719,8 +800,11 @@ contains
 !-----------------------------------------------!
 SUBROUTINE ReInitialise_EB_Bunch_fields
 	if ( sim_parameters%L_BunchREinit ) then
-		if ( abs(calculate_nth_moment_bunch(1,1,3)-sim_parameters%lastBunchREinit) > sim_parameters%bunch_reinit_distance_um ) then
-			sim_parameters%lastBunchREinit = calculate_nth_moment_bunch(1,1,3)
+		bunch(1)%part(:)%cmp(14)=1.
+		if ( abs(calculate_nth_moment(1,1,3,'nocentral') &
+		   -sim_parameters%lastBunchREinit) > sim_parameters%bunch_reinit_distance_um ) then
+		! if ( abs(calculate_nth_moment_bunch(1,1,3)-sim_parameters%lastBunchREinit) > sim_parameters%bunch_reinit_distance_um ) then
+			sim_parameters%lastBunchREinit = calculate_nth_moment(1,1,3,'nocentral')
 			call Compute_bunch_density
 			call init_EM_fields
 		end if

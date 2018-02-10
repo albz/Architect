@@ -117,13 +117,12 @@ INTEGER Lapl_dim
 		call init_external_Bfields
 	endif
 
-
   !--- Bunch Diagnostics ---!
   call bunch_diagnostics_Integrated_AllBunches
   ! Plasma and bunch diagnostics
   call final_data_dump
   call write_read_nml
-
+  
 ! ----------- MAIN TIME LOOP -----------------------------
 ! --------------------------------------------------------
 
@@ -194,8 +193,9 @@ INTEGER Lapl_dim
       !sim_parameters%sim_time=sim_parameters%sim_time+sim_parameters%dt
       sim_parameters%sim_time=sim_parameters%iter*sim_parameters%dt
 
-      if(abs(calculate_nth_moment_bunch(1,1,3)).gt.total_run_distance) then
-        write(*,'(A,1e14.5)') ' > total run distance:',abs(calculate_nth_moment_bunch(1,1,3))
+      bunch(1)%part(:)%cmp(14)=1.
+      if(abs(calculate_nth_moment(1,1,3,'nocentral')).gt.total_run_distance) then
+        write(*,'(A,1e14.5)') ' > total run distance:',abs(calculate_nth_moment(1,1,3,'nocentral'))
         write(*,'(A)') '--- --- --- End of run --- --- ---'
         goto 123
     	endif
