@@ -64,9 +64,9 @@ end subroutine open_file
 			pos_z = plasma%k_p * pos_z
 			pos_r = plasma%k_p * pos_r
 
-			if( pos_z .le. (minval(z_mesh_shifted)+25.*mesh_par%dzm) ) bunch(j)%part(ip)%cmp(7)=0.
-			if( pos_z .ge. (maxval(z_mesh)-25.*mesh_par%dzm) )         bunch(j)%part(ip)%cmp(7)=0.
-			if( pos_r .ge. (maxval(x_mesh)-25.*mesh_par%dxm) )         bunch(j)%part(ip)%cmp(7)=0.
+			if( pos_z .le. (minval(z_mesh_shifted)+20.*mesh_par%dzm) )   bunch(j)%part(ip)%cmp(7)=0.
+			if( pos_z .ge. (maxval(z_mesh_shifted)-20.*mesh_par%dzm) )   bunch(j)%part(ip)%cmp(7)=0.
+			if( pos_r .ge. mesh_par%R_mesh_plasma-2.*mesh_par%dxm    )   bunch(j)%part(ip)%cmp(7)=0.
 	    endif
 
 	end subroutine

@@ -131,6 +131,8 @@ CONTAINS
 			Ezi   = 0.
 			Exi   = 0.
 			Bphii = 0.
+      pos_z = plasma%k_p*     ( bunch(j)%part(ip)%cmp(3)-sim_parameters%zg )
+      pos_r = plasma%k_p* sqrt( bunch(j)%part(ip)%cmp(1)**2+bunch(j)%part(ip)%cmp(2)**2 )
 		endif
 
 		! ----- Leap-Frog with Boris rotation
