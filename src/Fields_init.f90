@@ -57,12 +57,12 @@ contains
 		sim_parameters%dim_Laplacian = dim_Lapl
 
 		!--- allocate ---!
-		allocate(a0(mesh_par%Nzm,mesh_par%Nxm))
-		allocate(a1(mesh_par%Nzm,mesh_par%Nxm))
-		allocate(a2(mesh_par%Nzm,mesh_par%Nxm))
-		allocate(a3(mesh_par%Nzm,mesh_par%Nxm))
-		allocate(a4(mesh_par%Nzm,mesh_par%Nxm))
-		allocate(rhoR(mesh_par%Nzm,mesh_par%Nxm))
+		if(.not.allocated(a0)) allocate(a0(mesh_par%Nzm,mesh_par%Nxm))
+		if(.not.allocated(a1)) allocate(a1(mesh_par%Nzm,mesh_par%Nxm))
+		if(.not.allocated(a2)) allocate(a2(mesh_par%Nzm,mesh_par%Nxm))
+		if(.not.allocated(a3)) allocate(a3(mesh_par%Nzm,mesh_par%Nxm))
+		if(.not.allocated(a4)) allocate(a4(mesh_par%Nzm,mesh_par%Nxm))
+		if(.not.allocated(rhoR)) allocate(rhoR(mesh_par%Nzm,mesh_par%Nxm))
 		!--- *** ---!
 
 
