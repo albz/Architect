@@ -152,10 +152,10 @@ IMPLICIT NONE
 		REAL(8)    :: bunch_gamma_m(7)=0.,bunch_eps_x(7)=0.,bunch_eps_y(7)=0.,bunch_dgamma(7)=0.
     real(8)    :: Charge_right(7),Charge_left(7),sigma_cut(7)
 		REAL(8)    :: maxnorm,wsor
-		INTEGER    :: init_width_r, init_width_z, iter_max, shape(7)
+		INTEGER    :: init_width_r, init_width_z, iter_max
     INTEGER    :: npZ(8), npR(8)
 		REAL(8)    :: ChargeB(7)=0., db(7)=0.
-    CHARACTER  :: inbunch(7)*30,PWeights(7)*30
+    CHARACTER  :: inbunch(7)*30,PWeights(7)*30,shape(7)*30,optimisation(7)*3
 	END TYPE
 
   !--- dump and restart variables ---!

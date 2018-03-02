@@ -33,38 +33,79 @@
  contains
  !--- --- ---!
 
- subroutine generate_bunch(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,charge,s_cut)
 
- integer,intent(in)   :: nparticles,bunch_number
- real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,charge,s_cut
- real(8) :: rnumber(nparticles),rnumber3D(3,nparticles)
 
- !--- charges and weights ---!
- !--- they need to be initialised here since they are used within the diagnostic subroutine ---!
- bunch(bunch_number)%part(:)%cmp(12)=charge/nparticles ! macroparticle charge
- bunch(bunch_number)%part(:)%cmp(13)=1.e10*bunch(bunch_number)%part(:)%cmp(12)/1.6021766
- !--- flags ---!
- bunch(bunch_number)%part(:)%cmp(7)=1.0
- bunch(bunch_number)%part(:)%cmp(8)=1.0
- bunch(bunch_number)%part(:)%cmp(14)=1.0
+ !----------------------------------------------!
+ !----------------------------------------------!
+ !---            BIAGAUSSIAN                 ---!
+ !----------------------------------------------!
+ !----------------------------------------------!
 
-  call boxmuller_vector_cutDimensional(rnumber3D,nparticles,s_cut,3)
-  call initialise_rmsdimension(bunch_number,rnumber3D(1,:),nparticles,s_x,'x')
-  call initialise_rmsdimension(bunch_number,rnumber3D(2,:),nparticles,s_y,'y')
-  call initialise_rmsdimension(bunch_number,rnumber3D(3,:),nparticles,s_z,'z')
+  subroutine generate_bunch_bigaussian_equal(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,charge,s_cut)
+  integer,intent(in)   :: nparticles,bunch_number
+  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,charge,s_cut
+  real(8) :: rnumber(nparticles),rnumber3D(3,nparticles)
 
-  call boxmuller_vector(rnumber,nparticles)
-  call initialise_emittance_x_weightedbunch(bunch_number,rnumber,nparticles,eps_x,s_x)
-  call boxmuller_vector(rnumber,nparticles)
-  call initialise_emittance_y_weightedbunch(bunch_number,rnumber,nparticles,eps_y,s_y)
-  call boxmuller_vector(rnumber,nparticles)
-  call initialise_energy_spread_weightedbunch(bunch_number,rnumber,nparticles,dgamma,gamma_m)
+      !--- charges and weights ---!
+      !--- they need to be initialised here since they are used within the diagnostic subroutine ---!
+      bunch(bunch_number)%part(:)%cmp(12)=charge/nparticles ! macroparticle charge
+      bunch(bunch_number)%part(:)%cmp(13)=1.e10*bunch(bunch_number)%part(:)%cmp(12)/1.6021766
+      !--- flags ---!
+      bunch(bunch_number)%part(:)%cmp(7)=1.0
+      bunch(bunch_number)%part(:)%cmp(8)=1.0
+      bunch(bunch_number)%part(:)%cmp(14)=1.0
 
-  !--- X-Y-Z-old ---!
-  bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
-  bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
-  bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
- end subroutine generate_bunch
+      call boxmuller_vector_cutDimensional(rnumber3D,nparticles,s_cut,3)
+      bunch(bunch_number)%part(:)%cmp(1)=rnumber3D(1,:)*s_x
+      bunch(bunch_number)%part(:)%cmp(2)=rnumber3D(2,:)*s_y
+      bunch(bunch_number)%part(:)%cmp(3)=rnumber3D(3,:)*s_z
+
+      call boxmuller_vector(rnumber,nparticles)
+      bunch(bunch_number)%part(:)%cmp(4)=rnumber*eps_x/s_x
+      call boxmuller_vector(rnumber,nparticles)
+      bunch(bunch_number)%part(:)%cmp(5)=rnumber*eps_y/s_y
+      call boxmuller_vector(rnumber,nparticles)
+      bunch(bunch_number)%part(:)%cmp(6)=-rnumber*(0.01*dgamma)*gamma_m-gamma_m
+
+      !--- X-Y-Z-old ---!
+      bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
+      bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
+      bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
+  end subroutine generate_bunch_bigaussian_equal
+
+
+  subroutine generate_bunch_bigaussian_equal_optimised(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,charge,s_cut)
+  integer,intent(in)   :: nparticles,bunch_number
+  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,charge,s_cut
+  real(8) :: rnumber(nparticles),rnumber3D(3,nparticles)
+
+      !--- charges and weights ---!
+      !--- they need to be initialised here since they are used within the diagnostic subroutine ---!
+      bunch(bunch_number)%part(:)%cmp(12)=charge/nparticles ! macroparticle charge
+      bunch(bunch_number)%part(:)%cmp(13)=1.e10*bunch(bunch_number)%part(:)%cmp(12)/1.6021766
+      !--- flags ---!
+      bunch(bunch_number)%part(:)%cmp(7)=1.0
+      bunch(bunch_number)%part(:)%cmp(8)=1.0
+      bunch(bunch_number)%part(:)%cmp(14)=1.0
+
+      call boxmuller_vector_cutDimensional(rnumber3D,nparticles,s_cut,3)
+      call initialise_rmsdimension(bunch_number,rnumber3D(1,:),nparticles,s_x,'x')
+      call initialise_rmsdimension(bunch_number,rnumber3D(2,:),nparticles,s_y,'y')
+      call initialise_rmsdimension(bunch_number,rnumber3D(3,:),nparticles,s_z,'z')
+
+      call boxmuller_vector(rnumber,nparticles)
+      call initialise_emittance_x_weightedbunch(bunch_number,rnumber,nparticles,eps_x,s_x)
+      call boxmuller_vector(rnumber,nparticles)
+      call initialise_emittance_y_weightedbunch(bunch_number,rnumber,nparticles,eps_y,s_y)
+      call boxmuller_vector(rnumber,nparticles)
+      call initialise_energy_spread_weightedbunch(bunch_number,rnumber,nparticles,dgamma,gamma_m)
+
+      !--- X-Y-Z-old ---!
+      bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
+      bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
+      bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
+  end subroutine generate_bunch_bigaussian_equal_optimised
+
 
 !--- *** ---!
  subroutine generate_bunch_bigaussian_weighted(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,charge,npZ,npR,s_cut)
@@ -75,89 +116,126 @@
  real(8) :: r_part_dim,r_part_dimless,r_cc_dim,r_cc_dimless,theta,z_part_dim,z_cc_dim
  real(8) :: rnumber(nparticles)
 
- dr=mesh_par%dxm/plasma%k_p
- dz=mesh_par%dzm/plasma%k_p
+   dr=mesh_par%dxm/plasma%k_p
+   dz=mesh_par%dzm/plasma%k_p
 
- alpha = (charge*1e-9) /(2.d0*pi)/sqrt(2.d0*pi)/(s_x*1e-6)/(s_y*1e-6)/(s_z*1e-6)
- alpha = alpha / 1.6e-19 / (plasma%n0*1e6) ! * (plasma%k_p/1e6)**3
+   alpha = (charge*1e-9) /(2.d0*pi)/sqrt(2.d0*pi)/(s_x*1e-6)/(s_y*1e-6)/(s_z*1e-6)
+   alpha = alpha / 1.6e-19 / (plasma%n0*1e6) ! * (plasma%k_p/1e6)**3
 
- p=1
- do iz=-int(s_cut*s_z/dz),int(s_cut*s_z/dz)
-   do ir=0,int(s_cut*s_x/dr)+1
-       if( ((ir+.5)*dr/s_cut/s_x)**2+((iz+.5)*dz/s_cut/s_z)**2<1.) then
-         do ppcr=1,npR
-           do ppcz=1,npZ
-             r_part_dim          =ir*dr+dr/(npR+1.)*ppcr
-             r_part_dimless      =ir*mesh_par%dxm+mesh_par%dxm/(npR+1.)*ppcr
-             r_cc_dim            =ir*dr+dr/2.
-             r_cc_dimless        =ir*mesh_par%dxm+mesh_par%dxm/2.
-             theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
-            !  theta               =2.d0*pi/npZ*(ppcz-1)
-             z_part_dim          =iz*dz+dz/(npZ+1.)*ppcz
-             z_cc_dim            =iz*dz+dz/2.
-             bunch(bunch_number)%part(p)%cmp(1)=r_part_dim*cos(theta)
-             bunch(bunch_number)%part(p)%cmp(2)=r_part_dim*sin(theta)
-             bunch(bunch_number)%part(p)%cmp(3)=z_part_dim
-             bunch(bunch_number)%part(p)%cmp(12)=alpha *r_part_dimless*mesh_par%dxm*mesh_par%dzm /npZ/npR
-             bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * pi/2.
-             bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * exp(-r_part_dim**2/2./s_x**2)
-             bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * exp(-z_part_dim**2/2./s_z**2)
-             bunch(bunch_number)%part(p)%cmp(13)=1.e10*bunch(bunch_number)%part(p)%cmp(12)/1.6021766
-             p=p+1
+   p=1
+   do iz=-int(s_cut*s_z/dz),int(s_cut*s_z/dz)
+     do ir=0,int(s_cut*s_x/dr)
+         if( ((ir+.5)*dr/s_cut/s_x)**2+((iz+.5)*dz/s_cut/s_z)**2<1.) then
+           do ppcr=1,npR
+             do ppcz=1,npZ
+               r_part_dim          =ir*dr+dr/(npR+1.)*ppcr
+               r_part_dimless      =ir*mesh_par%dxm+mesh_par%dxm/(npR+1.)*ppcr
+               r_cc_dim            =ir*dr+dr/2.
+               r_cc_dimless        =ir*mesh_par%dxm+mesh_par%dxm/2.
+               theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
+              !  theta               =2.d0*pi/npZ*(ppcz-1)
+               z_part_dim          =iz*dz+dz/(npZ+1.)*ppcz
+               z_cc_dim            =iz*dz+dz/2.
+               bunch(bunch_number)%part(p)%cmp(1)=r_part_dim*cos(theta)
+               bunch(bunch_number)%part(p)%cmp(2)=r_part_dim*sin(theta)
+               bunch(bunch_number)%part(p)%cmp(3)=z_part_dim
+               bunch(bunch_number)%part(p)%cmp(12)=alpha *r_part_dimless*mesh_par%dxm*mesh_par%dzm /npZ/npR
+               bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * pi/2.
+               bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * exp(-r_part_dim**2/2./s_x**2)
+               bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * exp(-z_part_dim**2/2./s_z**2)
+               bunch(bunch_number)%part(p)%cmp(13)=1.e10*bunch(bunch_number)%part(p)%cmp(12)/1.6021766
+               p=p+1
+             enddo
            enddo
-         enddo
-       endif
+         endif
+     enddo
    enddo
- enddo
 
- call boxmuller_vector(rnumber,nparticles)
- call initialise_emittance_x_weightedbunch(bunch_number,rnumber,nparticles,eps_x,s_x)
- call boxmuller_vector(rnumber,nparticles)
- call initialise_emittance_y_weightedbunch(bunch_number,rnumber,nparticles,eps_y,s_y)
- call boxmuller_vector(rnumber,nparticles)
- call initialise_energy_spread_weightedbunch(bunch_number,rnumber,nparticles,dgamma,gamma_m)
+   call boxmuller_vector(rnumber,nparticles)
+   bunch(bunch_number)%part(:)%cmp(4)=rnumber*eps_x/s_x
+   call boxmuller_vector(rnumber,nparticles)
+   bunch(bunch_number)%part(:)%cmp(5)=rnumber*eps_y/s_y
+   call boxmuller_vector(rnumber,nparticles)
+   bunch(bunch_number)%part(:)%cmp(6)=-rnumber*(0.01*dgamma)*gamma_m-gamma_m
 
- !--- flags ---!
- bunch(bunch_number)%part(:)%cmp(7)=1.0
- bunch(bunch_number)%part(:)%cmp(8)=1.0
- bunch(bunch_number)%part(:)%cmp(14)=1.0
- !--- X-Y-Z-old ---!
- bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
- bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
- bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
+   !--- flags ---!
+   bunch(bunch_number)%part(:)%cmp(7)=1.0
+   bunch(bunch_number)%part(:)%cmp(8)=1.0
+   bunch(bunch_number)%part(:)%cmp(14)=1.0
+   !--- X-Y-Z-old ---!
+   bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
+   bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
+   bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
  end subroutine generate_bunch_bigaussian_weighted
 
-!--- *** ---!
- subroutine generate_hollow_bunch(x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,charge)
 
- integer,intent(in)   :: nparticles
- real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,charge
- real(8) :: rnumber(nparticles),particle_radius(nparticles),particle_theta(nparticles)
+ subroutine generate_bunch_bigaussian_weighted_optimised(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,charge,npZ,npR,s_cut)
+ integer,intent(in)   :: nparticles,npR,npZ,bunch_number
+ real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,charge,s_cut
+ integer :: iz,ir,p,ppcr,ppcz
+ real(8) :: dr,dz,alpha,r
+ real(8) :: r_part_dim,r_part_dimless,r_cc_dim,r_cc_dimless,theta,z_part_dim,z_cc_dim
+ real(8) :: rnumber(nparticles)
 
-  call random_uniform_vector(particle_radius,nparticles)
-  particle_radius=s_x+particle_radius*(s_y-s_x)
-  call random_uniform_vector(particle_theta,nparticles)
-  particle_theta=2.*3.1415*particle_theta
-	! call boxmuller_vector(rnumber,nparticles)
-	! generated_bunch(1,:)=particle_radius*cos(particle_theta)
-	! call boxmuller_vector(rnumber,nparticles)
-	! generated_bunch(2,:)=particle_radius*sin(particle_theta)
-	call random_uniform_vector(rnumber,nparticles)
-	! generated_bunch(3,:)=(rnumber*s_z)-s_z/2. !+ z_cm
-	call boxmuller_vector(rnumber,nparticles)
-	! generated_bunch(4,:)=rnumber*eps_x/s_x
-	call boxmuller_vector(rnumber,nparticles)
-	! generated_bunch(5,:)=rnumber*eps_y/s_y
-	call boxmuller_vector(rnumber,nparticles)
-	! generated_bunch(6,:)=rnumber * 0.01*dgamma*gamma_m + gamma_m
+   dr=mesh_par%dxm/plasma%k_p
+   dz=mesh_par%dzm/plasma%k_p
 
-  ! generated_bunch(7,:)=charge/nparticles ! macroparticle charge
-  ! generated_bunch(8,:)=1.e10*generated_bunch(7,:)/1.6021766
- end subroutine generate_hollow_bunch
+   alpha = (charge*1e-9) /(2.d0*pi)/sqrt(2.d0*pi)/(s_x*1e-6)/(s_y*1e-6)/(s_z*1e-6)
+   alpha = alpha / 1.6e-19 / (plasma%n0*1e6) ! * (plasma%k_p/1e6)**3
+
+   p=1
+   do iz=-int(s_cut*s_z/dz),int(s_cut*s_z/dz)
+     do ir=0,int(s_cut*s_x/dr)
+         if( ((ir+.5)*dr/s_cut/s_x)**2+((iz+.5)*dz/s_cut/s_z)**2<1.) then
+           do ppcr=1,npR
+             do ppcz=1,npZ
+               r_part_dim          =ir*dr+dr/(npR+1.)*ppcr
+               r_part_dimless      =ir*mesh_par%dxm+mesh_par%dxm/(npR+1.)*ppcr
+               r_cc_dim            =ir*dr+dr/2.
+               r_cc_dimless        =ir*mesh_par%dxm+mesh_par%dxm/2.
+               theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
+              !  theta               =2.d0*pi/npZ*(ppcz-1)
+               z_part_dim          =iz*dz+dz/(npZ+1.)*ppcz
+               z_cc_dim            =iz*dz+dz/2.
+               bunch(bunch_number)%part(p)%cmp(1)=r_part_dim*cos(theta)
+               bunch(bunch_number)%part(p)%cmp(2)=r_part_dim*sin(theta)
+               bunch(bunch_number)%part(p)%cmp(3)=z_part_dim
+               bunch(bunch_number)%part(p)%cmp(12)=alpha *r_part_dimless*mesh_par%dxm*mesh_par%dzm /npZ/npR
+               bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * pi/2.
+               bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * exp(-r_part_dim**2/2./s_x**2)
+               bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * exp(-z_part_dim**2/2./s_z**2)
+               bunch(bunch_number)%part(p)%cmp(13)=1.e10*bunch(bunch_number)%part(p)%cmp(12)/1.6021766
+               p=p+1
+             enddo
+           enddo
+         endif
+     enddo
+   enddo
+
+   call boxmuller_vector(rnumber,nparticles)
+   call initialise_emittance_x_weightedbunch(bunch_number,rnumber,nparticles,eps_x,s_x)
+   call boxmuller_vector(rnumber,nparticles)
+   call initialise_emittance_y_weightedbunch(bunch_number,rnumber,nparticles,eps_y,s_y)
+   call boxmuller_vector(rnumber,nparticles)
+   call initialise_energy_spread_weightedbunch(bunch_number,rnumber,nparticles,dgamma,gamma_m)
+
+   !--- flags ---!
+   bunch(bunch_number)%part(:)%cmp(7)=1.0
+   bunch(bunch_number)%part(:)%cmp(8)=1.0
+   bunch(bunch_number)%part(:)%cmp(14)=1.0
+   !--- X-Y-Z-old ---!
+   bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
+   bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
+   bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
+ end subroutine generate_bunch_bigaussian_weighted_optimised
 
 
-!--- *** ---!
- subroutine generate_triangularZ_uniformR_bunch(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,n0)
+ !----------------------------------------------!
+ !----------------------------------------------!
+ !---    TRAPEZOIDAL::Z  + UNIFROM::R        ---!
+ !----------------------------------------------!
+ !----------------------------------------------!
+ subroutine generate_bunch_trapezoidalZ_uniformR_equal(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,n0)
  integer,intent(in)   :: nparticles,bunch_number
  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0
  real(8),intent(inout)   :: charge
@@ -165,69 +243,169 @@
  integer :: i
  real(8) :: z,y,x,a
 
- !--- charge ---!
- charge= electron_charge*pi * (s_x*1d-6) * (s_y*1d-6) &
-                            * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (n0*1d6)
- charge=charge*1e9 !converting to [nC]
+    !--- charge ---!
+    charge= electron_charge*pi * (s_x*1d-6) * (s_y*1d-6) &
+                               * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (n0*1d6)
+    charge=charge*1e9 !converting to [nC]
 
- !--- charges and weights ---!
- bunch(bunch_number)%part(:)%cmp(12)=charge/nparticles ! macroparticle charge
- bunch(bunch_number)%part(:)%cmp(13)=1.e10*bunch(bunch_number)%part(:)%cmp(12)/1.6021766
+    !--- charges and weights ---!
+    bunch(bunch_number)%part(:)%cmp(12)=charge/nparticles ! macroparticle charge
+    bunch(bunch_number)%part(:)%cmp(13)=1.e10*bunch(bunch_number)%part(:)%cmp(12)/1.6021766
 
-  do i=1,nparticles
-    call random_number(z)
-    call random_number(a)
-    Do while(a>Charge_left+(Charge_right-Charge_left)*z)
-      call random_number(z)
-      call random_number(a)
+    do i=1,nparticles
+        call random_number(z)
+        call random_number(a)
+        Do while(a>Charge_left+(Charge_right-Charge_left)*z)
+            call random_number(z)
+            call random_number(a)
+        enddo
+        x=random_number_range(-1.d0,1.d0)
+        y=random_number_range(-1.d0,1.d0)
+        Do while(sqrt(x**2+y**2)>1.d0)
+            x=random_number_range(-1.d0,1.d0)
+            y=random_number_range(-1.d0,1.d0)
+        enddo
+        bunch(bunch_number)%part(i)%cmp(1)=x*s_x!+x_cm
+        bunch(bunch_number)%part(i)%cmp(2)=y*s_y!+y_cm
+        bunch(bunch_number)%part(i)%cmp(3)=z*s_z!+z_cm
     enddo
 
-    x=random_number_range(-1.d0,1.d0)
-    y=random_number_range(-1.d0,1.d0)
-    Do while(sqrt(x**2+y**2)>1.d0)
-      x=random_number_range(-1.d0,1.d0)
-      y=random_number_range(-1.d0,1.d0)
+    call boxmuller_vector(rnumber,nparticles)
+    bunch(bunch_number)%part(:)%cmp(4)=rnumber*eps_x/s_x
+    call boxmuller_vector(rnumber,nparticles)
+    bunch(bunch_number)%part(:)%cmp(5)=rnumber*eps_y/s_y
+    call boxmuller_vector(rnumber,nparticles)
+    bunch(bunch_number)%part(:)%cmp(6)=-rnumber * 0.01*dgamma*gamma_m-gamma_m
+
+    !--- flags ---!
+    bunch(bunch_number)%part(:)%cmp(7)=1.0
+    bunch(bunch_number)%part(:)%cmp(8)=1.0
+    bunch(bunch_number)%part(:)%cmp(14)=1.0
+    !--- X-Y-Z-old ---!
+    bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
+    bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
+    bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
+ end subroutine generate_bunch_trapezoidalZ_uniformR_equal
+
+ subroutine generate_bunch_trapezoidalZ_uniformR_equal_optimised(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,n0)
+ integer,intent(in)   :: nparticles,bunch_number
+ real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0
+ real(8),intent(inout)   :: charge
+ real(8) :: rnumber(nparticles),particle_radius(nparticles),particle_theta(nparticles)
+ integer :: i
+ real(8) :: z,y,x,a
+
+    !--- charge ---!
+    charge= electron_charge*pi * (s_x*1d-6) * (s_y*1d-6) &
+                              * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (n0*1d6)
+    charge=charge*1e9 !converting to [nC]
+
+    !--- charges and weights ---!
+    bunch(bunch_number)%part(:)%cmp(12)=charge/nparticles ! macroparticle charge
+    bunch(bunch_number)%part(:)%cmp(13)=1.e10*bunch(bunch_number)%part(:)%cmp(12)/1.6021766
+
+    do i=1,nparticles
+        call random_number(z)
+        call random_number(a)
+        Do while(a>Charge_left+(Charge_right-Charge_left)*z)
+            call random_number(z)
+            call random_number(a)
+        enddo
+        x=random_number_range(-1.d0,1.d0)
+        y=random_number_range(-1.d0,1.d0)
+        Do while(sqrt(x**2+y**2)>1.d0)
+            x=random_number_range(-1.d0,1.d0)
+            y=random_number_range(-1.d0,1.d0)
+        enddo
+        bunch(bunch_number)%part(i)%cmp(1)=x*s_x!+x_cm
+        bunch(bunch_number)%part(i)%cmp(2)=y*s_y!+y_cm
+        bunch(bunch_number)%part(i)%cmp(3)=z*s_z!+z_cm
     enddo
-    bunch(bunch_number)%part(i)%cmp(1)=x*s_x!+x_cm
-    bunch(bunch_number)%part(i)%cmp(2)=y*s_y!+y_cm
-    bunch(bunch_number)%part(i)%cmp(3)=z*s_z!+z_cm
-  enddo
 
-	! call boxmuller_vector(rnumber,nparticles)
-  ! bunch(bunch_number)%part(:)%cmp(4)=rnumber*eps_x/s_x
-	! call boxmuller_vector(rnumber,nparticles)
-  ! bunch(bunch_number)%part(:)%cmp(5)=rnumber*eps_y/s_y
-	! call boxmuller_vector(rnumber,nparticles)
-  ! bunch(bunch_number)%part(:)%cmp(6)=-(rnumber * 0.01*dgamma*gamma_m + gamma_m)
-  call boxmuller_vector(rnumber,nparticles)
-  call initialise_emittance_x_weightedbunch(bunch_number,rnumber,nparticles,eps_x,s_x)
-  call boxmuller_vector(rnumber,nparticles)
-  call initialise_emittance_y_weightedbunch(bunch_number,rnumber,nparticles,eps_y,s_y)
-  call boxmuller_vector(rnumber,nparticles)
-  call initialise_energy_spread_weightedbunch(bunch_number,rnumber,nparticles,dgamma,gamma_m)
+    call boxmuller_vector(rnumber,nparticles)
+    call initialise_emittance_x_weightedbunch(bunch_number,rnumber,nparticles,eps_x,s_x)
+    call boxmuller_vector(rnumber,nparticles)
+    call initialise_emittance_y_weightedbunch(bunch_number,rnumber,nparticles,eps_y,s_y)
+    call boxmuller_vector(rnumber,nparticles)
+    call initialise_energy_spread_weightedbunch(bunch_number,rnumber,nparticles,dgamma,gamma_m)
 
-  !--- flags ---!
-  bunch(bunch_number)%part(:)%cmp(7)=1.0
-  bunch(bunch_number)%part(:)%cmp(8)=1.0
-  bunch(bunch_number)%part(:)%cmp(14)=1.0
-  !--- X-Y-Z-old ---!
-  bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
-  bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
-  bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
- end subroutine generate_triangularZ_uniformR_bunch
+    !--- flags ---!
+    bunch(bunch_number)%part(:)%cmp(7)=1.0
+    bunch(bunch_number)%part(:)%cmp(8)=1.0
+    bunch(bunch_number)%part(:)%cmp(14)=1.0
+    !--- X-Y-Z-old ---!
+    bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
+    bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
+    bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
+  end subroutine generate_bunch_trapezoidalZ_uniformR_equal_optimised
 
 
- subroutine generate_triangularZ_uniformR_bunch_weighted(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,n0,npZ,npR)
-   integer,intent(in)   :: nparticles,npR,npZ,bunch_number
-   real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0
-   real(8),intent(inout)   :: charge
-   real(8) :: rnumber(nparticles),particle_radius(nparticles),particle_theta(nparticles)
-   real(8) :: z,y,x,a,dr,dz
-   real(8) :: r_part_dim,r_part_dimless,r_cc_dim,r_cc_dimless,z_part_dim,z_cc_dim,theta
-   integer :: iz,ir,p,ppcr,ppcz
+  subroutine generate_bunch_trapezoidalZ_uniformR_weighted(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,n0,npZ,npR)
+  integer,intent(in)   :: nparticles,npR,npZ,bunch_number
+  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0
+  real(8),intent(inout)   :: charge
+  real(8) :: rnumber(nparticles),particle_radius(nparticles),particle_theta(nparticles)
+  real(8) :: z,y,x,a,dr,dz
+  real(8) :: r_part_dim,r_part_dimless,r_cc_dim,r_cc_dimless,z_part_dim,z_cc_dim,theta
+  integer :: iz,ir,p,ppcr,ppcz
 
-   dr=mesh_par%dxm/plasma%k_p
-   dz=mesh_par%dzm/plasma%k_p
+  dr=mesh_par%dxm/plasma%k_p
+  dz=mesh_par%dzm/plasma%k_p
+
+   p=1
+     do iz=-int(s_z/dz),0
+       do ir=0,int(s_x/dr)
+         do ppcr=1,npR
+           do ppcz=1,npZ
+             r_part_dim          =ir*dr+dr/(npR+1.)*ppcr !particle radius
+             r_part_dimless      =ir*mesh_par%dxm+mesh_par%dxm/(npR+1.)*ppcr !particle radius dimensionless
+             r_cc_dim            =ir*dr+dr/2. !cell centre :: now not used
+             r_cc_dimless        =ir*mesh_par%dxm+mesh_par%dxm/2. !cell centre dimensionless:: now not used
+             theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
+            !  theta               =2.d0*pi/npZ*(ppcz-1)
+             z_part_dim          =iz*dz+dz/(npZ+1.)*ppcz
+             z_cc_dim            =iz*dz+dz/2.
+             bunch(bunch_number)%part(p)%cmp(1)=r_part_dim*cos(theta)
+             bunch(bunch_number)%part(p)%cmp(2)=r_part_dim*sin(theta)
+             bunch(bunch_number)%part(p)%cmp(3)=z_part_dim+s_z
+             bunch(bunch_number)%part(p)%cmp(12)=Charge_right + (Charge_left-Charge_right)/s_z*abs(z_part_dim)
+             bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * pi/2. * r_part_dimless *mesh_par%dxm*mesh_par%dzm /npZ/npR
+             bunch(bunch_number)%part(p)%cmp(13)=1.e10*bunch(bunch_number)%part(p)%cmp(12)/1.6021766
+             p=p+1
+           enddo
+         enddo
+     enddo
+   enddo
+
+   call boxmuller_vector(rnumber,nparticles)
+   bunch(bunch_number)%part(:)%cmp(4)=rnumber*eps_x/s_x
+   call boxmuller_vector(rnumber,nparticles)
+   bunch(bunch_number)%part(:)%cmp(5)=rnumber*eps_y/s_y
+   call boxmuller_vector(rnumber,nparticles)
+   bunch(bunch_number)%part(:)%cmp(6)=-rnumber * 0.01*dgamma*gamma_m-gamma_m
+
+   !--- flags ---!
+   bunch(bunch_number)%part(:)%cmp(7)=1.0
+   bunch(bunch_number)%part(:)%cmp(8)=1.0
+   bunch(bunch_number)%part(:)%cmp(14)=1.0
+   !--- X-Y-Z-old ---!
+   bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
+   bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
+   bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
+ end subroutine generate_bunch_trapezoidalZ_uniformR_weighted
+
+
+  subroutine generate_bunch_trapezoidalZ_uniformR_weighted_optimised(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,n0,npZ,npR)
+  integer,intent(in)   :: nparticles,npR,npZ,bunch_number
+  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0
+  real(8),intent(inout)   :: charge
+  real(8) :: rnumber(nparticles),particle_radius(nparticles),particle_theta(nparticles)
+  real(8) :: z,y,x,a,dr,dz
+  real(8) :: r_part_dim,r_part_dimless,r_cc_dim,r_cc_dimless,z_part_dim,z_cc_dim,theta
+  integer :: iz,ir,p,ppcr,ppcz
+
+  dr=mesh_par%dxm/plasma%k_p
+  dz=mesh_par%dzm/plasma%k_p
 
    p=1
      do iz=-int(s_z/dz),0
@@ -269,225 +447,249 @@
    bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
    bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
    bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
- end subroutine generate_triangularZ_uniformR_bunch_weighted
-
-!--- *** Cylindrical Bunch ***----!
-subroutine generate_cylindrical_bunch(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,charge)
-integer,intent(in)   :: nparticles,bunch_number
-real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,charge
-real(8) :: rnumber(nparticles),particle_radius(nparticles),particle_theta(nparticles)
-integer :: i
-real(8) :: z,y,x,a
-
-!--- charges and weights ---!
-bunch(bunch_number)%part(:)%cmp(12)=charge/nparticles ! macroparticle charge
-bunch(bunch_number)%part(:)%cmp(13)=1.e10*bunch(bunch_number)%part(:)%cmp(12)/1.6021766
-
-  do i=1,nparticles
-     x=random_number_range(-1.d0,1.d0)
-     y=random_number_range(-1.d0,1.d0)
-     z=random_number_range(-1.d0,0.d0)
-     Do while(sqrt(x**2+y**2)>1.d0)
-       x=random_number_range(-1.d0,1.d0)
-       y=random_number_range(-1.d0,1.d0)
-     enddo
-     bunch(bunch_number)%part(i)%cmp(1)=x*s_x!+x_cm
-     bunch(bunch_number)%part(i)%cmp(2)=y*s_y!+y_cm
-     bunch(bunch_number)%part(i)%cmp(3)=z*s_z!+z_cm
-   enddo
-
- ! call boxmuller_vector(rnumber,nparticles)
- ! bunch(bunch_number)%part(:)%cmp(4)=rnumber*eps_x/s_x
- ! call boxmuller_vector(rnumber,nparticles)
- ! bunch(bunch_number)%part(:)%cmp(5)=rnumber*eps_y/s_y
- ! call boxmuller_vector(rnumber,nparticles)
- ! bunch(bunch_number)%part(:)%cmp(6)=-(rnumber * 0.01*dgamma*gamma_m + gamma_m)
- call boxmuller_vector(rnumber,nparticles)
- call initialise_emittance_x_weightedbunch(bunch_number,rnumber,nparticles,eps_x,s_x)
- call boxmuller_vector(rnumber,nparticles)
- call initialise_emittance_y_weightedbunch(bunch_number,rnumber,nparticles,eps_y,s_y)
- call boxmuller_vector(rnumber,nparticles)
- call initialise_energy_spread_weightedbunch(bunch_number,rnumber,nparticles,dgamma,gamma_m)
-
- !--- flags ---!
- bunch(bunch_number)%part(:)%cmp(7)=1.0
- bunch(bunch_number)%part(:)%cmp(8)=1.0
- bunch(bunch_number)%part(:)%cmp(14)=1.0
- !--- X-Y-Z-old ---!
- bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
- bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
- bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
-end subroutine generate_cylindrical_bunch
-
-!--- *** ---!
- subroutine generate_cylindrical_bunch_weighted(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,charge,npZ,npR)
- integer,intent(in)   :: nparticles,npR,npZ,bunch_number
- real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,charge
- integer :: iz,ir,p,ppcr,ppcz
- real(8) :: r_part_dim,r_part_dimless,theta,dr,dz,alpha
- real(8) :: rnumber(nparticles)
-
- dr=mesh_par%dxm/plasma%k_p !now in microns
- dz=mesh_par%dzm/plasma%k_p !now in microns
-
- alpha = (charge*1e-9) / (s_x*1e-6)**2 / pi / (s_z*1e-6)
- alpha = alpha / 1.6e-19 / (plasma%n0*1e6)
-
- p=1
-  do iz=-int(s_z/dz),0
-   do ir=0,int(s_x/dr)-1
-       do ppcr=1,npR
-         do ppcz=1,npZ
-           r_part_dim          =ir*dr+dr/(npR+1.)*ppcr
-           r_part_dimless      =ir*mesh_par%dxm+mesh_par%dxm/(npR+1.)*ppcr
-           theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
-          !  theta               =2.d0*pi/npZ*(ppcz-1)
-           bunch(bunch_number)%part(p)%cmp(1)=r_part_dim*cos(theta)
-           bunch(bunch_number)%part(p)%cmp(2)=r_part_dim*sin(theta)
-           bunch(bunch_number)%part(p)%cmp(3)=iz*dz+dz/(npZ+1.)*ppcz+s_z
-           bunch(bunch_number)%part(p)%cmp(12)=alpha * pi/2. * r_part_dimless *(mesh_par%dxm)*(mesh_par%dzm) /npZ/npR
-           bunch(bunch_number)%part(p)%cmp(13)=1.e10*bunch(bunch_number)%part(p)%cmp(12)/1.6021766
-           p=p+1
-         enddo
-       enddo
-   enddo
- enddo
-
- call boxmuller_vector(rnumber,nparticles)
- call initialise_emittance_x_weightedbunch(bunch_number,rnumber,nparticles,eps_x,s_x)
- call boxmuller_vector(rnumber,nparticles)
- call initialise_emittance_y_weightedbunch(bunch_number,rnumber,nparticles,eps_y,s_y)
- call boxmuller_vector(rnumber,nparticles)
- call initialise_energy_spread_weightedbunch(bunch_number,rnumber,nparticles,dgamma,gamma_m)
-
- !--- flags ---!
- bunch(bunch_number)%part(:)%cmp(7)=1.0
- bunch(bunch_number)%part(:)%cmp(8)=1.0
- bunch(bunch_number)%part(:)%cmp(14)=1.0
- !--- X-Y-Z-old ---!
- bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
- bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
- bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
- end subroutine generate_cylindrical_bunch_weighted
+ end subroutine generate_bunch_trapezoidalZ_uniformR_weighted_optimised
 
 
- subroutine generate_triangularZ_normalR_bunch(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,s_cut,charge,n0)
- integer,intent(in)   :: nparticles,bunch_number
- real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0,s_cut
- real(8),intent(inout)   :: charge
- real(8) :: rnumber(nparticles),rnumber3D(3,nparticles),particle_radius(nparticles),particle_theta(nparticles)
- integer :: i
- real(8) :: z,y,x,a
+ !----------------------------------------------!
+ !----------------------------------------------!
+ !---    TRAPEZOIDAL::Z  + GAUSSIAN::R       ---!
+ !----------------------------------------------!
+ !----------------------------------------------!
+  subroutine generate_bunch_trapezoidalZ_gaussianR_equal(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,s_cut,charge,n0)
+  integer,intent(in)   :: nparticles,bunch_number
+  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0,s_cut
+  real(8),intent(inout)   :: charge
+  real(8) :: rnumber(nparticles),rnumber3D(3,nparticles),particle_radius(nparticles),particle_theta(nparticles)
+  integer :: i
+  real(8) :: z,y,x,a
 
- !--- charge ---!
- charge= electron_charge* 2.d0*pi* (s_x*1d-6) * (s_y*1d-6) &
-                        * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (n0*1d6)
- charge=charge*1e9 !converting to [nC]
+    !--- charge ---!
+    charge= electron_charge* 2.d0*pi* (s_x*1d-6) * (s_y*1d-6) &
+                          * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (n0*1d6)
+    charge=charge*1e9 !converting to [nC]
 
- !--- charges and weights ---!
- bunch(bunch_number)%part(:)%cmp(12)=charge/nparticles ! macroparticle charge
- bunch(bunch_number)%part(:)%cmp(13)=1.e10*bunch(bunch_number)%part(:)%cmp(12)/1.6021766
- !--- flags ---!
- bunch(bunch_number)%part(:)%cmp(7)=1.0
- bunch(bunch_number)%part(:)%cmp(8)=1.0
- bunch(bunch_number)%part(:)%cmp(14)=1.0
+    !--- charges and weights ---!
+    bunch(bunch_number)%part(:)%cmp(12)=charge/nparticles ! macroparticle charge
+    bunch(bunch_number)%part(:)%cmp(13)=1.e10*bunch(bunch_number)%part(:)%cmp(12)/1.6021766
+    !--- flags ---!
+    bunch(bunch_number)%part(:)%cmp(7)=1.0
+    bunch(bunch_number)%part(:)%cmp(8)=1.0
+    bunch(bunch_number)%part(:)%cmp(14)=1.0
 
-
-  do i=1,nparticles
-    call random_number(z)
-    call random_number(a)
-    if(Charge_left >= Charge_right) then !triangular shape left-right
-      Do while(a*Charge_left>=Charge_left+(Charge_right-Charge_left)*z)
+    do i=1,nparticles
         call random_number(z)
         call random_number(a)
-      enddo
-    elseif(Charge_left < Charge_right) then !triangular shape right-left
-      Do while(a*Charge_right>=Charge_left+(Charge_right-Charge_left)*z)
+        if(Charge_left >= Charge_right) then !triangular shape left-right
+            Do while(a*Charge_left>=Charge_left+(Charge_right-Charge_left)*z)
+                call random_number(z)
+                call random_number(a)
+            enddo
+        elseif(Charge_left < Charge_right) then !triangular shape right-left
+            Do while(a*Charge_right>=Charge_left+(Charge_right-Charge_left)*z)
+                call random_number(z)
+                call random_number(a)
+            enddo
+        endif
+        ! bunch(bunch_number)%part(i)%cmp(3)=z*(s_z+mesh_par%dzm/plasma%k_p) + .5*mesh_par%dzm/plasma%k_p !+z_cm
+        bunch(bunch_number)%part(i)%cmp(3)=z*s_z
+    enddo
+
+    call boxmuller_vector_cutDimensional(rnumber3D,nparticles,s_cut,2)
+    bunch(bunch_number)%part(:)%cmp(1)=rnumber3D(1,:)*s_x
+    bunch(bunch_number)%part(:)%cmp(2)=rnumber3D(2,:)*s_y
+
+    call boxmuller_vector(rnumber,nparticles)
+    bunch(bunch_number)%part(:)%cmp(4)=rnumber*eps_x/s_x
+    call boxmuller_vector(rnumber,nparticles)
+    bunch(bunch_number)%part(:)%cmp(5)=rnumber*eps_y/s_y
+    call boxmuller_vector(rnumber,nparticles)
+    bunch(bunch_number)%part(:)%cmp(6)=-rnumber*(0.01*dgamma)*gamma_m-gamma_m
+
+    !--- X-Y-Z-old ---!
+    bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
+    bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
+    bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
+  end subroutine generate_bunch_trapezoidalZ_gaussianR_equal
+
+  subroutine generate_bunch_trapezoidalZ_gaussianR_equal_optimised(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,s_cut,charge,n0)
+  integer,intent(in)   :: nparticles,bunch_number
+  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0,s_cut
+  real(8),intent(inout)   :: charge
+  real(8) :: rnumber(nparticles),rnumber3D(3,nparticles),particle_radius(nparticles),particle_theta(nparticles)
+  integer :: i
+  real(8) :: z,y,x,a
+
+    !--- charge ---!
+    charge= electron_charge* 2.d0*pi* (s_x*1d-6) * (s_y*1d-6) &
+                          * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (n0*1d6)
+    charge=charge*1e9 !converting to [nC]
+
+    !--- charges and weights ---!
+    bunch(bunch_number)%part(:)%cmp(12)=charge/nparticles ! macroparticle charge
+    bunch(bunch_number)%part(:)%cmp(13)=1.e10*bunch(bunch_number)%part(:)%cmp(12)/1.6021766
+    !--- flags ---!
+    bunch(bunch_number)%part(:)%cmp(7)=1.0
+    bunch(bunch_number)%part(:)%cmp(8)=1.0
+    bunch(bunch_number)%part(:)%cmp(14)=1.0
+
+    do i=1,nparticles
         call random_number(z)
         call random_number(a)
-      enddo
-    endif
-    ! bunch(bunch_number)%part(i)%cmp(3)=z*(s_z+mesh_par%dzm/plasma%k_p) + .5*mesh_par%dzm/plasma%k_p !+z_cm
-    bunch(bunch_number)%part(i)%cmp(3)=z*s_z
-  enddo
+        if(Charge_left >= Charge_right) then !triangular shape left-right
+            Do while(a*Charge_left>=Charge_left+(Charge_right-Charge_left)*z)
+                call random_number(z)
+                call random_number(a)
+            enddo
+        elseif(Charge_left < Charge_right) then !triangular shape right-left
+            Do while(a*Charge_right>=Charge_left+(Charge_right-Charge_left)*z)
+                call random_number(z)
+                call random_number(a)
+            enddo
+        endif
+        ! bunch(bunch_number)%part(i)%cmp(3)=z*(s_z+mesh_par%dzm/plasma%k_p) + .5*mesh_par%dzm/plasma%k_p !+z_cm
+        bunch(bunch_number)%part(i)%cmp(3)=z*s_z
+    enddo
 
-  call boxmuller_vector_cutDimensional(rnumber3D,nparticles,s_cut,2)
-  call initialise_rmsdimension(bunch_number,rnumber3D(1,:),nparticles,s_x,'x')
-  call initialise_rmsdimension(bunch_number,rnumber3D(2,:),nparticles,s_y,'y')
+    call boxmuller_vector_cutDimensional(rnumber3D,nparticles,s_cut,2)
+    call initialise_rmsdimension(bunch_number,rnumber3D(1,:),nparticles,s_x,'x')
+    call initialise_rmsdimension(bunch_number,rnumber3D(2,:),nparticles,s_y,'y')
 
-  call boxmuller_vector(rnumber,nparticles)
-  call initialise_emittance_x_weightedbunch(bunch_number,rnumber,nparticles,eps_x,s_x)
-  call boxmuller_vector(rnumber,nparticles)
-  call initialise_emittance_y_weightedbunch(bunch_number,rnumber,nparticles,eps_y,s_y)
-  call boxmuller_vector(rnumber,nparticles)
-  call initialise_energy_spread_weightedbunch(bunch_number,rnumber,nparticles,dgamma,gamma_m)
+    call boxmuller_vector(rnumber,nparticles)
+    call initialise_emittance_x_weightedbunch(bunch_number,rnumber,nparticles,eps_x,s_x)
+    call boxmuller_vector(rnumber,nparticles)
+    call initialise_emittance_y_weightedbunch(bunch_number,rnumber,nparticles,eps_y,s_y)
+    call boxmuller_vector(rnumber,nparticles)
+    call initialise_energy_spread_weightedbunch(bunch_number,rnumber,nparticles,dgamma,gamma_m)
 
-  !--- X-Y-Z-old ---!
-  bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
-  bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
-  bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
-end subroutine generate_triangularZ_normalR_bunch
+    !--- X-Y-Z-old ---!
+    bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
+    bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
+    bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
+  end subroutine generate_bunch_trapezoidalZ_gaussianR_equal_optimised
 
 !--- *** ---!
-subroutine generate_triangularZ_normalR_bunch_weighted(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,n0,npR,npZ,s_cut)
-integer,intent(in)   :: nparticles,npR,npZ,bunch_number
-real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0,s_cut
-real(8),intent(inout)   :: charge
-real(8) :: rnumber(nparticles),particle_radius(nparticles),particle_theta(nparticles)
-real(8) :: z,y,x,a,dr,dz
-real(8) :: r_part_dim,r_part_dimless,r_cc_dim,r_cc_dimless,z_part_dim,z_cc_dim,theta
-integer :: iz,ir,p,ppcr,ppcz,Ns_z
+  subroutine generate_bunch_trapezoidalZ_gaussianR_weighted(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,n0,npR,npZ,s_cut)
+  integer,intent(in)   :: nparticles,npR,npZ,bunch_number
+  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0,s_cut
+  real(8),intent(inout)   :: charge
+  real(8) :: rnumber(nparticles),particle_radius(nparticles),particle_theta(nparticles)
+  real(8) :: z,y,x,a,dr,dz
+  real(8) :: r_part_dim,r_part_dimless,r_cc_dim,r_cc_dimless,z_part_dim,z_cc_dim,theta
+  integer :: iz,ir,p,ppcr,ppcz,Ns_z
 
-dr=mesh_par%dxm/plasma%k_p
-dz=mesh_par%dzm/plasma%k_p
+    dr=mesh_par%dxm/plasma%k_p
+    dz=mesh_par%dzm/plasma%k_p
 
-Ns_z = int(s_z/dz)-1
+    Ns_z = int(s_z/dz)-1
 
-p=1
-  do iz=-Ns_z,0
-    do ir=0,int(s_cut*s_x/dr)-1
-      do ppcr=1,npR
-        do ppcz=1,npZ
-          r_part_dim          =ir*dr+dr/(npR+1.)*ppcr
-          r_part_dimless      =ir*mesh_par%dxm+mesh_par%dxm/(npR+1.)*ppcr
-          r_cc_dim            =ir*dr+dr/2. !cc:cell-centre radius cell centre
-          r_cc_dimless        =ir*mesh_par%dxm+mesh_par%dxm/2. !cc:cell-centre radius cell centre
-          theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
-          ! theta               =2.d0*pi/npZ*(ppcz-1)
-          ! z_part_dim          =(iz+.5)*dz+dz/(npZ+1.)*ppcz
-          z_part_dim          =iz*dz+dz/(npZ+1.)*ppcz
-          z_cc_dim            =(iz+.5)*dz+dz/2.
-          bunch(bunch_number)%part(p)%cmp(1)=r_part_dim*cos(theta)
-          bunch(bunch_number)%part(p)%cmp(2)=r_part_dim*sin(theta)
-          bunch(bunch_number)%part(p)%cmp(3)=z_part_dim +Ns_z*dz
-          bunch(bunch_number)%part(p)%cmp(12)=Charge_right + (Charge_left-Charge_right)/(int(s_z/dz)-.5)*abs(iz)
-          bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * pi/2. * r_part_dimless *mesh_par%dxm*mesh_par%dzm /npZ/npR
-          bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * exp(-r_part_dim**2/2./s_x**2)
-          bunch(bunch_number)%part(p)%cmp(13)=1.e10*bunch(bunch_number)%part(p)%cmp(12)/1.6021766
-          p=p+1
+    p=1
+      do iz=-Ns_z,0
+        do ir=0,int(s_cut*s_x/dr)-1
+          do ppcr=1,npR
+            do ppcz=1,npZ
+              r_part_dim          =ir*dr+dr/(npR+1.)*ppcr
+              r_part_dimless      =ir*mesh_par%dxm+mesh_par%dxm/(npR+1.)*ppcr
+              r_cc_dim            =ir*dr+dr/2. !cc:cell-centre radius cell centre
+              r_cc_dimless        =ir*mesh_par%dxm+mesh_par%dxm/2. !cc:cell-centre radius cell centre
+              theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
+              ! theta               =2.d0*pi/npZ*(ppcz-1)
+              ! z_part_dim          =(iz+.5)*dz+dz/(npZ+1.)*ppcz
+              z_part_dim          =iz*dz+dz/(npZ+1.)*ppcz
+              z_cc_dim            =(iz+.5)*dz+dz/2.
+              bunch(bunch_number)%part(p)%cmp(1)=r_part_dim*cos(theta)
+              bunch(bunch_number)%part(p)%cmp(2)=r_part_dim*sin(theta)
+              bunch(bunch_number)%part(p)%cmp(3)=z_part_dim +Ns_z*dz
+              bunch(bunch_number)%part(p)%cmp(12)=Charge_right + (Charge_left-Charge_right)/(int(s_z/dz)-.5)*abs(iz)
+              bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * pi/2. * r_part_dimless *mesh_par%dxm*mesh_par%dzm /npZ/npR
+              bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * exp(-r_part_dim**2/2./s_x**2)
+              bunch(bunch_number)%part(p)%cmp(13)=1.e10*bunch(bunch_number)%part(p)%cmp(12)/1.6021766
+              p=p+1
+            enddo
+          enddo
+      enddo
+    enddo
+
+    call boxmuller_vector(rnumber,nparticles)
+    bunch(bunch_number)%part(:)%cmp(4)=rnumber*eps_x/s_x
+    call boxmuller_vector(rnumber,nparticles)
+    bunch(bunch_number)%part(:)%cmp(5)=rnumber*eps_y/s_y
+    call boxmuller_vector(rnumber,nparticles)
+    bunch(bunch_number)%part(:)%cmp(6)=-rnumber*(0.01*dgamma)*gamma_m-gamma_m
+
+    !--- flags ---!
+    bunch(bunch_number)%part(:)%cmp(7)=1.0
+    bunch(bunch_number)%part(:)%cmp(8)=1.0
+    bunch(bunch_number)%part(:)%cmp(14)=1.0
+    !--- X-Y-Z-old ---!
+    bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
+    bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
+    bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
+  end subroutine generate_bunch_trapezoidalZ_gaussianR_weighted
+
+  !--- *** ---!
+  subroutine generate_bunch_trapezoidalZ_gaussianR_weighted_optimised(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,n0,npR,npZ,s_cut)
+    integer,intent(in)   :: nparticles,npR,npZ,bunch_number
+    real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0,s_cut
+    real(8),intent(inout)   :: charge
+    real(8) :: rnumber(nparticles),particle_radius(nparticles),particle_theta(nparticles)
+    real(8) :: z,y,x,a,dr,dz
+    real(8) :: r_part_dim,r_part_dimless,r_cc_dim,r_cc_dimless,z_part_dim,z_cc_dim,theta
+    integer :: iz,ir,p,ppcr,ppcz,Ns_z
+
+      dr=mesh_par%dxm/plasma%k_p
+      dz=mesh_par%dzm/plasma%k_p
+
+      Ns_z = int(s_z/dz)-1
+
+      p=1
+        do iz=-Ns_z,0
+          do ir=0,int(s_cut*s_x/dr)-1
+            do ppcr=1,npR
+              do ppcz=1,npZ
+                r_part_dim          =ir*dr+dr/(npR+1.)*ppcr
+                r_part_dimless      =ir*mesh_par%dxm+mesh_par%dxm/(npR+1.)*ppcr
+                r_cc_dim            =ir*dr+dr/2. !cc:cell-centre radius cell centre
+                r_cc_dimless        =ir*mesh_par%dxm+mesh_par%dxm/2. !cc:cell-centre radius cell centre
+                theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
+                ! theta               =2.d0*pi/npZ*(ppcz-1)
+                ! z_part_dim          =(iz+.5)*dz+dz/(npZ+1.)*ppcz
+                z_part_dim          =iz*dz+dz/(npZ+1.)*ppcz
+                z_cc_dim            =(iz+.5)*dz+dz/2.
+                bunch(bunch_number)%part(p)%cmp(1)=r_part_dim*cos(theta)
+                bunch(bunch_number)%part(p)%cmp(2)=r_part_dim*sin(theta)
+                bunch(bunch_number)%part(p)%cmp(3)=z_part_dim +Ns_z*dz
+                bunch(bunch_number)%part(p)%cmp(12)=Charge_right + (Charge_left-Charge_right)/(int(s_z/dz)-.5)*abs(iz)
+                bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * pi/2. * r_part_dimless *mesh_par%dxm*mesh_par%dzm /npZ/npR
+                bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * exp(-r_part_dim**2/2./s_x**2)
+                bunch(bunch_number)%part(p)%cmp(13)=1.e10*bunch(bunch_number)%part(p)%cmp(12)/1.6021766
+                p=p+1
+              enddo
+            enddo
         enddo
       enddo
-  enddo
-enddo
 
-call boxmuller_vector(rnumber,nparticles)
-call initialise_emittance_x_weightedbunch(bunch_number,rnumber,nparticles,eps_x,s_x)
-call boxmuller_vector(rnumber,nparticles)
-call initialise_emittance_y_weightedbunch(bunch_number,rnumber,nparticles,eps_y,s_y)
-call boxmuller_vector(rnumber,nparticles)
-call initialise_energy_spread_weightedbunch(bunch_number,rnumber,nparticles,dgamma,gamma_m)
+      call boxmuller_vector(rnumber,nparticles)
+      call initialise_emittance_x_weightedbunch(bunch_number,rnumber,nparticles,eps_x,s_x)
+      call boxmuller_vector(rnumber,nparticles)
+      call initialise_emittance_y_weightedbunch(bunch_number,rnumber,nparticles,eps_y,s_y)
+      call boxmuller_vector(rnumber,nparticles)
+      call initialise_energy_spread_weightedbunch(bunch_number,rnumber,nparticles,dgamma,gamma_m)
 
-!--- flags ---!
-bunch(bunch_number)%part(:)%cmp(7)=1.0
-bunch(bunch_number)%part(:)%cmp(8)=1.0
-bunch(bunch_number)%part(:)%cmp(14)=1.0
-!--- X-Y-Z-old ---!
-bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
-bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
-bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
-end subroutine generate_triangularZ_normalR_bunch_weighted
+      !--- flags ---!
+      bunch(bunch_number)%part(:)%cmp(7)=1.0
+      bunch(bunch_number)%part(:)%cmp(8)=1.0
+      bunch(bunch_number)%part(:)%cmp(14)=1.0
+      !--- X-Y-Z-old ---!
+      bunch(bunch_number)%part(:)%cmp(9)=bunch(bunch_number)%part(:)%cmp(1)
+      bunch(bunch_number)%part(:)%cmp(10)=bunch(bunch_number)%part(:)%cmp(2)
+      bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
+    end subroutine generate_bunch_trapezoidalZ_gaussianR_weighted_optimised
 
-!--- *** ---!
+    !----------------------------------------------!
+    !----------------------------------------------!
+    !---    READ FROM EXTERNAL FILE             ---!
+    !----------------------------------------------!
+    !----------------------------------------------!
  subroutine read_from_external_file(name_file,number_of_particles,generated_bunch)
  character,intent(in) :: name_file*255
  integer,intent(in)   :: number_of_particles
@@ -538,23 +740,21 @@ read(9,*) string
 
 
   real(8) function calculate_bunch_number_of_particles(nb,shape,PWeights,nparticles)
-    integer, intent(in) :: nb,shape,nparticles
-    character(len=*), intent(in) :: PWeights
+    integer, intent(in) :: nb,nparticles
+    character(len=*), intent(in) :: shape,PWeights
     integer :: iz,ir
     real(8) :: dz,dr, s_x, s_y, s_z, s_cut
 
     calculate_bunch_number_of_particles=0
     dr=mesh_par%dxm/plasma%k_p
     dz=mesh_par%dzm/plasma%k_p
+    s_x=bunch_initialization%bunch_s_x(nb)
+    s_z=bunch_initialization%bunch_s_z(nb)
     s_cut = bunch_initialization%sigma_cut(nb)
 
-    if ( trim(PWeights)=='equal') then !--- Assign equal number of particles
-      calculate_bunch_number_of_particles=nparticles
-    endif
+    if( trim(PWeights)=='equal') calculate_bunch_number_of_particles=nparticles
 
-    if ( trim(PWeights)=='weighted' .and. shape==1) then !weighted::BIGAUSSIAN
-      s_x=bunch_initialization%bunch_s_x(nb)
-      s_z=bunch_initialization%bunch_s_z(nb)
+    if( trim(shape)=='bigaussian' .and. trim(PWeights)=='weighted') then
       do iz=-int(s_cut*s_z/dz),int(s_cut*s_z/dz)
         do ir=0,int(s_cut*s_x/dr)+1
           if( ((ir+.5)*dr/s_cut/s_x)**2+((iz+.5)*dz/s_cut/s_z)**2<1.) then
@@ -566,9 +766,7 @@ read(9,*) string
     endif
 
 
-    if ( trim(PWeights)=='weighted' .and. shape==2) then !weighted::tringularZ+uniforR
-      s_x=bunch_initialization%bunch_s_x(nb)
-      s_z=bunch_initialization%bunch_s_z(nb)
+    if( trim(shape)=='cylindrical' .and. trim(PWeights)=='weighted') then
       do iz=-int(s_z/dz),0
         do ir=0,int(s_x/dr)
             calculate_bunch_number_of_particles=calculate_bunch_number_of_particles+ &
@@ -578,9 +776,7 @@ read(9,*) string
     endif
 
 
-    if ( trim(PWeights)=='weighted' .and. shape==3) then !weighted::tringularZ+gaussianR
-      s_x=bunch_initialization%bunch_s_x(nb)
-      s_z=bunch_initialization%bunch_s_z(nb)
+    if ( trim(shape)=='trapezoidal' .and. trim(PWeights)=='weighted') then
       do iz=-int(s_z/dz)+1,0
         do ir=0,int(s_cut*s_x/dr)-1
             calculate_bunch_number_of_particles=calculate_bunch_number_of_particles+ &
@@ -588,19 +784,8 @@ read(9,*) string
         enddo
       enddo
     endif
-
-
-    if ( trim(PWeights)=='weighted' .and. shape==4) then !weighted::cylinder
-      s_x=bunch_initialization%bunch_s_x(nb)
-      s_z=bunch_initialization%bunch_s_z(nb)
-      do iz=-int(s_z/dz),0
-      do ir=0,int(s_x/dr)
-          calculate_bunch_number_of_particles=calculate_bunch_number_of_particles+ &
-              bunch_initialization%npZ(nb)*bunch_initialization%npR(nb)
-      enddo
-      enddo
-    endif
   end function calculate_bunch_number_of_particles
+
 
  subroutine initialise_emittance_x_weightedbunch(bunch_number,rnumber,nparticles,eps_x,s_x)
    integer, intent(in)    :: bunch_number,nparticles

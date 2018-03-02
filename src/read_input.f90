@@ -430,7 +430,7 @@ subroutine preset_bunch_initialization
 
 		!just one driver
 		bunch_initialization%n_total_bunches=1
-    bunch_initialization%shape(:)= 1 !1: gaussian, 2: hollow bunch ets. see bunch_init.f90
+    bunch_initialization%shape(:)='bigaussian' 
     bunch_initialization%chargeB(:)= 0.200
 		bunch_initialization%n_particles(:)= 50000
 		bunch_initialization%bunch_s_x(:)=8.0
@@ -446,6 +446,7 @@ subroutine preset_bunch_initialization
     bunch_initialization%Charge_left(:)=1.d0
     !--- weight selection ---!
     bunch_initialization%PWeights(:)='equal'
+    bunch_initialization%optimisation(:)='no'
     bunch_initialization%sigma_cut(:)=5.0
     bunch_initialization%npZ(:)=2
     bunch_initialization%npR(:)=2
