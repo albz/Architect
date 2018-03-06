@@ -821,8 +821,9 @@ read(9,*) string
    real(8) :: err,dgamma_local
 
    dgamma_local=dgamma
-   DO WHILE( ABS(err) > 1e-8)
-     bunch(bunch_number)%part(:)%cmp(6)=-(rnumber *0.01*dgamma_local*gamma_m + gamma_m)
+   err=1.d0
+   DO WHILE( ABS(err) > 1d-8)
+     bunch(bunch_number)%part(:)%cmp(6)=-(rnumber *0.01d0*dgamma_local*gamma_m + gamma_m)
      err = calculate_energy_spread(bunch_number)-(dgamma*0.01d0)
      dgamma_local=dgamma_local-err
    ENDDO
