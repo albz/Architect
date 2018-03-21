@@ -280,7 +280,6 @@ subroutine preset_mesh_parameters
   mesh_par%Nsample_z=-1        !longitudinal number of points per sigma_z
   mesh_par%Nsample_r=-1        !transverse number of points per 2*sigma_r
   mesh_par%R_mesh=-1.D0        !transverse domain dimension in [um] -> converted in kp
-  mesh_par%R_mesh_plasma=-1.D0 !transverse plasma extension in [um] -> converted in kp
   mesh_par%Left_mesh=-1.D0     !longitudinal Left  plasma extension in [um] -> converted in kp
   mesh_par%Right_mesh=-1.D0    !longitudinal Right plasma extension in [um] -> converted in kp
 end subroutine preset_mesh_parameters
@@ -430,7 +429,7 @@ subroutine preset_bunch_initialization
 
 		!just one driver
 		bunch_initialization%n_total_bunches=1
-    bunch_initialization%shape(:)='bigaussian' 
+    bunch_initialization%shape(:)='bigaussian'
     bunch_initialization%chargeB(:)= 0.200
 		bunch_initialization%n_particles(:)= 50000
 		bunch_initialization%bunch_s_x(:)=8.0

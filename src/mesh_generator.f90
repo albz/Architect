@@ -185,20 +185,6 @@ CONTAINS
              write(*,'(A)') 'From INPUT :: you have selected R_mesh :: maximum extension in microns'
              write(*,'(A,f8.3,A,f8.3,A,f8.3,A)') 'R_mesh:        ',mesh_par%R_mesh/plasma%k_p,' (um) --- R_mesh (dimensionless):        ',mesh_par%R_mesh, 'x Kp --- Rmax (derived): ', mesh_par%Rmax,' x sigma_r (first bunch)'
          end if
-         !--- *** plasma radial extension *** ---!
-         if(mesh_par%R_mesh_plasma<0.D0) then
-             mesh_par%R_mesh_plasma=mesh_par%Rmax_plasma*plasma%k_p*sim_parameters%r0
-             write(*,'(A)')
-             write(*,'(A)') 'From INPUT :: you have selected R_mesh_plasma :: maximum plasma extension in unit of sigma_r'
-             write(*,'(A,f8.3,A,f8.3,A,f8.3,A)') 'Rmax_plasma: ',mesh_par%Rmax_plasma,' x sigma_r (first bunch) --- R_mesh_plasma (dimensionless): ',mesh_par%R_mesh_plasma,' x Kp --- R_mesh_plasma:',mesh_par%R_mesh_plasma/plasma%k_p,' (um)'
-         else
-             mesh_par%R_mesh_plasma=mesh_par%R_mesh_plasma*plasma%k_p
-             mesh_par%Rmax_plasma  =mesh_par%R_mesh_plasma / (plasma%k_p*sim_parameters%r0)
-             write(*,'(A)')
-             write(*,'(A)') 'From INPUT :: you have selected R_mesh_plasma :: maximum plasma extension in microns'
-             write(*,'(A,f8.3,A,f8.3,A,f8.3,A)') 'R_mesh_plasma: ',mesh_par%R_mesh_plasma/plasma%k_p,' (um) --- R_mesh_plasma (dimensionless): ',mesh_par%R_mesh_plasma, 'x Kp --- Rmax (derived): ', mesh_par%Rmax_plasma,' x sigma_r (first bunch)'
-         end if
-
 
 
          mesh_par%ScaleX=2.*sim_parameters%r0*plasma%k_p 	! Transverse size of mesh is based on transverse size of first bunch
@@ -225,8 +211,8 @@ CONTAINS
          mesh_par%R_mesh=mesh_par%R_mesh 			! Mesh transv. size
          ! mesh nodes (Transverse)
          mesh_par%Nxm         = int(mesh_par%R_mesh/mesh_par%dxm)+1 	! Mesh transv. dimension
-         mesh_par%NRmax_plasma= int(mesh_par%R_mesh_plasma/mesh_par%dxm)+1 !Plasma extension (number of cells)
          if(mod(mesh_par%Nxm,2).eq.1) mesh_par%Nxm=mesh_par%Nxm+1
+         mesh_par%NRmax_plasma= int(maxval(bck_plasma%radius_um(:))/mesh_par%dxm)+1 !Plasma extension (number of cells)
 
 
          !--- *** LONGITUDINAL *** ---!

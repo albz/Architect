@@ -77,11 +77,11 @@ IMPLICIT NONE
       INTEGER :: NRmax_plasma
       INTEGER :: Nxm,Nzm,Nsample_r,Nsample_z,Nxm_old,Nzm_old
       REAL(8) :: Left_Domain_boundary,Right_Domain_boundary
-      REAL(8) :: ScaleX,ScaleZ,ScaleR,L_mesh,R_mesh,R_mesh_plasma,dzm,dxm,dzm_old,dxm_old
+      REAL(8) :: ScaleX,ScaleZ,ScaleR,L_mesh,R_mesh,dzm,dxm,dzm_old,dxm_old
       REAL(8) :: z_min,z_max,z_min_um,z_max_um
       REAL(8) :: z_min_moving,z_max_moving,z_min_moving_um,z_max_moving_um
       REAL(8) :: Left_mesh,Right_mesh !input-parameters
-      REAL(8) :: Rmax,Rmax_plasma
+      REAL(8) :: Rmax
    END TYPE
 
    !--- define the background plasma profile ---!
