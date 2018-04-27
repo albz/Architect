@@ -91,6 +91,7 @@ def architect_read_PS_bin_v_3(dir_path,file_name):
 	f        = open(path,'rb')
 
 	#-#
+	var.bunch_charges=[];
 	var.output_version     = struct.unpack('i', f.read(4))[0]
 	var.n_bunches           = struct.unpack('i', f.read(4))[0]
 	for i in range(0,var.n_bunches): var.bunch_charges.append(struct.unpack('d', f.read(8))[0])

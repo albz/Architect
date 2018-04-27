@@ -75,7 +75,27 @@ USE architect_class_structure
   REAL(8) :: s_x(1),s_y(1),s_z(1)
   REAL(8) :: mu_x(1),mu_y(1),mu_z(1)
 
+  ! do ibunch=1,sim_par%Nbunches
+  !   mu_x(1)  = calculate_nth_moment(ibunch,1,1,'nocentral')
+  ! 	mu_y(1)  = calculate_nth_moment(ibunch,1,2,'nocentral')
+  ! 	mu_z(1)  = calculate_nth_moment(ibunch,1,3,'nocentral')
+  !   s_x(1)  = sqrt(calculate_nth_moment(ibunch,2,1,'central'))
+  ! 	s_y(1)  = sqrt(calculate_nth_moment(ibunch,2,2,'central'))
+  ! 	s_z(1)  = sqrt(calculate_nth_moment(ibunch,2,3,'central'))
+  !
+  !   do iparticle=1,size(bunch(ibunch)%part(:))
+ 	! 		if( bunch(ibunch)%part(iparticle)%cmp(8) .eq. 1.) then
+  !       if( abs(bunch(ibunch)%part(iparticle)%cmp(1)-mu_x(1)) > 4.*s_x(1)  ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
+  !       if( abs(bunch(ibunch)%part(iparticle)%cmp(2)-mu_y(1)) > 4.*s_y(1)  ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
+  !       if( abs(bunch(ibunch)%part(iparticle)%cmp(3)-mu_z(1)) > 4.*s_z(1)  ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
+ 	! 		endif
+ 	! 	enddo
+  !
+ 	! enddo
+
+
   do ibunch=1,sim_par%Nbunches
+
     mu_x(1)  = calculate_nth_moment(ibunch,1,1,'nocentral')
   	mu_y(1)  = calculate_nth_moment(ibunch,1,2,'nocentral')
   	mu_z(1)  = calculate_nth_moment(ibunch,1,3,'nocentral')
@@ -85,31 +105,14 @@ USE architect_class_structure
 
     do iparticle=1,size(bunch(ibunch)%part(:))
  			if( bunch(ibunch)%part(iparticle)%cmp(8) .eq. 1.) then
-        if( abs(bunch(ibunch)%part(iparticle)%cmp(1)-mu_x(1)) > 4.*s_x(1)  ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
-        if( abs(bunch(ibunch)%part(iparticle)%cmp(2)-mu_y(1)) > 4.*s_y(1)  ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
-        if( abs(bunch(ibunch)%part(iparticle)%cmp(3)-mu_z(1)) > 4.*s_z(1)  ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
+        if( abs(bunch(ibunch)%part(iparticle)%cmp(1)-mu_x(1)) > 4.*bunch_initialization%bunch_s_x(ibunch) ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
+        if( abs(bunch(ibunch)%part(iparticle)%cmp(2)-mu_y(1)) > 4.*bunch_initialization%bunch_s_y(ibunch) ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
+        if( abs(bunch(ibunch)%part(iparticle)%cmp(3)-mu_z(1)) > 4.*bunch_initialization%bunch_s_z(ibunch) ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
  			endif
  		enddo
 
  	enddo
 
-	! do ii=1,sim_par%Nbunches
-	! 	npc=sum(bunch(ii)%part(:)%cmp(8))
-	! 	avgz=0.
-	! 	avgz=sum(bunch(ii)%part(:)%cmp(3)*bunch(ii)%part(:)%cmp(8))
-	! 	avgz=avgz/npc
-  !
-  !
-	! 	max_ellipsoidal = max( sim_par%rB0(ii) , sim_par%lbunch(ii) )
-	! 	max_ellipsoidal = max_ellipsoidal * sim_par%sigma_cut
-  !
-	! 	do ss=1,size(bunch(ii)%part(:))
-	! 		if( bunch(ii)%part(ss)%cmp(8) .eq. 1.) then
-	! 			radius = sqrt(bunch(ii)%part(ss)%cmp(1)**2+bunch(ii)%part(ss)%cmp(2)**2+(bunch(ii)%part(ss)%cmp(3)-avgz)**2)
-	! 			if( radius > max_ellipsoidal ) bunch(ii)%part(ss)%cmp(8)=0.
-	! 		endif
-	! 	enddo
-	! enddo
 END SUBROUTINE
 
 
