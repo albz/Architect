@@ -169,6 +169,22 @@ CONTAINS
 		enddo
 
 		!--- Add Bfield on the LEFT-Boundary ---!
+		if(mesh_par%z_min_moving_um <= Bpoloidal%z_coordinate_um(1)+1e3  .and. &
+			 mesh_par%z_min_moving_um >  Bpoloidal%z_coordinate_um(1)     ) then
+
+			 Bfield   = mu0*Bpoloidal%background_current_A(i)/(2.D0*pi*Bpoloidal%capillary_radius_um*1e-6) !Poloidal field from current
+			 Bfield   = Bfield / (96.*sqrt(plasma%n0)/3e8) !from Dimensional to DimensionLESS
+			 do j=2,mesh_par%Nxm
+				 !---Linear+Cubic with ramp cos2
+				 Radius=r_mesh(j)/Bpoloidal%capillary_radius
+				 a=Bpoloidal%a_shape(i)
+				 mesh(2,j)%B_ex_poloidal = -Bfield*((1.D0-a)*Radius+a*Radius**3)*cos(pi/2./1e3*(mesh_par%z_min_moving_um-Bpoloidal%z_coordinate_um(1)))**2
+			 enddo
+		 endif
+		 !--- *** ---!
+
+
+		!--- Add Bfield on the LEFT-Boundary ---!
 		Do i=1,5
 			if(mesh_par%z_min_moving_um <= Bpoloidal%z_coordinate_um(i) .and. &
 			   mesh_par%z_min_moving_um >  Bpoloidal%z_coordinate_um(i+1) ) then

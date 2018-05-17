@@ -577,6 +577,12 @@
   real(8) :: r_part_dim,r_part_dimless,r_cc_dim,r_cc_dimless,z_part_dim,z_cc_dim,theta
   integer :: iz,ir,p,ppcr,ppcz,Ns_z
 
+  !--- charge ---!
+  charge= electron_charge* 2.d0*pi* (s_x*1d-6) * (s_y*1d-6) &
+                        * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (n0*1d6)
+  charge=charge*1e9 !converting to [nC]
+
+  !---
     dr=mesh_par%dxm/plasma%k_p
     dz=mesh_par%dzm/plasma%k_p
 
