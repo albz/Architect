@@ -587,7 +587,6 @@
     dz=mesh_par%dzm/plasma%k_p
 
     Ns_z = int(s_z/dz)-1
-
     p=1
       do iz=-Ns_z,0
         do ir=0,int(s_cut*s_x/dr)-1
@@ -606,7 +605,7 @@
               bunch(bunch_number)%part(p)%cmp(2)=r_part_dim*sin(theta)
               bunch(bunch_number)%part(p)%cmp(3)=z_part_dim +Ns_z*dz
               bunch(bunch_number)%part(p)%cmp(12)=Charge_right + (Charge_left-Charge_right)/(int(s_z/dz)-.5)*abs(iz)
-              bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * pi/2. * r_part_dimless *mesh_par%dxm*mesh_par%dzm /npZ/npR
+              bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * pi/2. *sqrt(1e16/n0) * r_part_dimless *mesh_par%dxm*mesh_par%dzm /npZ/npR
               bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * exp(-r_part_dim**2/2./s_x**2)
               bunch(bunch_number)%part(p)%cmp(13)=1.e10*bunch(bunch_number)%part(p)%cmp(12)/1.6021766
               p=p+1
