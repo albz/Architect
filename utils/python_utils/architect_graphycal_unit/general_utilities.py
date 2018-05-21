@@ -26,6 +26,7 @@ def list_outputs(path):
     for root, dirs, files in os.walk(path):
         var.list_outputs=files
         var.last_output=files[-1]
+    var.list_outputs = sorted(var.list_outputs, key=lambda x: int(os.path.splitext(x)[0]))
 
 def read_argv(argv):
     var.frm_number=-1
