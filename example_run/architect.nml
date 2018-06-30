@@ -1,18 +1,20 @@
 &PLASMA_PARAMETERS
+
 	!Length of the accelerating stage, in um
-	plasma%l_acc=30050.0
+	plasma%l_acc=30000
 
 	!Plasma initial density, in cm^-3
-	plasma%n0=1.0e16
+	plasma%n0=1.0e16,
 /
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 &SIMULATION_PARAMETERS
 
 	!CFL condition
-	sim_parameters%CFL=0.9
+	sim_parameters%CFL=0.9,
 
-	! DOMAIN BOUNDARIES AND CAPILLARY RAMP LENGHT
+
+! DOMAIN BOUNDARIES AND CAPILLARY RAMP LENGHT
 
 	!Moving window parameters
 	sim_parameters%window_mode = 1 !(0 = window moves with first bunch, 1 = window moves at constant speed)
@@ -22,7 +24,7 @@
 ! FLUID ADVANCE SCHEME
 
 ! Fluid Scheme (0 = Upwind, 1 = FCT, 2 = Upwind new centering )
-  sim_parameters%Fluid_Scheme=2
+  sim_parameters%Fluid_Scheme=2,
 
 ! BUNCH INTEGRATED DIAGNOSTICS
 
@@ -31,27 +33,27 @@
 	sim_parameters%sigma_cut=2.5
 
 	!Enable diagnostics with dcut (0 = No, 1 = Yes)
-	sim_parameters%diagnostics_with_dcut = 1
+	sim_parameters%diagnostics_with_dcut = 1,
 
 
 ! OUTPUT OPTIONS
 	!Output format (0:ASCII, 1:Binary; Integrated parameters are always in ASCII)
-	sim_parameters%Output_format= 1
+	sim_parameters%Output_format= 1,
 
 	!Save reduced Phase Space (0: save the whole phase space, 1: save only the phase space with the cut of integrated diagnostics)
 	sim_parameters%reduced_PS = 0
 
 	!Integrated Outputs (sigmas, emittance, energy spread etc.) every nn steps :
 	sim_parameters%output_Integrated_params_nstep = 900000, !steps
-	sim_parameters%output_Integrated_params_dist  = 25., !mu
+	sim_parameters%output_Integrated_params_dist  = 250., !mu
 
 	!OnGrid Output (set 0 for final results only):
 	sim_parameters%output_grid_nstep = 900000, !steps
-	sim_parameters%output_grid_dist  = 250., !mu
+	sim_parameters%output_grid_dist  = 2e2, !mu
 
 	!Phase Space output (set 0 for writing at the end):
 	sim_parameters%output_PS_nstep = 900000, !steps
-	sim_parameters%output_PS_dist  = 10.e4,!mu
+	sim_parameters%output_PS_dist  = 1.e4,!mu
 
 	!Number of grid point to jump when saving
 	sim_parameters%jump_grid=1,
@@ -60,17 +62,17 @@
 	sim_parameters%jump_PS=1,
 
 !Shapiro-Wilks applied on bunches - diagnostic options:
-	sim_parameters%L_SW_test=.TRUE.,
+	sim_parameters%L_SW_test=.FALSE.,
 	sim_parameters%SW_sample_dimension=5000,
 	sim_parameters%SW_sub_iter=10,
 
 !lineout
-	sim_parameters%L_lineout = .TRUE.,
+	sim_parameters%L_lineout = .FALSE.,
 
 !Bunch REinitialisation
 	sim_parameters%L_Bunch_evolve=.FALSE.
 	sim_parameters%L_BunchREinit=.FALSE.
-	sim_parameters%bunch_reinit_distance_um=50.0
+	sim_parameters%bunch_reinit_distance_um=5000.0,
 /
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -78,83 +80,156 @@
 
 	!Transverse sampling points per units min(2* whole bunch \sigma_r, lambda_p/2, based on first bunch)
 	mesh_par%Nsample_r= 20
+
 	!Longitudinal sampling points per unit min(\sigma_z bunches,lambda_p, based on first bunch)
 	mesh_par%Nsample_z= 50
-
-
 	!Define resolution instead of number of points
-	mesh_par%dzm=1.0
-	mesh_par%dxm=0.4
+	mesh_par%dzm=2.
+	mesh_par%dxm=0.8
 
 	!Moving window/Domain boundaries in lambdap units
 	mesh_par%Left_Domain_boundary= 1.0
 	mesh_par%Right_Domain_boundary=1.5
 	!Domain Boundaries in mu
-	mesh_par%Left_mesh=250.00
-	mesh_par%Right_mesh=350.00
+	mesh_par%Left_mesh=200.00,
+	mesh_par%Right_mesh=450.00,
+
 
 	!---Mesh radius in \sigma_r units---!
-	mesh_par%Rmax=13.
-	mesh_par%Rmax_plasma=8.
+	mesh_par%Rmax=30.
 	!---Mesh radius in microns---!
-	mesh_par%R_mesh=90.
-	mesh_par%R_mesh_plasma=80.
+	mesh_par%R_mesh=150.
 /
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 &BACKGROUND_PLASMA_PROFILE
-bck_plasma%order_logitudinal(1)=0, !0: constant
-bck_plasma%order_logitudinal(2)=0, !0: constant
-														       													!1: linear ramp
-bck_plasma%order_radial(1)=0,      !0: constant
-bck_plasma%order_radial(2)=0,      !0: constant
-bck_plasma%n_over_n0(1)=0.d0,      !n/n0
-bck_plasma%n_over_n0(2)=1.d0,      !n/n0
-bck_plasma%z_coordinate_um(1)=0.
-bck_plasma%z_coordinate_um(2)=-1.0,
-bck_plasma%z_coordinate_um(3)=-5.5e4,
-bck_plasma%radius_um(1)=500., 
+	bck_plasma%external_density=.FALSE., !read from external file
+	bck_plasma%filename='./ne.nml',     !read from external file
+	bck_plasma%shift_um=-50.,
+
+	bck_plasma%order_logitudinal(1)=3, !0: constant
+	bck_plasma%order_logitudinal(2)=0, !1: linear ramp
+	bck_plasma%order_logitudinal(3)=3, !0: constant
+	bck_plasma%order_logitudinal(4)=0, !0: constant
+                                       !1: linear ramp
+	bck_plasma%order_radial(1)=0,      !0: constant
+	bck_plasma%order_radial(2)=0,      !0: constant
+	bck_plasma%order_radial(3)=0,      !0: constant
+	bck_plasma%order_radial(4)=0,      !0: constant
+	bck_plasma%order_radial(5)=0,      !0: constant
+
+	bck_plasma%n_over_n0(1)=0.d0,      !n/n0
+	bck_plasma%n_over_n0(2)=1.d0,      !n/n0
+	bck_plasma%n_over_n0(3)=1.d0,      !n/n0
+	bck_plasma%n_over_n0(4)=0.d0,      !n/n0
+	bck_plasma%n_over_n0(5)=0.d0,      !n/n0
+
+	bck_plasma%z_coordinate_um(1)=0.
+	bck_plasma%z_coordinate_um(2)=-500.0,
+	bck_plasma%z_coordinate_um(3)=-1100500.0,
+	bck_plasma%z_coordinate_um(4)=-1101000.0,
+	bck_plasma%z_coordinate_um(5)=-200.0e4,
+
+	bck_plasma%radius_um(1)=120.00,
+	bck_plasma%radius_um(2)=120.00,
+	bck_plasma%radius_um(3)=120.00,
+	bck_plasma%radius_um(4)=120.00,
+	bck_plasma%radius_um(5)=120.00,
 /
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 &BUNCHINIT
 	bunch_initialization%l_bunch_internal_init=.T.,
-	bunch_initialization%n_total_bunches=2,
+	bunch_initialization%n_total_bunches=1,
 	bunch_initialization%self_consistent_field_bunch=3,
-	bunch_initialization%maxnorm=1e-6,
+	bunch_initialization%maxnorm=1e-7,
 	bunch_initialization%init_width_r=100,
 	bunch_initialization%init_width_z=3,
-	bunch_initialization%iter_max=100000,
+	bunch_initialization%iter_max=5000,
 
-	bunch_initialization%db(1)=0.,
-	bunch_initialization%db(2)=0.45,
+	bunch_initialization%db(1)=0.00,
+	bunch_initialization%db(2)=1.50,
+	bunch_initialization%db(3)=1.50,
+	bunch_initialization%db(4)=1.50,
+	bunch_initialization%db(5)=1.45,
 
-	bunch_initialization%ChargeB(1)=0.200,
-	bunch_initialization%ChargeB(2)=0.060,
+	bunch_initialization%ChargeB(1)=0.040,
+	bunch_initialization%ChargeB(2)=0.120,
+	bunch_initialization%ChargeB(3)=0.240,
+	bunch_initialization%ChargeB(4)=0.440,
+	bunch_initialization%ChargeB(5)=0.024,
 
-	bunch_initialization%shape(1)=1,
-	bunch_initialization%n_particles(1)=100000,
-	bunch_initialization%bunch_s_x(1)=4.0,
-	bunch_initialization%bunch_s_y(1)=4.0,
-	bunch_initialization%bunch_s_z(1)=50.0,
-	bunch_initialization%bunch_gamma_m(1)=200.,
+
+	bunch_initialization%shape(1)='bigaussian',
+	bunch_initialization%PWeights(1)='equal',
+	bunch_initialization%npZ(1)=5,
+	bunch_initialization%npR(1)=5,
+	bunch_initialization%n_particles(1)=10000,
+	bunch_initialization%sigma_cut(1)=3.0,
+	bunch_initialization%bunch_s_x(1)=8.0,
+	bunch_initialization%bunch_s_y(1)=8.0,
+	bunch_initialization%bunch_s_z(1)=33.0,
+	bunch_initialization%bunch_gamma_m(1)=2000.,
 	bunch_initialization%bunch_eps_x(1)=3.00,
 	bunch_initialization%bunch_eps_y(1)=3.00,
 	bunch_initialization%bunch_dgamma(1)=0.100,
-	!bunch_initialization%Charge_left(1)=8.00,
-	!bunch_initialization%Charge_right(1)=1.0,
 
-	bunch_initialization%shape(2)=1,
-	bunch_initialization%n_particles(2)=50000,
-	bunch_initialization%bunch_s_x(2)=2.300,
-	bunch_initialization%bunch_s_y(2)=2.300,
-	bunch_initialization%bunch_s_z(2)=10.0,
-	bunch_initialization%bunch_gamma_m(2)=200.,
-	bunch_initialization%bunch_eps_x(2)=1.00,
-	bunch_initialization%bunch_eps_y(2)=1.00,
+	bunch_initialization%shape(2)='bigaussian',
+	bunch_initialization%PWeights(2)='equal',
+	bunch_initialization%npZ(2)=5,
+	bunch_initialization%npR(2)=5,
+	bunch_initialization%n_particles(2)=10000,
+	bunch_initialization%sigma_cut(2)=3.0,
+	bunch_initialization%bunch_s_x(2)=4.0,
+	bunch_initialization%bunch_s_y(2)=4.0,
+	bunch_initialization%bunch_s_z(2)=33.0,
+	bunch_initialization%bunch_gamma_m(2)=2000.,
+	bunch_initialization%bunch_eps_x(2)=3.00,
+	bunch_initialization%bunch_eps_y(2)=3.00,
 	bunch_initialization%bunch_dgamma(2)=0.100,
 
+	bunch_initialization%shape(3)='bigaussian',
+	bunch_initialization%PWeights(3)='equal',
+	bunch_initialization%npZ(3)=5,
+	bunch_initialization%npR(3)=5,
+	bunch_initialization%n_particles(3)=10000,
+	bunch_initialization%sigma_cut(3)=3.0,
+	bunch_initialization%bunch_s_x(3)=4.0,
+	bunch_initialization%bunch_s_y(3)=4.0,
+	bunch_initialization%bunch_s_z(3)=33.0,
+	bunch_initialization%bunch_gamma_m(3)=2000.,
+	bunch_initialization%bunch_eps_x(3)=3.00,
+	bunch_initialization%bunch_eps_y(3)=3.00,
+	bunch_initialization%bunch_dgamma(3)=0.100,
+
+	bunch_initialization%shape(4)='bigaussian',
+	bunch_initialization%PWeights(4)='equal',
+	bunch_initialization%npZ(4)=5,
+	bunch_initialization%npR(4)=5,
+	bunch_initialization%n_particles(4)=10000,
+	bunch_initialization%sigma_cut(4)=3.0,
+	bunch_initialization%bunch_s_x(4)=4.0,
+	bunch_initialization%bunch_s_y(4)=4.0,
+	bunch_initialization%bunch_s_z(4)=33.0,
+	bunch_initialization%bunch_gamma_m(4)=2000.,
+	bunch_initialization%bunch_eps_x(4)=3.00,
+	bunch_initialization%bunch_eps_y(4)=3.00,
+	bunch_initialization%bunch_dgamma(4)=0.100,
+
+	bunch_initialization%shape(5)='trapezoidal',
+	bunch_initialization%PWeights(5)='equal',
+	bunch_initialization%n_particles(5)=10000,
+	bunch_initialization%sigma_cut(5)=3.0,
+	bunch_initialization%bunch_s_x(5)=0.9,
+	bunch_initialization%bunch_s_y(5)=0.9,
+	bunch_initialization%bunch_s_z(5)=10.0,
+	bunch_initialization%bunch_gamma_m(5)=2000.,
+	bunch_initialization%bunch_eps_x(5)=1.00,
+	bunch_initialization%bunch_eps_y(5)=1.00,
+	bunch_initialization%bunch_dgamma(5)=0.100,
+	bunch_initialization%Charge_left(5)=80.0,
+	bunch_initialization%Charge_right(5)=5.0,
 
 	!From external file:
 	bunch_initialization%inbunch(1)='driver1.dat',
@@ -167,23 +242,16 @@ bck_plasma%radius_um(1)=500.,
 ! Transforms current beam twiss parameters alpha_start and beta_start, for each beam i, as
 ! alpha_new(i)=alpha_new_factor(i)*alpha_start(i) and beta_new(i)=beta_new_factor(i)*beta_start(i), keeping emittance constant.
 ! Take care that new values of beta are roughly the same for ALL bunches, for reliable simulations!
-    twiss%L_Twiss=.FALSE.,
-    twiss%alpha_new_factor(1)=0.09375,
-    twiss%beta_new_factor(1) =86.08333,
-    twiss%alpha_new_factor(2)=0.20794,
-    twiss%beta_new_factor(2) =5.5187334593,
+	twiss%L_Twiss(5)=.TRUE.,
+	twiss%alpha_new_factor(5)=0.74783,
+	twiss%beta_new_factor(5) =1.1827,
+	twiss%alpha_new_factor(5)=-0.593969,
+	twiss%beta_new_factor(5) =3.117,
 /
 
 &Bpoloidal_par
-	Bpoloidal%L_Bpoloidal=.FALSE.,
-	Bpoloidal%L_BfieldfromV=.FALSE.,
-	Bpoloidal%capillary_radius_um=500.0D0, !Capillary Radius in [um]
-	Bpoloidal%background_current_A(1)=45.D0, !Current in Ampere [A]
-	Bpoloidal%background_current_A(2)=  0.D0, !Current in Ampere [A]
-	Bpoloidal%a_shape(1)=-1.6D0, !Shape of the External Poloidal magnetic field
-	Bpoloidal%a_shape(2)= 0.0D0, !Shape of the External Poloidal magnetic field
-	Bpoloidal%z_coordinate_um(1)=-500.0,
-	Bpoloidal%z_coordinate_um(2)=-3.5D4,
+	Bpoloidal%L_Bpoloidal=.FALSE.
+	Bpoloidal%L_BfieldfromV=.FALSE.
 /
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -196,6 +264,13 @@ bck_plasma%radius_um(1)=500.,
 
 &OS
 	!Output format. 0=mac; 1=windows
-    Osys%macwin=0
+  Osys%macwin=0
 	Osys%output_dir='driver_320_witness_20'
+/
+
+&DUMP_AND_RESTART
+	dump_restart%L_onoff=.TRUE.,
+	dump_restart%restart=.FALSE.,
+	dump_restart%nstep=99999,
+	dump_restart%distance_um=1.e3,
 /
