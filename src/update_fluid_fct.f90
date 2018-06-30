@@ -41,31 +41,32 @@ CONTAINS
    INTEGER :: i,j,iter,q
    !~INTEGER :: Nz,Nr,Node_min_lo_z,Node_max_lo_z,Node_min_lo_r,Node_max_lo_r,Node_end_lo_z,Node_end_lo_r
    !~INTEGER ::       Node_min_ho_z,Node_max_ho_z,Node_min_ho_r,Node_max_ho_r,Node_end_ho_z,Node_end_ho_r
-   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: ux,uz,ne,ux_halfDt,uz_halfDt,ux_new,uz_new,ne_new
-   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: Ex_f,Ez_f,Bphi_f
-   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: ne_ux_halfDt,ne_uz_halfDt,ne_ux_new,ne_uz_new
+   REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: ux,uz,ne,ux_halfDt,uz_halfDt,ux_new,uz_new,ne_new
+   REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: Ex_f,Ez_f,Bphi_f
+   REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: ne_ux_halfDt,ne_uz_halfDt,ne_ux_new,ne_uz_new
 
    !~REAL DeltaR,DeltaZ,Dt,threshold_factor
-   REAL threshold_factor
+   REAL(8) threshold_factor
+   REAL(8) one_over_three,one_over_six,five_over_six
 
-   REAL beta_x_halfDt,beta_z_halfDt
-   REAL beta_z_left,beta_z_right,beta_x_down,beta_x_up
-   REAL ux_temp,uz_temp
-   REAL q_min,q_max
-   REAL A_c_left,A_c_right,A_c_up,A_c_down
+   REAL(8) beta_x_halfDt,beta_z_halfDt
+   REAL(8) beta_z_left,beta_z_right,beta_x_down,beta_x_up
+   REAL(8) ux_temp,uz_temp
+   REAL(8) q_min,q_max
+   REAL(8) A_c_left,A_c_right,A_c_up,A_c_down
    !~REAL, DIMENSION(mesh_par%Nxm) :: r_mesh,Sr,Sz,Vol
 
-   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: beta_z_i_minus_halfDz,beta_x_j_minus_halfDr
+   REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: beta_z_i_minus_halfDz,beta_x_j_minus_halfDr
 
 
-   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: quantity_td,quantity
-   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: flux_lo_z,flux_lo_right,flux_lo_up,flux_lo_r
-   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: flux_ho_z,flux_ho_right,flux_ho_up,flux_ho_r
-   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: A_left,A_down
-   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: C_left,C_right,C_up,C_down
-   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: q__plus,q__minus
-   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: Q_plus,Q_minus,P_plus,P_minus
-   REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: R_plus,R_minus
+   REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: quantity_td,quantity
+   REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: flux_lo_z,flux_lo_right,flux_lo_up,flux_lo_r
+   REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: flux_ho_z,flux_ho_right,flux_ho_up,flux_ho_r
+   REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: A_left,A_down
+   REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: C_left,C_right,C_up,C_down
+   REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: q__plus,q__minus
+   REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: Q_plus,Q_minus,P_plus,P_minus
+   REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: R_plus,R_minus
    !REAL, DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: beta_x,beta_z
 
    !--------------!
@@ -76,7 +77,10 @@ CONTAINS
    !~DeltaZ  = mesh_par%dzm
    !~Dt      = sim_parameters%dt*plasma%omega_p
 
-   threshold_factor = 1e-6
+   threshold_factor = 1e-12
+   one_over_three   = 1.D0/3.D0
+   one_over_six     = 1.D0/6.D0
+   five_over_six    = 5.D0/6.D0
 
    !---------------------------------------------------------------------------------!
    !                                     Z axis                                      !
@@ -141,9 +145,9 @@ CONTAINS
    !-----------------------!
    !   Initial Conditions  !
    !-----------------------!
-   ux  =	mesh(:,:)%ux
-   uz  =	mesh(:,:)%uz
-   ne  =	mesh(:,:)%n_plasma_e
+   ux               =	mesh(:,:)%ux
+   uz               =	mesh(:,:)%uz
+   ne               =	mesh(:,:)%n_plasma_e
 
    ! Initialize auxiliary vectors and reals
 
@@ -154,14 +158,14 @@ CONTAINS
    ux_new           = 0.
    uz_new           = 0.
 
-   ne_new	    	= 0.
+   ne_new	    	    = 0.
 
    beta_x_halfDt    = 0.
    beta_z_halfDt    = 0.
 
-   Ez_f		    	= 0.
-   Ex_f	        = 0.
-   Bphi_f	    	= 0.
+   Ez_f		    	    = 0.
+   Ex_f	            = 0.
+   Bphi_f	    	    = 0.
 
 !------------------------ Advection FCT -----------------------------!
 
@@ -170,20 +174,21 @@ CONTAINS
 	! Advection begins here 			        !
 	!-------------------------------------------!
 
-	!--> beta-face-centered
+  !--> beta-face-centered
 	do i= Node_min_lo_z,Node_end_lo_z
 	do j= Node_min_lo_r,Node_end_lo_r
-		beta_z_left   = uz(i-1,j)/sqrt( 1. + ux(i-1,j)**2 + uz(i-1,j)**2 + threshold_factor)
-		beta_z_right  = uz(i  ,j)/sqrt( 1. + ux(i  ,j)**2 + uz(i  ,j)**2 + threshold_factor)
-		beta_x_down   = ux(i,j-1)/sqrt( 1. + ux(i,j-1)**2 + uz(i,j-1)**2 + threshold_factor)
-		beta_x_up     = ux(i,j  )/sqrt( 1. + ux(i,j  )**2 + uz(i,j  )**2 + threshold_factor)
+		beta_z_left   = uz(i-1,j)/sqrt( 1.D0 + ux(i-1,j)**2 + uz(i-1,j)**2 + threshold_factor)
+		beta_z_right  = uz(i  ,j)/sqrt( 1.D0 + ux(i  ,j)**2 + uz(i  ,j)**2 + threshold_factor)
+		beta_x_down   = ux(i,j-1)/sqrt( 1.D0 + ux(i,j-1)**2 + uz(i,j-1)**2 + threshold_factor)
+		beta_x_up     = ux(i,j  )/sqrt( 1.D0 + ux(i,j  )**2 + uz(i,j  )**2 + threshold_factor)
 
-		beta_z_i_minus_halfDz(i,j) = 0.5*( beta_z_left + beta_z_right )
-		beta_x_j_minus_halfDr(i,j) = 0.5*( beta_x_down + beta_x_up    )
+		beta_z_i_minus_halfDz(i,j) = 0.5D0*( beta_z_left + beta_z_right )
+		beta_x_j_minus_halfDr(i,j) = 0.5D0*( beta_x_down + beta_x_up    )
 	end do
 	end do
 
-!to be structured to be converted into a function
+
+  !to be structured to be converted into a function
 do q=1,3
 	quantity    = 0.
 	quantity_td = 0.
@@ -193,15 +198,19 @@ do q=1,3
 
 	!--- FCT-fluxes
 	!--- low-order
+  flux_lo_z=0.D0
+	flux_lo_r=0.D0
+	!--- donor-cell
 	do i= Node_min_lo_z,Node_max_lo_z
 	do j= Node_min_lo_r,Node_max_lo_r
-		flux_lo_z (i,j) = quantity(i-1,j  ) * max(0.,beta_z_i_minus_halfDz(i,j)) + quantity(i  ,j  ) * min(0.,beta_z_i_minus_halfDz(i,j))
-		flux_lo_r (i,j) = quantity(i  ,j-1) * max(0.,beta_x_j_minus_halfDr(i,j)) + quantity(i  ,j  ) * min(0.,beta_x_j_minus_halfDr(i,j))
-		!---!
-		flux_lo_z (i,j) = flux_lo_z (i,j) * Sz(j) * Dt
-		flux_lo_r (i,j) = flux_lo_r (i,j) * Sr(j) * Dt
+    flux_lo_z (i,j) = quantity(i-1,j  ) * max(0.D0,beta_z_i_minus_halfDz(i,j)) + quantity(i  ,j  ) * min(0.D0,beta_z_i_minus_halfDz(i,j))
+    flux_lo_r (i,j) = quantity(i  ,j-1) * max(0.D0,beta_x_j_minus_halfDr(i,j)) + quantity(i  ,j  ) * min(0.D0,beta_x_j_minus_halfDr(i,j))
 	end do
 	end do
+	!--- right border ---!
+	flux_lo_z (Node_max_lo_z+1,Node_min_lo_r:Node_max_lo_r) = flux_lo_z (Node_max_lo_z,Node_min_lo_r:Node_max_lo_r)
+	!--- upper border ---!
+	flux_lo_r (Node_min_lo_z:Node_max_lo_z,Node_max_lo_r+1) = flux_lo_r (Node_min_lo_z:Node_max_lo_z,Node_max_lo_r)
 
 	! right border
 	do j= Node_min_lo_r,Node_max_lo_r
@@ -213,16 +222,33 @@ do q=1,3
 		flux_lo_r (i,Node_max_lo_r+1) = flux_lo_r (i,Node_max_lo_r)
 	end do
 
-
+  flux_ho_z=0.D0
+	flux_ho_r=0.D0
 	!--- high-order
 	do i= Node_min_ho_z,Node_max_ho_z
 	do j= Node_min_ho_r,Node_max_ho_r
-		flux_ho_z (i,j) =  0.58333333*(quantity(i  ,j  )+quantity(i-1,j  ))- 0.08333333*(quantity(i+1,j  )+quantity(i-2,j  ))
-		flux_ho_r (i,j) =  0.58333333*(quantity(i  ,j  )+quantity(i  ,j-1))- 0.08333333*(quantity(i  ,j+1)+quantity(i  ,j-2))
+    !TUCKMANTEL STENCIL
+    !flux_ho_z (i,j)  = ( -one_over_six *quantity(i-2,j  ) + five_over_six*quantity(i-1,j  ) + one_over_three*quantity(i  ,j  )) &
+    !                   * max(0.D0,beta_z_i_minus_halfDz(i,j)) + &   ! if flux_z is positive 
+    !                   ( one_over_three*quantity(i-1,j  ) + five_over_six*quantity(i  ,j  ) - one_over_six  *quantity(i+1,j  )) & ! 
+    !                   * min(0.D0,beta_z_i_minus_halfDz(i,j)) ! if flux_z is negative
+    !flux_ho_r (i,j)  = ( -one_over_six *quantity(i  ,j-2) + five_over_six*quantity(i  ,j-1) + one_over_three*quantity(i  ,j  )) & ! if flux_r is positive 
+    !                   * max(0.D0,beta_x_j_minus_halfDr(i,j)) + &
+    !                   ( one_over_three*quantity(i  ,j-1) + five_over_six*quantity(i  ,j  ) - one_over_six  *quantity(i  ,j+1)) & ! if flux_r is negative
+    !                   * min(0.D0,beta_x_j_minus_halfDr(i,j))
+    !ZALESAK STENCIL
+    flux_ho_z (i,j)  = ( -1.D0/12.D0*(quantity(i-2,j  )+quantity(i+1,j  )) + 7.D0/12.D0*(quantity(i-1,j  ) + quantity(i  ,j  ))) &
+                       * max(0.D0,beta_z_i_minus_halfDz(i,j)) + &   ! if flux_z is positive 
+                       ( -1.D0/12.D0*(quantity(i-1,j  )+quantity(i+2,j  )) + 7.D0/12.D0*(quantity(i  ,j  ) + quantity(i+1,j  ))) & ! 
+                       * min(0.D0,beta_z_i_minus_halfDz(i,j)) ! if flux_z is negative
+    flux_ho_r (i,j)  = ( -1.D0/12.D0*(quantity(i  ,j-2)+quantity(i  ,j+1)) + 7.D0/12.D0*(quantity(i  ,j-1) + quantity(i  ,j  ))) & ! if flux_r is positive 
+                       * max(0.D0,beta_x_j_minus_halfDr(i,j)) + &
+                       ( -1.D0/12.D0*(quantity(i  ,j-1)+quantity(i  ,j+2)) + 7.D0/12.D0*(quantity(i  ,j  ) + quantity(i  ,j+1))) & ! ! if flux_r is negative
+                       * min(0.D0,beta_x_j_minus_halfDr(i,j))
 
-		!---!
-		flux_ho_z (i,j) = flux_ho_z (i,j) * Sz(j) * Dt *beta_z_i_minus_halfDz(i,j)
-		flux_ho_r (i,j) = flux_ho_r (i,j) * Sr(j) * Dt *beta_x_j_minus_halfDr(i,j)
+
+		!flux_ho_z (i,j) =  0.58333333*(quantity(i  ,j  )+quantity(i-1,j  ))- 0.08333333*(quantity(i+1,j  )+quantity(i-2,j  ))
+		!flux_ho_r (i,j) =  0.58333333*(quantity(i  ,j  )+quantity(i  ,j-1))- 0.08333333*(quantity(i  ,j+1)+quantity(i  ,j-2))
 
 		!--- correction ---!
 		! antidiffusive fluxes
@@ -231,17 +257,18 @@ do q=1,3
 	end do
 	end do
 
+  !--- compute the low order solution
+  do i= Node_min_lo_z,Node_max_lo_z
+	do j= Node_min_lo_r,Node_max_lo_r
+		quantity_td(i,j)= quantity(i,j)    - Dt/Vol(j) * (Sr(j+1)*flux_lo_r(i,j+1)-Sr(j)*flux_lo_r(i,j))
+	end do
+	end do
 
-
-	!--- compute the low order solution
 	do i= Node_min_lo_z,Node_max_lo_z
 	do j= Node_min_lo_r,Node_max_lo_r
-		quantity_td(i,j)= quantity(i,j) - 1./Vol(j) * ( &
-		                  flux_lo_z(i+1,j  )-flux_lo_z(i,j) + &
-		                  flux_lo_r(i  ,j+1)-flux_lo_r(i,j)   )
+		quantity_td(i,j)= quantity_td(i,j) - Dt*Sz(j)/Vol(j) * (flux_lo_z(i+1,j)-flux_lo_z(i,j))
 	end do
 	end do
-
 	!---------------------------------------------!
 	!  Boundary conditions for low order solution !
 	!---------------------------------------------!
@@ -255,11 +282,11 @@ do q=1,3
 
    		! lower boundary
    		do i = Node_min_lo_z,Node_max_lo_z
-        		quantity_td(i,1)          = quantity_td(i,Node_min_lo_r)
+        		quantity_td(i,1)             = quantity_td(i,Node_min_lo_r)
    		enddo
    		! left boundary
    		do j = Node_min_lo_r,Node_max_lo_r
-			quantity_td(1,j)              = quantity_td(Node_min_lo_z,j)
+			quantity_td(1,j)                   = quantity_td(Node_min_lo_z,j)
    		enddo
    		! right boundary
 !   		do j = Node_min_lo_r,Node_max_lo_r
@@ -279,7 +306,7 @@ do q=1,3
    		enddo
    		! left boundary
    		do j = Node_min_lo_r,Node_max_lo_r
-        		quantity_td(1,j)              =  0.
+        		quantity_td(1,j)              =  0.D0
    		enddo
    		! right boundary
 !   		do j = Node_min_lo_r,Node_max_lo_r
@@ -294,11 +321,11 @@ do q=1,3
 
    		! lower boundary
    		do i = Node_min_lo_z,Node_max_lo_z
-        		quantity_td(i,1         )  =  quantity_td(i,Node_min_lo_r)
+        		quantity_td(i,1         )     =  quantity_td(i,Node_min_lo_r)
    		enddo
    		! left boundary
    		do j = Node_min_lo_r,Node_max_lo_r
-        		quantity_td(1,j)           =  0.
+        		quantity_td(1,j)              =  0.D0
    		enddo
    		! right boundary
 !   		do j = Node_min_lo_r,Node_max_lo_r
@@ -312,25 +339,25 @@ do q=1,3
 	!            Correction by FCT scheme         !
 	!---------------------------------------------!
 
-	A_left   = 0.
-	A_down   = 0.
-    C_left   = 0.
-	C_right  = 0.
-	C_up     = 0.
-	C_down   = 0.
-    q__plus  = 0.
-	q__minus = 0.
-    Q_plus   = 0.
-	Q_minus  = 0.
-	P_plus   = 0.
-	P_minus  = 0.
-	R_plus   = 0.
-	R_minus  = 0.
+	A_left   = 0.D0
+	A_down   = 0.D0
+  C_left   = 0.D0
+	C_right  = 0.D0
+	C_up     = 0.D0
+	C_down   = 0.D0
+  q__plus  = 0.D0
+	q__minus = 0.D0
+  Q_plus   = 0.D0
+	Q_minus  = 0.D0
+	P_plus   = 0.D0
+	P_minus  = 0.D0
+	R_plus   = 0.D0
+	R_minus  = 0.D0
 
 
 	! practical correction
 	! errors might be nested in here, pay attention
-    do i= Node_min_ho_z,Node_max_ho_z
+  do i= Node_min_ho_z,Node_max_ho_z
 	do j= Node_min_ho_r,Node_max_ho_r
 !	    if( A_left(i+1,j) * ( quantity_td(i+1,j)-quantity_td(i,j) ) < 0. .and. &
 !	        A_left(i+1,j) * ( quantity_td(i+2,j)-quantity_td(i+1,j) ) < 0. .or. &
@@ -339,15 +366,15 @@ do q=1,3
 !	    if( A_down(i,j+1) * ( quantity_td(i,j+1)-quantity_td(i,j) ) < 0. .and. &
 !	        A_down(i,j+1) * ( quantity_td(i,j+2)-quantity_td(i,j+1) ) < 0. .or. &
 !	        A_down(i,j+1) * ( quantity_td(i,j)-quantity_td(i,j-1) ) < 0. ) A_down(i,j+1) = 0.
-	    if( A_left(i,j) * ( quantity_td(i,j)-quantity_td(i-1,j  ) ) .le. 0. ) A_left(i,j) = 0.
-	    if( A_down(i,j) * ( quantity_td(i,j)-quantity_td(i  ,j-1) ) .le. 0. ) A_down(i,j) = 0.
+	    if( A_left(i,j) * ( quantity_td(i,j)-quantity_td(i-1,j  ) ) .le. 0.D0 ) A_left(i,j) = 0.D0
+	    if( A_down(i,j) * ( quantity_td(i,j)-quantity_td(i  ,j-1) ) .le. 0.D0 ) A_down(i,j) = 0.D0
 	enddo
 	enddo
 
     do i= Node_min_ho_z,Node_max_ho_z
 	do j= Node_min_ho_r,Node_max_ho_r
-		P_plus (i,j) = max(A_left (i  ,j),0.)-min(A_left(i+1,j),0.)+max(A_down(i,j  ),0.)-min(A_down(i,j+1),0.)
-		P_minus(i,j) = max(A_left (i+1,j),0.)-min(A_left(i  ,j),0.)+max(A_down(i,j+1),0.)-min(A_down(i,j  ),0.)
+		P_plus (i,j) = max(A_left (i  ,j),0.D0)-min(A_left(i+1,j),0.D0)+max(A_down(i,j  ),0.D0)-min(A_down(i,j+1),0.D0)
+		P_minus(i,j) = max(A_left (i+1,j),0.D0)-min(A_left(i  ,j),0.D0)+max(A_down(i,j+1),0.D0)-min(A_down(i,j  ),0.D0)
 
 		q__plus (i,j) = max(quantity(i,j),quantity_td(i,j))
 		q__minus(i,j) = min(quantity(i,j),quantity_td(i,j))
@@ -365,19 +392,19 @@ do q=1,3
 		Q_plus  (i,j) = (q_max           -quantity_td(i,j) )*Vol(j)
 		Q_minus (i,j) = (quantity_td(i,j)-q_min            )*Vol(j)
 
-		R_plus (i,j) = 0.
-		R_minus(i,j) = 0.
-		if (P_plus (i,j) >0. ) R_plus (i,j) = min( 1.,(Q_plus (i,j)/P_plus (i,j)) )
-		if (P_minus(i,j) >0. ) R_minus(i,j) = min( 1.,(Q_minus(i,j)/P_minus(i,j)) )
+		R_plus (i,j) = 0.D0
+		R_minus(i,j) = 0.D0
+		if (P_plus (i,j) >0.D0 ) R_plus (i,j) = min( 1.D0,(Q_plus (i,j)/P_plus (i,j)) )
+		if (P_minus(i,j) >0.D0 ) R_minus(i,j) = min( 1.D0,(Q_minus(i,j)/P_minus(i,j)) )
 	end do
 	end do
 
 	do i= Node_min_ho_z,Node_max_ho_z
 	do j= Node_min_ho_r,Node_max_ho_r
-		if(A_left(i,j).le.0.) then
-			C_left(i,j) = min(R_plus(i-1,j),R_minus(i  ,j))
+		if(A_left(i,j).le.0.D0) then
+			C_left(i,j) = min(R_plus(i-1,j  ),R_minus(i  ,j))
 		else
-			C_left(i,j) = min(R_plus(i  ,j),R_minus(i-1,j))
+			C_left(i,j) = min(R_plus(i  ,j  ),R_minus(i-1,j))
 		endif
 
 		if(A_down(i,j).le.0.) then
@@ -390,16 +417,15 @@ do q=1,3
 
 	do i= Node_min_ho_z,Node_max_ho_z-1
 	do j= Node_min_ho_r,Node_max_ho_r-1
-		A_c_left       = C_left (i  ,j  )*A_left (i  ,j  )
-		A_c_right      = C_left (i+1,j  )*A_left (i+1,j  )
-		A_c_down       = C_down (i  ,j  )*A_down (i  ,j  )
-		A_c_up         = C_down (i  ,j+1)*A_down (i  ,j+1)
+		A_c_left       = C_left (i  ,j  )*A_left (i  ,j  ) * Sz(j  )
+		A_c_right      = C_left (i+1,j  )*A_left (i+1,j  ) * Sz(j  )
+		A_c_down       = C_down (i  ,j  )*A_down (i  ,j  ) * Sr(j  )
+		A_c_up         = C_down (i  ,j+1)*A_down (i  ,j+1) * Sr(j+1)
 
-		quantity(i,j) = quantity_td(i,j) - 1./Vol(j) * &
+		quantity(i,j) = quantity_td(i,j) - Dt/Vol(j) * &
 		               (A_c_right-A_c_left+A_c_up-A_c_down)
 	end do
 	end do
-
 
 
 	! low order scheme on axis
@@ -409,7 +435,7 @@ do q=1,3
 	end do
 	! low order scheme on the right (not ghost cell)
 	do j = Node_min_lo_r,Node_max_lo_r
-     	quantity (Node_max_ho_z,j)     = quantity_td(Node_max_ho_z,j)
+    quantity (Node_max_ho_z,j)     = quantity_td(Node_max_ho_z,j)
 		quantity (Node_max_lo_z,j)     = quantity_td(Node_max_lo_z,j)
  	enddo
 
@@ -426,7 +452,7 @@ do q=1,3
 		! upper boundary
 		! High order domain
 		do i = Node_min_ho_z,Node_max_ho_z
-        		quantity(i,Node_max_ho_r) = quantity(i,Node_max_ho_r-1)
+        		quantity(i,Node_max_ho_r)   = quantity(i,Node_max_ho_r-1)
    		enddo
 
    		do i = Node_min_ho_z,Node_max_ho_z
@@ -434,16 +460,16 @@ do q=1,3
    		enddo
 		! Low order domain
    		do i = Node_min_lo_z,Node_max_lo_z
-        		quantity(i,Node_end_lo_r) = quantity(i,Node_max_lo_r)
+        		quantity(i,Node_end_lo_r)   = quantity(i,Node_max_lo_r)
    		enddo
 
    		! lower boundary
    		do i = Node_min_lo_z,Node_max_lo_z
-        		quantity(i,1)          = quantity(i,Node_min_lo_r)
+        		quantity(i,1)               = quantity(i,Node_min_lo_r)
    		enddo
    		! left boundary
    		do j = Node_min_lo_r,Node_max_lo_r
-			quantity(1,j)              = quantity(Node_min_lo_z,j)
+			quantity(1,j)                     = quantity(Node_min_lo_z,j)
    		enddo
    		! right boundary
 !   		do j = Node_min_lo_r,Node_max_lo_r
@@ -454,7 +480,7 @@ do q=1,3
 		! upper boundary
 		! High order domain
 		do i = Node_min_ho_z,Node_max_ho_z
-        		quantity(i,Node_max_ho_r) = quantity(i,Node_max_ho_r-1)
+        		quantity(i,Node_max_ho_r)    = quantity(i,Node_max_ho_r-1)
    		enddo
 
    		do i = Node_min_ho_z,Node_max_ho_z
@@ -462,17 +488,17 @@ do q=1,3
    		enddo
 		! Low order domain
    		do i = Node_min_lo_z,Node_max_lo_z
-        		quantity(i,Node_end_lo_r)  =  quantity(i,Node_max_lo_r)
+        		quantity(i,Node_end_lo_r)    =  quantity(i,Node_max_lo_r)
    		enddo
 
 
    		! lower boundary
    		do i = Node_min_lo_z,Node_max_lo_z
-        		quantity(i,1         )     = -quantity(i,Node_min_lo_r)
+        		quantity(i,1         )       = -quantity(i,Node_min_lo_r)
    		enddo
    		! left boundary
    		do j = Node_min_lo_r,Node_max_lo_r
-        		quantity(1,j)              =  0.
+        		quantity(1,j)                =  0.D0
    		enddo
    		! right boundary
 !   		do j = Node_min_lo_r,Node_max_lo_r
@@ -483,7 +509,7 @@ do q=1,3
 		! upper boundary
    		! High order domain
 		do i = Node_min_ho_z,Node_max_ho_z
-        		quantity(i,Node_max_ho_r) = quantity(i,Node_max_ho_r-1)
+        		quantity(i,Node_max_ho_r)    = quantity(i,Node_max_ho_r-1)
    		enddo
 
 		do i = Node_min_ho_z,Node_max_ho_z
@@ -491,17 +517,17 @@ do q=1,3
    		enddo
 		! Low order domain
 		do i = Node_min_lo_z,Node_max_lo_z
-        		quantity(i,Node_end_lo_r)  =  quantity(i,Node_max_lo_r)
+        		quantity(i,Node_end_lo_r)    =  quantity(i,Node_max_lo_r)
    		enddo
 
 
    		! lower boundary
    		do i = Node_min_lo_z,Node_max_lo_z
-        		quantity(i,1         )  =  quantity(i,Node_min_lo_r)
+        		quantity(i,1         )       =  quantity(i,Node_min_lo_r)
    		enddo
    		! left boundary
    		do j = Node_min_lo_r,Node_max_lo_r
-        		quantity(1,j)           =  0.
+        		quantity(1,j)                =  0.D0
    		enddo
    		! right boundary
 !   		do j = Node_min_lo_r,Node_max_lo_r
@@ -521,15 +547,15 @@ enddo
 
         do i= Node_min_lo_z,Node_max_lo_z
         do j= Node_min_lo_r,Node_max_lo_r
-      Ez_f   (i,j) =        mesh(i,j  )%Ez + mesh(i,j  )%Ez_bunch           ! properly centered in space
-      Ex_f   (i,j) = 0.25*( mesh(i,j  )%Ex       + mesh(i+1,j  )%Ex   &
-                          + mesh(i,j-1)%Ex       + mesh(i+1,j-1)%Ex   ) &   ! properly centered in space
-                    +0.25*( mesh(i,j  )%Ex_bunch + mesh(i+1,j  )%Ex_bunch &
-                          + mesh(i,j-1)%Ex_bunch + mesh(i+1,j-1)%Ex_bunch ) ! properly centered in space
-      Bphi_f (i,j) = 0.25*( mesh(i,j  )%Bphi     + mesh(i  ,j-1)%Bphi &
-                          + mesh(i,j  )%Bphi_old + mesh(i  ,j-1)%Bphi_old ) & ! properly centered in time
-                    +0.25*( mesh(i,j  )%Bphi_bunch     + mesh(i  ,j-1)%Bphi_bunch &
-                          + mesh(i,j  )%Bphi_old_bunch + mesh(i  ,j-1)%Bphi_old_bunch ) ! properly centered in time
+      Ez_f   (i,j) =        mesh(i,j  )%Ez               + mesh(i  ,j  )%Ez_bunch         ! properly centered in space
+      Ex_f   (i,j) = 0.25D0*( mesh(i,j  )%Ex             + mesh(i+1,j  )%Ex        &
+                          +   mesh(i,j-1)%Ex             + mesh(i+1,j-1)%Ex      ) &      ! properly centered in space
+                    +0.25D0*( mesh(i,j  )%Ex_bunch       + mesh(i+1,j  )%Ex_bunch  &
+                            + mesh(i,j-1)%Ex_bunch       + mesh(i+1,j-1)%Ex_bunch)        ! properly centered in space
+      Bphi_f (i,j) = 0.25D0*( mesh(i,j  )%Bphi           + mesh(i  ,j-1)%Bphi       &
+                            + mesh(i,j  )%Bphi_old       + mesh(i  ,j-1)%Bphi_old ) &     ! properly centered in time
+                    +0.25D0*( mesh(i,j  )%Bphi_bunch     + mesh(i  ,j-1)%Bphi_bunch &
+                            + mesh(i,j  )%Bphi_old_bunch + mesh(i  ,j-1)%Bphi_old_bunch ) ! properly centered in time
         enddo
         enddo
 
@@ -539,8 +565,8 @@ enddo
 		do j= Node_min_lo_r,Node_max_lo_r
 
 			if (ne_new(i,j).le.threshold_factor) then
-					beta_x_halfDt = 0.
-					beta_z_halfDt = 0.
+					beta_x_halfDt = 0.D0
+					beta_z_halfDt = 0.D0
 					!ne_new(i,j)   = threshold_factor
 			else
 
@@ -591,8 +617,8 @@ enddo
 
    ! left boundary
    do j = Node_min_lo_r,Node_max_lo_r
-		ux_new(1,j)             = 0.
-    uz_new(1,j)             = 0.
+		ux_new(1,j)             = 0.D0
+    uz_new(1,j)             = 0.D0
    enddo
 
    ! right boundary
