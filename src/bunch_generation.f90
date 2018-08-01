@@ -140,7 +140,7 @@
                bunch(bunch_number)%part(p)%cmp(2)=r_part_dim*sin(theta)
                bunch(bunch_number)%part(p)%cmp(3)=z_part_dim
                bunch(bunch_number)%part(p)%cmp(12)=alpha *r_part_dimless*mesh_par%dxm*mesh_par%dzm /npZ/npR
-               bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * pi/2.
+               bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * 1.5101/sqrt(plasma%n0/1e16)
                bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * exp(-r_part_dim**2/2./s_x**2)
                bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * exp(-z_part_dim**2/2./s_z**2)
                bunch(bunch_number)%part(p)%cmp(13)=1.e10*bunch(bunch_number)%part(p)%cmp(12)/1.6021766
@@ -201,7 +201,7 @@
                bunch(bunch_number)%part(p)%cmp(2)=r_part_dim*sin(theta)
                bunch(bunch_number)%part(p)%cmp(3)=z_part_dim
                bunch(bunch_number)%part(p)%cmp(12)=alpha *r_part_dimless*mesh_par%dxm*mesh_par%dzm /npZ/npR
-               bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * pi/2.
+               bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * 1.5101/sqrt(plasma%n0/1e16)
                bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * exp(-r_part_dim**2/2./s_x**2)
                bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * exp(-z_part_dim**2/2./s_z**2)
                bunch(bunch_number)%part(p)%cmp(13)=1.e10*bunch(bunch_number)%part(p)%cmp(12)/1.6021766
@@ -235,9 +235,9 @@
  !---    TRAPEZOIDAL::Z  + UNIFROM::R        ---!
  !----------------------------------------------!
  !----------------------------------------------!
- subroutine generate_bunch_trapezoidalZ_uniformR_equal(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,n0)
+ subroutine generate_bunch_trapezoidalZ_uniformR_equal(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge)
  integer,intent(in)   :: nparticles,bunch_number
- real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0
+ real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left
  real(8),intent(inout)   :: charge
  real(8) :: rnumber(nparticles),particle_radius(nparticles),particle_theta(nparticles)
  integer :: i
@@ -245,7 +245,7 @@
 
     !--- charge ---!
     charge= electron_charge*pi * (s_x*1d-6) * (s_y*1d-6) &
-                               * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (n0*1d6)
+                               * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (plasma%n0*1d6)
     charge=charge*1e9 !converting to [nC]
 
     !--- charges and weights ---!
@@ -287,9 +287,9 @@
     bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
  end subroutine generate_bunch_trapezoidalZ_uniformR_equal
 
- subroutine generate_bunch_trapezoidalZ_uniformR_equal_optimised(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,n0)
+ subroutine generate_bunch_trapezoidalZ_uniformR_equal_optimised(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge)
  integer,intent(in)   :: nparticles,bunch_number
- real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0
+ real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left
  real(8),intent(inout)   :: charge
  real(8) :: rnumber(nparticles),particle_radius(nparticles),particle_theta(nparticles)
  integer :: i
@@ -297,7 +297,7 @@
 
     !--- charge ---!
     charge= electron_charge*pi * (s_x*1d-6) * (s_y*1d-6) &
-                              * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (n0*1d6)
+                              * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (plasma%n0*1d6)
     charge=charge*1e9 !converting to [nC]
 
     !--- charges and weights ---!
@@ -340,10 +340,10 @@
   end subroutine generate_bunch_trapezoidalZ_uniformR_equal_optimised
 
 
-  subroutine generate_bunch_trapezoidalZ_uniformR_weighted(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,n0,npZ,npR)
-  integer,intent(in)   :: nparticles,npR,npZ,bunch_number
-  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0
-  real(8),intent(inout)   :: charge
+  subroutine generate_bunch_trapezoidalZ_uniformR_weighted(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,npZ,npR)
+  integer,intent(in)    :: nparticles,npR,npZ,bunch_number
+  real(8),intent(in)    :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left
+  real(8),intent(inout) :: charge
   real(8) :: rnumber(nparticles),particle_radius(nparticles),particle_theta(nparticles)
   real(8) :: z,y,x,a,dr,dz
   real(8) :: r_part_dim,r_part_dimless,r_cc_dim,r_cc_dimless,z_part_dim,z_cc_dim,theta
@@ -369,7 +369,7 @@
              bunch(bunch_number)%part(p)%cmp(2)=r_part_dim*sin(theta)
              bunch(bunch_number)%part(p)%cmp(3)=z_part_dim+s_z
              bunch(bunch_number)%part(p)%cmp(12)=Charge_right + (Charge_left-Charge_right)/s_z*abs(z_part_dim)
-             bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * pi/2. * r_part_dimless *mesh_par%dxm*mesh_par%dzm /npZ/npR
+             bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * 1.5101/sqrt(plasma%n0/1e16) * r_part_dimless *mesh_par%dxm*mesh_par%dzm /npZ/npR
              bunch(bunch_number)%part(p)%cmp(13)=1.e10*bunch(bunch_number)%part(p)%cmp(12)/1.6021766
              p=p+1
            enddo
@@ -395,9 +395,9 @@
  end subroutine generate_bunch_trapezoidalZ_uniformR_weighted
 
 
-  subroutine generate_bunch_trapezoidalZ_uniformR_weighted_optimised(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,n0,npZ,npR)
+  subroutine generate_bunch_trapezoidalZ_uniformR_weighted_optimised(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,npZ,npR)
   integer,intent(in)   :: nparticles,npR,npZ,bunch_number
-  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0
+  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left
   real(8),intent(inout)   :: charge
   real(8) :: rnumber(nparticles),particle_radius(nparticles),particle_theta(nparticles)
   real(8) :: z,y,x,a,dr,dz
@@ -424,7 +424,7 @@
              bunch(bunch_number)%part(p)%cmp(2)=r_part_dim*sin(theta)
              bunch(bunch_number)%part(p)%cmp(3)=z_part_dim+s_z
              bunch(bunch_number)%part(p)%cmp(12)=Charge_right + (Charge_left-Charge_right)/s_z*abs(z_part_dim)
-             bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * pi/2. * r_part_dimless *mesh_par%dxm*mesh_par%dzm /npZ/npR
+             bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * 1.5101/sqrt(plasma%n0/1e16) * r_part_dimless *mesh_par%dxm*mesh_par%dzm /npZ/npR
              bunch(bunch_number)%part(p)%cmp(13)=1.e10*bunch(bunch_number)%part(p)%cmp(12)/1.6021766
              p=p+1
            enddo
@@ -455,9 +455,9 @@
  !---    TRAPEZOIDAL::Z  + GAUSSIAN::R       ---!
  !----------------------------------------------!
  !----------------------------------------------!
-  subroutine generate_bunch_trapezoidalZ_gaussianR_equal(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,s_cut,charge,n0)
+  subroutine generate_bunch_trapezoidalZ_gaussianR_equal(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,s_cut,charge)
   integer,intent(in)   :: nparticles,bunch_number
-  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0,s_cut
+  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,s_cut
   real(8),intent(inout)   :: charge
   real(8) :: rnumber(nparticles),rnumber3D(3,nparticles),particle_radius(nparticles),particle_theta(nparticles)
   integer :: i
@@ -465,7 +465,7 @@
 
     !--- charge ---!
     charge= electron_charge* 2.d0*pi* (s_x*1d-6) * (s_y*1d-6) &
-                          * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (n0*1d6)
+                          * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (plasma%n0*1d6)
     charge=charge*1e9 !converting to [nC]
 
     !--- charges and weights ---!
@@ -511,9 +511,9 @@
     bunch(bunch_number)%part(:)%cmp(11)=bunch(bunch_number)%part(:)%cmp(3)
   end subroutine generate_bunch_trapezoidalZ_gaussianR_equal
 
-  subroutine generate_bunch_trapezoidalZ_gaussianR_equal_optimised(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,s_cut,charge,n0)
+  subroutine generate_bunch_trapezoidalZ_gaussianR_equal_optimised(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,s_cut,charge)
   integer,intent(in)   :: nparticles,bunch_number
-  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0,s_cut
+  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,s_cut
   real(8),intent(inout)   :: charge
   real(8) :: rnumber(nparticles),rnumber3D(3,nparticles),particle_radius(nparticles),particle_theta(nparticles)
   integer :: i
@@ -521,7 +521,7 @@
 
     !--- charge ---!
     charge= electron_charge* 2.d0*pi* (s_x*1d-6) * (s_y*1d-6) &
-                          * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (n0*1d6)
+                          * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (plasma%n0*1d6)
     charge=charge*1e9 !converting to [nC]
 
     !--- charges and weights ---!
@@ -568,9 +568,9 @@
   end subroutine generate_bunch_trapezoidalZ_gaussianR_equal_optimised
 
 !--- *** ---!
-  subroutine generate_bunch_trapezoidalZ_gaussianR_weighted(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,n0,npR,npZ,s_cut)
+  subroutine generate_bunch_trapezoidalZ_gaussianR_weighted(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,npR,npZ,s_cut)
   integer,intent(in)   :: nparticles,npR,npZ,bunch_number
-  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0,s_cut
+  real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,s_cut
   real(8),intent(inout)   :: charge
   real(8) :: rnumber(nparticles),particle_radius(nparticles),particle_theta(nparticles)
   real(8) :: z,y,x,a,dr,dz
@@ -579,7 +579,7 @@
 
   !--- charge ---!
   charge= electron_charge* 2.d0*pi* (s_x*1d-6) * (s_y*1d-6) &
-                        * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (n0*1d6)
+                        * (Charge_left+Charge_right)*s_z*1d-6/2.d0 * (plasma%n0*1d6)
   charge=charge*1e9 !converting to [nC]
 
   !---
@@ -605,7 +605,7 @@
               bunch(bunch_number)%part(p)%cmp(2)=r_part_dim*sin(theta)
               bunch(bunch_number)%part(p)%cmp(3)=z_part_dim +Ns_z*dz
               bunch(bunch_number)%part(p)%cmp(12)=Charge_right + (Charge_left-Charge_right)/(int(s_z/dz)-.5)*abs(iz)
-              bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * pi/2. *sqrt(1e16/n0) * r_part_dimless *mesh_par%dxm*mesh_par%dzm /npZ/npR
+              bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * 1.5101/sqrt(plasma%n0/1e16) * r_part_dimless *mesh_par%dxm*mesh_par%dzm /npZ/npR
               bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * exp(-r_part_dim**2/2./s_x**2)
               bunch(bunch_number)%part(p)%cmp(13)=1.e10*bunch(bunch_number)%part(p)%cmp(12)/1.6021766
               p=p+1
@@ -632,9 +632,9 @@
   end subroutine generate_bunch_trapezoidalZ_gaussianR_weighted
 
   !--- *** ---!
-  subroutine generate_bunch_trapezoidalZ_gaussianR_weighted_optimised(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,n0,npR,npZ,s_cut)
+  subroutine generate_bunch_trapezoidalZ_gaussianR_weighted_optimised(bunch_number,x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,nparticles,Charge_right,Charge_left,charge,npR,npZ,s_cut)
     integer,intent(in)   :: nparticles,npR,npZ,bunch_number
-    real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,n0,s_cut
+    real(8),intent(in)      :: x_cm,y_cm,z_cm,s_x,s_y,s_z,gamma_m,eps_x,eps_y,dgamma,Charge_right,Charge_left,s_cut
     real(8),intent(inout)   :: charge
     real(8) :: rnumber(nparticles),particle_radius(nparticles),particle_theta(nparticles)
     real(8) :: z,y,x,a,dr,dz
@@ -664,7 +664,7 @@
                 bunch(bunch_number)%part(p)%cmp(2)=r_part_dim*sin(theta)
                 bunch(bunch_number)%part(p)%cmp(3)=z_part_dim +Ns_z*dz
                 bunch(bunch_number)%part(p)%cmp(12)=Charge_right + (Charge_left-Charge_right)/(int(s_z/dz)-.5)*abs(iz)
-                bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * pi/2. * r_part_dimless *mesh_par%dxm*mesh_par%dzm /npZ/npR
+                bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * 1.5101/sqrt(plasma%n0/1e16) * r_part_dimless *mesh_par%dxm*mesh_par%dzm /npZ/npR
                 bunch(bunch_number)%part(p)%cmp(12)=bunch(bunch_number)%part(p)%cmp(12) * exp(-r_part_dim**2/2./s_x**2)
                 bunch(bunch_number)%part(p)%cmp(13)=1.e10*bunch(bunch_number)%part(p)%cmp(12)/1.6021766
                 p=p+1

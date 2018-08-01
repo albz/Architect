@@ -139,7 +139,7 @@
                           bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
                           bunch_initialization%n_particles(i),&
                           bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i), &
-                          bunch_initialization%ChargeB(i),plasma%n0)
+                          bunch_initialization%ChargeB(i))
 
           !--- cylindrical + equal particles + yes optimisation
           if(   trim(bunch_initialization%shape(i))=='cylindrical'  &
@@ -155,7 +155,7 @@
                             bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
                             bunch_initialization%n_particles(i),&
                             bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i), &
-                            bunch_initialization%ChargeB(i),plasma%n0)
+                            bunch_initialization%ChargeB(i))
 
             !--- cylindrical + weighted particles + no optimisation
             if(   trim(bunch_initialization%shape(i))=='cylindrical'  &
@@ -171,7 +171,7 @@
                               bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
                               bunch_initialization%n_particles(i),&
                               bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i), &
-                              bunch_initialization%ChargeB(i),plasma%n0, &
+                              bunch_initialization%ChargeB(i), &
                               bunch_initialization%npZ(i),bunch_initialization%npR(i))
 
               !--- cylindrical + weighted particles + yes optimisation
@@ -188,7 +188,7 @@
                                 bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
                                 bunch_initialization%n_particles(i),&
                                 bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i), &
-                                bunch_initialization%ChargeB(i),plasma%n0, &
+                                bunch_initialization%ChargeB(i), &
                                 bunch_initialization%npZ(i),bunch_initialization%npR(i))
 
 
@@ -207,7 +207,7 @@
                             				bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
                             				bunch_initialization%n_particles(i),&
                                     bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i), &
-                                    bunch_initialization%sigma_cut(i),bunch_initialization%ChargeB(i),plasma%n0)
+                                    bunch_initialization%sigma_cut(i),bunch_initialization%ChargeB(i))
 
                   !--- trapezoidal + equal particles + yes optimisation
                   if(   trim(bunch_initialization%shape(i))=='trapezoidal'  &
@@ -223,7 +223,7 @@
                               				bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
                               				bunch_initialization%n_particles(i),&
                                       bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i), &
-                                      bunch_initialization%sigma_cut(i),bunch_initialization%ChargeB(i),plasma%n0)
+                                      bunch_initialization%sigma_cut(i),bunch_initialization%ChargeB(i))
 
                     !--- trapezoidal + weighted particles + no optimisation
                     if(   trim(bunch_initialization%shape(i))=='trapezoidal'  &
@@ -239,7 +239,7 @@
                                         bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
                                         bunch_initialization%n_particles(i),&
                                         bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i), &
-                                        bunch_initialization%ChargeB(i),plasma%n0, &
+                                        bunch_initialization%ChargeB(i), &
                                         bunch_initialization%npZ(i), bunch_initialization%npR(i), &
                                         bunch_initialization%sigma_cut(i))
 
@@ -257,7 +257,7 @@
                                         bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
                                         bunch_initialization%n_particles(i),&
                                         bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i), &
-                                        bunch_initialization%ChargeB(i),plasma%n0, &
+                                        bunch_initialization%ChargeB(i), &
                                         bunch_initialization%npZ(i), bunch_initialization%npR(i), &
                                         bunch_initialization%sigma_cut(i))
 

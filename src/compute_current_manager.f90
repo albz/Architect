@@ -41,16 +41,15 @@ CONTAINS
    SUBROUTINE Kernel_ComputeCurrent_FDTD
    IMPLICIT NONE
    INTEGER inc,tt
-   REAL(8) :: k_0,n_0,conv
+   REAL(8) :: k_0,conv
 
    k_0 = plasma%k_p
-   n_0 = plasma%n0
 
    call Compute_beam_3current_FDTD
 
    ! Conversion factor
    conv     = (1./(2.*pi*mesh_par%dzm*mesh_par%dxm))*(k_0*1.e4)**3   	!Divide by cell volume (1/r factor included in subroutine Compute_beam_3current_FDTD)
-   conv     = conv/n_0     						!dimensionless
+   conv     = conv/plasma%n0           						!dimensionless
 
    mesh%rho =   mesh%rho*conv
    mesh%Jz  =   mesh%Jz*conv
