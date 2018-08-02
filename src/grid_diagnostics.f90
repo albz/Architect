@@ -51,13 +51,13 @@ CONTAINS
 
 
 subroutine density_lineout_2bunch_cm
-  real(8) :: mu_z
+  real(8) :: mu_z(1)
   integer :: idx_mu_z,bunch_number,ss
   character*90 :: filename
 
   bunch_number=2
-  mu_z = calculate_nth_moment_bunch(bunch_number,1,3)
-  idx_mu_z=1 + int( (mu_z*plasma%k_p-mesh_par%z_min_moving) * one_over_dz )
+  mu_z(1)  = calculate_nth_moment(bunch_number,1,3,'nocentral')
+  idx_mu_z = 1 + int( (mu_z(1)*plasma%k_p-mesh_par%z_min_moving) * one_over_dz )
 
   filename=TRIM(sim_parameters%path_integrated_diagnostics)//'density_lineout_2bunch_cm.dat'
   call open_file(OSys%macwin,filename)
@@ -69,13 +69,13 @@ end subroutine density_lineout_2bunch_cm
 
 
 subroutine Er_lineout_2bunch_cm
-  real(8) :: mu_z
+  real(8) :: mu_z(1)
   integer :: idx_mu_z,bunch_number,ss
   character*90 :: filename
 
   bunch_number=2
-  mu_z = calculate_nth_moment_bunch(bunch_number,1,3)
-  idx_mu_z=1 + int( (mu_z*plasma%k_p-mesh_par%z_min_moving) * one_over_dz )
+  mu_z(1)  = calculate_nth_moment(bunch_number,1,3,'nocentral')
+  idx_mu_z = 1 + int( (mu_z(1)*plasma%k_p-mesh_par%z_min_moving) * one_over_dz )
 
   filename=TRIM(sim_parameters%path_integrated_diagnostics)//'Er_lineout_2bunch_cm.dat'
   call open_file(OSys%macwin,filename)

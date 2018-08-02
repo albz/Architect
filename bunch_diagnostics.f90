@@ -34,23 +34,17 @@ CONTAINS
 
   ! --- BUNCH DIAGNOSTIC MANAGER ---!
   SUBROUTINE bunch_diagnostics_Integrated_AllBunches
-  integer :: i, n,n1,n2,ier
-  real(8) :: mu_z,sigma_z
+  integer :: bunch_number, n,n1,n2,ier
 
-  do i=1,bunch_initialization%n_total_bunches
-    call bunch_sliced_diagnostics(i)
-    call bunch_integrated_diagnostics(i)
-    if(sim_parameters%L_SW_test) call bunch_shapiro_wilks(i)
+  do bunch_number=1,bunch_initialization%n_total_bunches
+    call bunch_integrated_diagnostics(bunch_number)
+    if(sim_parameters%L_SW_test) call bunch_shapiro_wilks(bunch_number)
   enddo
 
   if (sim_parameters%diagnostics_with_dcut.eq.1) then
     call apply_Sigma_cut(sim_parameters,plasma%k_p)
-    do i=1,bunch_initialization%n_total_bunches
-      mu_z    = calculate_nth_moment_bunch_dcut(i,1,3)
-      sigma_z = sqrt( calculate_nth_central_moment_bunch_dcut(i,2,3) )
-
-      call bunch_sliced_diagnostics_dcut(i,mu_z,sigma_z)
-      call bunch_integrated_diagnostics_dcut(i)
+    do bunch_number=1,bunch_initialization%n_total_bunches
+      call bunch_integrated_diagnostics_for_dcutparticles(bunch_number)
     enddo
   endif
 
@@ -74,25 +68,6 @@ USE architect_class_structure
   REAL(8) avgz,plasma_k_0,radius,drelZ,max_ellipsoidal
   REAL(8) :: s_x(1),s_y(1),s_z(1)
   REAL(8) :: mu_x(1),mu_y(1),mu_z(1)
-
-  ! do ibunch=1,sim_par%Nbunches
-  !   mu_x(1)  = calculate_nth_moment(ibunch,1,1,'nocentral')
-  ! 	mu_y(1)  = calculate_nth_moment(ibunch,1,2,'nocentral')
-  ! 	mu_z(1)  = calculate_nth_moment(ibunch,1,3,'nocentral')
-  !   s_x(1)  = sqrt(calculate_nth_moment(ibunch,2,1,'central'))
-  ! 	s_y(1)  = sqrt(calculate_nth_moment(ibunch,2,2,'central'))
-  ! 	s_z(1)  = sqrt(calculate_nth_moment(ibunch,2,3,'central'))
-  !
-  !   do iparticle=1,size(bunch(ibunch)%part(:))
- 	! 		if( bunch(ibunch)%part(iparticle)%cmp(8) .eq. 1.) then
-  !       if( abs(bunch(ibunch)%part(iparticle)%cmp(1)-mu_x(1)) > 4.*s_x(1)  ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
-  !       if( abs(bunch(ibunch)%part(iparticle)%cmp(2)-mu_y(1)) > 4.*s_y(1)  ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
-  !       if( abs(bunch(ibunch)%part(iparticle)%cmp(3)-mu_z(1)) > 4.*s_z(1)  ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
- 	! 		endif
- 	! 	enddo
-  !
- 	! enddo
-
 
   do ibunch=1,sim_par%Nbunches
 
