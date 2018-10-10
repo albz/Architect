@@ -253,6 +253,8 @@ subroutine preset_sim_parameters
   sim_parameters%L_BunchREinit=.false.
   sim_parameters%L_plasma_evolution=.true.
   sim_parameters%L_Bunch_evolve=.false.
+  sim_parameters%L_vay=.false.
+  sim_parameters%L_selffield=.false.
 
   !--- moving window ---!
   sim_parameters%window_mode=1

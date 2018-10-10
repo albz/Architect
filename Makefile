@@ -86,7 +86,7 @@ gf45  : FC = gfortran-mp-4.5
 gf45  : OPTFC = -ffree-line-length-none -fmax-stack-var-size=50000000
 gf45  : all
 
-gf48  : FC = gfortran-mp-4.8
+gf48  : FC = gfortran-4.8
 gf48  : OPTFC = -ffree-line-length-none -fmax-stack-var-size=50000000
 gf48  : all
 

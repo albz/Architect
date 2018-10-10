@@ -54,9 +54,14 @@
 
  !--- mean calculation
  if(component<7) then
-   mu_mean  = sum( bunch(number_bunch)%part(:)%cmp(component)*bunch(number_bunch)%part(:)%cmp(13), mask=maskbunch )
-   weight   = sum( bunch(number_bunch)%part(:)%cmp(13),                                            mask=maskbunch )
-   mu_mean  = mu_mean / weight
+    if(trim(bunch_initialization%PWeights(number_bunch))=='weighted' .and. (component==1 .or. component==4) ) then
+            mu_mean=0.D0
+            weight   = sum( bunch(number_bunch)%part(:)%cmp(13),                                            mask=maskbunch )
+    else
+            mu_mean  = sum( bunch(number_bunch)%part(:)%cmp(component)*bunch(number_bunch)%part(:)%cmp(13), mask=maskbunch )
+            weight   = sum( bunch(number_bunch)%part(:)%cmp(13),                                            mask=maskbunch )
+            mu_mean  = mu_mean / weight
+    endif
  else if(component==7) then !---gamma
    mu_mean  = sum( &
    sqrt(1. + bunch(number_bunch)%part(:)%cmp(4)**2  &
@@ -80,8 +85,12 @@
           * bunch(number_bunch)%part(:)%cmp(13), mask=maskbunch )
    moment  = moment / weight
  elseif ( trim(central)=='nocentral' .and. component<7) then
-   moment = sum( bunch(number_bunch)%part(:)%cmp(component)**nth *bunch(number_bunch)%part(:)%cmp(13), mask=maskbunch )
-   moment = moment / weight
+        if(trim(bunch_initialization%PWeights(number_bunch))=='weighted' .and. (component==1 .or. component==4) ) then
+            moment=0.D0
+        else
+            moment = sum( bunch(number_bunch)%part(:)%cmp(component)**nth *bunch(number_bunch)%part(:)%cmp(13), mask=maskbunch )
+            moment = moment / weight
+        endif
  elseif ( trim(central)=='nocentral' .and. component==7) then
    moment  = sum( &
    (sqrt(1. + bunch(number_bunch)%part(:)%cmp(4)**2   &
@@ -94,6 +103,7 @@
 
  !---
  deallocate(maskbunch)
+ if(trim(bunch_initialization%PWeights(number_bunch))=='weighted' .and. (component==1) ) moment=moment/2.D0
  calculate_nth_moment = moment(1)
  END FUNCTION calculate_nth_moment
 

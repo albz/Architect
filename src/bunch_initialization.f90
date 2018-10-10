@@ -227,7 +227,7 @@
 
                     !--- trapezoidal + weighted particles + no optimisation
                     if(   trim(bunch_initialization%shape(i))=='trapezoidal'  &
-                    .and. trim(bunch_initialization%PWeights(i))=='weighted'  &
+                    .and.  trim(bunch_initialization%PWeights(i))=='weighted' &
                     .and. trim(bunch_initialization%optimisation(i))=='no')   &
                                   call generate_bunch_trapezoidalZ_gaussianR_weighted( &
                                         i, 0.D0 , 0.D0, 0.D0,&

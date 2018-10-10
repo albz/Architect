@@ -23,7 +23,13 @@ MODULE my_types
 
 IMPLICIT NONE
 
-
+ !--- code precision ---!
+ integer, parameter :: sp = selected_real_kind(6, 37)
+ integer, parameter :: dp = selected_real_kind(15, 307)
+ integer, parameter :: dp_int = selected_int_kind(16)
+ integer, parameter :: hp_int = selected_int_kind(4)
+ integer, parameter :: qp = selected_real_kind(33, 4931)
+ !------------------------------------------------------!
 
    TYPE :: simul_param	 ! sim_parameters
 
@@ -68,7 +74,7 @@ IMPLICIT NONE
 
 	  REAL(8) :: lastInWindowCheck=0.,InWindoWCheckDelta=5.0
 
-    LOGICAL :: L_BunchREinit=.false.,L_plasma_evolution=.true.,L_Bunch_evolve
+    LOGICAL :: L_BunchREinit=.false.,L_plasma_evolution=.true.,L_Bunch_evolve,L_Vay=.False.,L_selffield=.false.
     REAL(8) :: lastBunchREinit=0.,bunch_reinit_distance_um=1000000.
 
    END TYPE
@@ -187,6 +193,9 @@ IMPLICIT NONE
 	PARAMETER (c=0.299792458D0,alpha=0.00729927d0,pi=3.141592653589793d0,c_SI=299792458D0)
   PARAMETER (electron_mass=9.10938291e-31, electron_charge=1.602176565e-19)
   PARAMETER (mu0=1.25663706D-6)
-	CHARACTER :: path*90,command*200
+  CHARACTER :: path*90,command*200
+  
+  real(dp), parameter :: zero = 0.0
+  real(dp), parameter :: one = 1.0
 
 END MODULE my_types

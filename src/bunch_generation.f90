@@ -132,8 +132,8 @@
                r_part_dimless      =ir*mesh_par%dxm+mesh_par%dxm/(npR+1.)*ppcr
                r_cc_dim            =ir*dr+dr/2.
                r_cc_dimless        =ir*mesh_par%dxm+mesh_par%dxm/2.
-               theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
-              !  theta               =2.d0*pi/npZ*(ppcz-1)
+              !  theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
+               theta               =0.D0
                z_part_dim          =iz*dz+dz/(npZ+1.)*ppcz
                z_cc_dim            =iz*dz+dz/2.
                bunch(bunch_number)%part(p)%cmp(1)=r_part_dim*cos(theta)
@@ -153,8 +153,7 @@
 
    call boxmuller_vector(rnumber,nparticles)
    bunch(bunch_number)%part(:)%cmp(4)=rnumber*eps_x/s_x
-   call boxmuller_vector(rnumber,nparticles)
-   bunch(bunch_number)%part(:)%cmp(5)=rnumber*eps_y/s_y
+   bunch(bunch_number)%part(:)%cmp(5)=0.D0
    call boxmuller_vector(rnumber,nparticles)
    bunch(bunch_number)%part(:)%cmp(6)=-rnumber*(0.01*dgamma)*gamma_m-gamma_m
 
@@ -193,8 +192,8 @@
                r_part_dimless      =ir*mesh_par%dxm+mesh_par%dxm/(npR+1.)*ppcr
                r_cc_dim            =ir*dr+dr/2.
                r_cc_dimless        =ir*mesh_par%dxm+mesh_par%dxm/2.
-               theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
-              !  theta               =2.d0*pi/npZ*(ppcz-1)
+              !  theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
+               theta               =0.D0
                z_part_dim          =iz*dz+dz/(npZ+1.)*ppcz
                z_cc_dim            =iz*dz+dz/2.
                bunch(bunch_number)%part(p)%cmp(1)=r_part_dim*cos(theta)
@@ -214,8 +213,7 @@
 
    call boxmuller_vector(rnumber,nparticles)
    call initialise_emittance_x_weightedbunch(bunch_number,rnumber,nparticles,eps_x,s_x)
-   call boxmuller_vector(rnumber,nparticles)
-   call initialise_emittance_y_weightedbunch(bunch_number,rnumber,nparticles,eps_y,s_y)
+   bunch(bunch_number)%part(:)%cmp(5)=0.D0
    call boxmuller_vector(rnumber,nparticles)
    call initialise_energy_spread_weightedbunch(bunch_number,rnumber,nparticles,dgamma,gamma_m)
 
@@ -361,8 +359,8 @@
              r_part_dimless      =ir*mesh_par%dxm+mesh_par%dxm/(npR+1.)*ppcr !particle radius dimensionless
              r_cc_dim            =ir*dr+dr/2. !cell centre :: now not used
              r_cc_dimless        =ir*mesh_par%dxm+mesh_par%dxm/2. !cell centre dimensionless:: now not used
-             theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
-            !  theta               =2.d0*pi/npZ*(ppcz-1)
+            !  theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
+             theta               =0.D0
              z_part_dim          =iz*dz+dz/(npZ+1.)*ppcz
              z_cc_dim            =iz*dz+dz/2.
              bunch(bunch_number)%part(p)%cmp(1)=r_part_dim*cos(theta)
@@ -379,8 +377,7 @@
 
    call boxmuller_vector(rnumber,nparticles)
    bunch(bunch_number)%part(:)%cmp(4)=rnumber*eps_x/s_x
-   call boxmuller_vector(rnumber,nparticles)
-   bunch(bunch_number)%part(:)%cmp(5)=rnumber*eps_y/s_y
+   bunch(bunch_number)%part(:)%cmp(5)=0.D0
    call boxmuller_vector(rnumber,nparticles)
    bunch(bunch_number)%part(:)%cmp(6)=-rnumber * 0.01*dgamma*gamma_m-gamma_m
 
@@ -416,8 +413,8 @@
              r_part_dimless      =ir*mesh_par%dxm+mesh_par%dxm/(npR+1.)*ppcr !particle radius dimensionless
              r_cc_dim            =ir*dr+dr/2. !cell centre :: now not used
              r_cc_dimless        =ir*mesh_par%dxm+mesh_par%dxm/2. !cell centre dimensionless:: now not used
-             theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
-            !  theta               =2.d0*pi/npZ*(ppcz-1)
+            !  theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
+             theta               =0.D0
              z_part_dim          =iz*dz+dz/(npZ+1.)*ppcz
              z_cc_dim            =iz*dz+dz/2.
              bunch(bunch_number)%part(p)%cmp(1)=r_part_dim*cos(theta)
@@ -434,8 +431,7 @@
 
    call boxmuller_vector(rnumber,nparticles)
    call initialise_emittance_x_weightedbunch(bunch_number,rnumber,nparticles,eps_x,s_x)
-   call boxmuller_vector(rnumber,nparticles)
-   call initialise_emittance_y_weightedbunch(bunch_number,rnumber,nparticles,eps_y,s_y)
+   bunch(bunch_number)%part(:)%cmp(5)=0.D0
    call boxmuller_vector(rnumber,nparticles)
    call initialise_energy_spread_weightedbunch(bunch_number,rnumber,nparticles,dgamma,gamma_m)
 
@@ -596,9 +592,8 @@
               r_part_dimless      =ir*mesh_par%dxm+mesh_par%dxm/(npR+1.)*ppcr
               r_cc_dim            =ir*dr+dr/2. !cc:cell-centre radius cell centre
               r_cc_dimless        =ir*mesh_par%dxm+mesh_par%dxm/2. !cc:cell-centre radius cell centre
-              theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
-              ! theta               =2.d0*pi/npZ*(ppcz-1)
-              ! z_part_dim          =(iz+.5)*dz+dz/(npZ+1.)*ppcz
+              ! theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
+              theta               =0.D0
               z_part_dim          =iz*dz+dz/(npZ+1.)*ppcz
               z_cc_dim            =(iz+.5)*dz+dz/2.
               bunch(bunch_number)%part(p)%cmp(1)=r_part_dim*cos(theta)
@@ -616,8 +611,7 @@
 
     call boxmuller_vector(rnumber,nparticles)
     bunch(bunch_number)%part(:)%cmp(4)=rnumber*eps_x/s_x
-    call boxmuller_vector(rnumber,nparticles)
-    bunch(bunch_number)%part(:)%cmp(5)=rnumber*eps_y/s_y
+    bunch(bunch_number)%part(:)%cmp(5)=0.D0
     call boxmuller_vector(rnumber,nparticles)
     bunch(bunch_number)%part(:)%cmp(6)=-rnumber*(0.01*dgamma)*gamma_m-gamma_m
 
@@ -655,9 +649,8 @@
                 r_part_dimless      =ir*mesh_par%dxm+mesh_par%dxm/(npR+1.)*ppcr
                 r_cc_dim            =ir*dr+dr/2. !cc:cell-centre radius cell centre
                 r_cc_dimless        =ir*mesh_par%dxm+mesh_par%dxm/2. !cc:cell-centre radius cell centre
-                theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
-                ! theta               =2.d0*pi/npZ*(ppcz-1)
-                ! z_part_dim          =(iz+.5)*dz+dz/(npZ+1.)*ppcz
+                ! theta               =2.d0*pi/(npR*npZ)*(ppcz+(ppcr-1)*npZ) !random_number_range(0.d0,2.d0*pi)
+                theta               =0.D0
                 z_part_dim          =iz*dz+dz/(npZ+1.)*ppcz
                 z_cc_dim            =(iz+.5)*dz+dz/2.
                 bunch(bunch_number)%part(p)%cmp(1)=r_part_dim*cos(theta)
@@ -675,8 +668,7 @@
 
       call boxmuller_vector(rnumber,nparticles)
       call initialise_emittance_x_weightedbunch(bunch_number,rnumber,nparticles,eps_x,s_x)
-      call boxmuller_vector(rnumber,nparticles)
-      call initialise_emittance_y_weightedbunch(bunch_number,rnumber,nparticles,eps_y,s_y)
+      bunch(bunch_number)%part(:)%cmp(5)=0.D0
       call boxmuller_vector(rnumber,nparticles)
       call initialise_energy_spread_weightedbunch(bunch_number,rnumber,nparticles,dgamma,gamma_m)
 

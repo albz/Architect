@@ -27,7 +27,6 @@ MODULE MoveParticle_FDTD
  USE architect_class_structure
  USE utilities
 
-
 IMPLICIT NONE
 
 
@@ -46,15 +45,16 @@ CONTAINS
 
 
    INTEGER ip,i,j
-   REAL(8) :: ai,Exi,Ezi,Bphii,gammaend
+   REAL(8) :: ai,Exi,Ezi,Bphii,gamma,gammaend
    REAL(8) :: xacc,yacc,zacc,racc
-   REAL(8) :: Beta_beam_x,Beta_beam_y,Beta_beam_z
+   REAL(8) :: Beta_beam_x,Beta_beam_y,beta_beam_r,Beta_beam_z
    INTEGER :: indz,indx,indz_s,indx_s
    REAL(8) :: Wr,Wz,Wr_s,Wz_s,fraz,fraz_s,pos_r,pos_z
    REAL(8) :: w00,w10,w01,w11
    REAL(8) :: Ex,Ey,Ez,Er,Bx,By,sin_theta,cos_theta,ux,uy,uz,ux_minus,uy_minus,uz_minus,ux_plus,uy_plus,uz_plus
    REAL(8) :: gamma_half_timestep,ux_prime,uy_prime,uz_prime,ux_new,uy_new,uz_new
-   REAL(8) :: tx,ty,tz,sx,sy,sz
+   REAL(8) :: tx,ty,tz,sx,sy,sz,alpha,t2
+   REAL(8) :: inv_gamma,pxsm,pysm,pzsm,us2,s,upx,upy,upz
 
 
    !--------------------------------------------------------------------------------!
@@ -77,10 +77,11 @@ CONTAINS
 						+mesh(indz    ,indx_s+1)%Ex  		* w01 &
 						+mesh(indz+1  ,indx_s  )%Ex  		* w10 &
 						+mesh(indz+1  ,indx_s+1)%Ex  		* w11
-            !<--> +mesh(indz    ,indx_s  )%Ex_bunch	* w00 &
-      			!<--> +mesh(indz    ,indx_s+1)%Ex_bunch	* w01 &
-      			!<--> +mesh(indz+1  ,indx_s  )%Ex_bunch	* w10 &
-      			!<--> +mesh(indz+1  ,indx_s+1)%Ex_bunch	* w11
+			if(sim_parameters%L_selffield) Exi = Exi &
+                                          + mesh(indz    ,indx_s  )%Ex_bunch	* w00 &
+      			                          + mesh(indz    ,indx_s+1)%Ex_bunch	* w01 &
+      			                          + mesh(indz+1  ,indx_s  )%Ex_bunch	* w10 &
+      			                          + mesh(indz+1  ,indx_s+1)%Ex_bunch	* w11
 
 
 		! ----- Ezi -------
@@ -90,10 +91,11 @@ CONTAINS
 						   +mesh(indz_s    ,indx+1)%Ez  		* w01 &
 						   +mesh(indz_s+1  ,indx  )%Ez   		* w10 &
 						   +mesh(indz_s+1  ,indx+1)%Ez      * w11
-               !<--> +mesh(indz_s    ,indx  )%Ez_bunch * w00 &
-         			 !<--> +mesh(indz_s    ,indx+1)%Ez_bunch * w01 &
-         			 !<--> +mesh(indz_s+1  ,indx  )%Ez_bunch * w10 &
-         			 !<--> +mesh(indz_s+1  ,indx+1)%Ez_bunch * w11
+			if(sim_parameters%L_selffield)  Ezi = Ezi &
+			                               + mesh(indz_s    ,indx  )%Ez_bunch * w00 &
+         			                       + mesh(indz_s    ,indx+1)%Ez_bunch * w01 &
+         			                       + mesh(indz_s+1  ,indx  )%Ez_bunch * w10 &
+         			                       + mesh(indz_s+1  ,indx+1)%Ez_bunch * w11
 
 		! ----- Bphii ----- (please remember, B must be interpolated between new and old value )
 			call particle_weights(5,Wr,Wz,Wr_s,Wz_s,fraz,fraz_s,indx,indx_s,pos_r,w00,w10,w01,w11)
@@ -101,21 +103,23 @@ CONTAINS
 			Bphii =	0.5*(mesh(indz_s  ,indx_s  )%Bphi     	* w00 &
 						      +mesh(indz_s  ,indx_s+1)%Bphi     	* w01 &
 					      	+mesh(indz_s+1,indx_s  )%Bphi     	* w10 &
-				      		+mesh(indz_s+1,indx_s+1)%Bphi     	* w11	)
-             !<--> +0.5*(mesh(indz_s  ,indx_s  )%Bphi_bunch  * w00 &
-      	      		!<--> +mesh(indz_s  ,indx_s+1)%Bphi_bunch  * w01 &
-      		      	!<--> +mesh(indz_s+1,indx_s  )%Bphi_bunch  * w10 &
-      	      		!<--> +mesh(indz_s+1,indx_s+1)%Bphi_bunch  * w11	)
+							  +mesh(indz_s+1,indx_s+1)%Bphi     	* w11	)
+			if(sim_parameters%L_selffield) Bphii = Bphii &
+                                          + 0.5*(mesh(indz_s  ,indx_s  )%Bphi_bunch  * w00 &
+      	                                  + mesh(indz_s  ,indx_s+1)%Bphi_bunch  * w01 &
+      		                              + mesh(indz_s+1,indx_s  )%Bphi_bunch  * w10 &
+      	                                  + mesh(indz_s+1,indx_s+1)%Bphi_bunch  * w11	)
 
 			Bphii = Bphii + &
 					0.5*(mesh(indz_s  ,indx_s  )%Bphi_old 	* w00 &
 						+mesh(indz_s  ,indx_s+1)%Bphi_old 	* w01 &
 						+mesh(indz_s+1,indx_s  )%Bphi_old 	* w10 &
 						+mesh(indz_s+1,indx_s+1)%Bphi_old 	* w11	)
-            !<--> +0.5*(mesh(indz_s  ,indx_s  )%Bphi_old_bunch 	* w00 &
-  					!<-->+mesh(indz_s  ,indx_s+1)%Bphi_old_bunch	* w01 &
-  					!<-->+mesh(indz_s+1,indx_s  )%Bphi_old_bunch	* w10 &
-  					!<-->+mesh(indz_s+1,indx_s+1)%Bphi_old_bunch	* w11	)
+			if(sim_parameters%L_selffield) Bphii = Bphii &
+            								+ 0.5*(mesh(indz_s  ,indx_s  )%Bphi_old_bunch 	* w00 &
+  											+ mesh(indz_s  ,indx_s+1)%Bphi_old_bunch	* w01 &
+  											+ mesh(indz_s+1,indx_s  )%Bphi_old_bunch	* w10 &
+  										  	+ mesh(indz_s+1,indx_s+1)%Bphi_old_bunch	* w11	)
 
       !External poloidal effect
       if(Bpoloidal%L_Bpoloidal) then
@@ -135,7 +139,10 @@ CONTAINS
       pos_r = plasma%k_p* sqrt( bunch(j)%part(ip)%cmp(1)**2+bunch(j)%part(ip)%cmp(2)**2 )
 		endif
 
-		! ----- Leap-Frog with Boris rotation
+
+		! ----- Leap-Frog with Boris rotation for 'equal' particle ----- !
+		if( trim(bunch_initialization%PWeights(j))=='equal' .and. .not. sim_parameters%L_vay) then
+
 		cos_theta = plasma%k_p* bunch(j)%part(ip)%cmp(1)/pos_r  ! x/r
 		sin_theta = plasma%k_p* bunch(j)%part(ip)%cmp(2)/pos_r	! y/r
 
@@ -254,6 +261,112 @@ CONTAINS
 		bunch(j)%part(ip)%cmp(1) = xacc
 		bunch(j)%part(ip)%cmp(2) = yacc
 		bunch(j)%part(ip)%cmp(3) = zacc
+
+	endif !casse for 'equal particles' and with no vay pusher
+
+
+
+
+		!--- Leap-Frog with VAY pusher ---!
+		if( trim(bunch_initialization%PWeights(j))=='equal' .and. sim_parameters%L_vay) then
+		cos_theta = plasma%k_p* bunch(j)%part(ip)%cmp(1)/pos_r  ! x/r
+		sin_theta = plasma%k_p* bunch(j)%part(ip)%cmp(2)/pos_r	! y/r
+
+		Ex        = Exi * cos_theta
+		Ey        = Exi * sin_theta
+
+		Bx        = -Bphii*sin_theta
+		By        =  Bphii*cos_theta
+		!Bz=0
+		
+		inv_gamma = one/sqrt(one + bunch(j)%part(ip)%cmp(4)**2 + bunch(j)%part(ip)%cmp(5)**2 + bunch(j)%part(ip)%cmp(6)**2 )
+
+		upx        = bunch(j)%part(ip)%cmp(4) + plasma%omega_p*sim_parameters%dt * Ex
+		upy        = bunch(j)%part(ip)%cmp(5) + plasma%omega_p*sim_parameters%dt * Ey
+		upz        = bunch(j)%part(ip)%cmp(6) + plasma%omega_p*sim_parameters%dt * Ezi
+
+        Tx  = plasma%omega_p*sim_parameters%dt/2.* Bx
+        Ty  = plasma%omega_p*sim_parameters%dt/2.* By
+        Tz  = plasma%omega_p*sim_parameters%dt/2.* zero
+
+        upx = upx + inv_gamma*(bunch(j)%part(ip)%cmp(5)*Tz - bunch(j)%part(ip)%cmp(6)*Ty) 
+        upy = upy + inv_gamma*(bunch(j)%part(ip)%cmp(6)*Tx - bunch(j)%part(ip)%cmp(4)*Tz)
+        upz = upz + inv_gamma*(bunch(j)%part(ip)%cmp(4)*Ty - bunch(j)%part(ip)%cmp(5)*Tx)
+
+        alpha = one + upx*upx + upy*upy + upz*upz
+        T2    = Tx**2 + Ty**2 + Tz**2
+
+        s     = alpha - T2
+        us2   = (upx*Tx + upy*Ty + upz*Tz)**2
+
+		alpha = one/sqrt(0.5*(s + sqrt(s**2 + 4.0*( T2 + us2 ))))
+
+        Tx = alpha *Tx
+        Ty = alpha *Ty
+        Tz = alpha *Tz
+
+        s = one/(one+Tx**2+Ty**2+Tz**2)
+        alpha   = upx*Tx + upy*Ty + upz*Tz
+        
+        pxsm = s*(upx + alpha*Tx + Tz*upy - Ty*upz)
+        pysm = s*(upy + alpha*Ty + Tx*upz - Tz*upx)
+		pzsm = s*(upz + alpha*Tz + Ty*upx - Tx*upy)
+
+ 		!--- Updates beam momenta ---!
+		bunch(j)%part(ip)%cmp(4)  = pxsm
+		bunch(j)%part(ip)%cmp(5)  = pysm
+		bunch(j)%part(ip)%cmp(6)  = pzsm
+		
+		!--- Stores the old positions, needed for correct J computation ---!
+		bunch(j)%part(ip)%cmp(9 )=bunch(j)%part(ip)%cmp(1)
+		bunch(j)%part(ip)%cmp(10)=bunch(j)%part(ip)%cmp(2)
+		bunch(j)%part(ip)%cmp(11)=bunch(j)%part(ip)%cmp(3)
+
+		!--- Updates beam positions and velocities ---!
+		gammaend  = sqrt(1. + pxsm**2 + pysm**2 + pzsm**2)
+
+		Beta_beam_x = pxsm/gammaend !updated velocity
+		Beta_beam_y = pysm/gammaend !updated velocity
+		Beta_beam_z = pzsm/gammaend !updated velocity
+
+		bunch(j)%part(ip)%cmp(1)  = bunch(j)%part(ip)%cmp(1) + c*Beta_beam_x*sim_parameters%dt
+		bunch(j)%part(ip)%cmp(2)  = bunch(j)%part(ip)%cmp(2) + c*Beta_beam_y*sim_parameters%dt
+		bunch(j)%part(ip)%cmp(3)  = bunch(j)%part(ip)%cmp(3) + c*Beta_beam_z*sim_parameters%dt
+
+	endif !casse for 'equal particles' with VAY pusher
+
+
+
+
+
+
+
+
+	! ----- Leap-Frog with Boris rotation for 'weighted' particle ----- !
+	if(trim(bunch_initialization%PWeights(j))=='weighted') then
+		gamma       = sqrt(1.D0 + bunch(j)%part(ip)%cmp(4)**2 + bunch(j)%part(ip)%cmp(6)**2 )
+		beta_beam_r = bunch(j)%part(ip)%cmp(4)/gamma ! r-component
+		beta_beam_z = bunch(j)%part(ip)%cmp(6)/gamma ! z-component
+
+		bunch(j)%part(ip)%cmp(4) = bunch(j)%part(ip)%cmp(4) + (Exi-beta_beam_z*Bphii) * plasma%omega_p*sim_parameters%dt
+		bunch(j)%part(ip)%cmp(6) = bunch(j)%part(ip)%cmp(6) + (Ezi+beta_beam_r*Bphii) * plasma%omega_p*sim_parameters%dt
+
+		!--- storing old position ---!
+		bunch(j)%part(ip)%cmp(9 )=bunch(j)%part(ip)%cmp(1)
+		bunch(j)%part(ip)%cmp(10)=bunch(j)%part(ip)%cmp(2)
+		bunch(j)%part(ip)%cmp(11)=bunch(j)%part(ip)%cmp(3)
+
+		gamma       = sqrt(1.D0 + bunch(j)%part(ip)%cmp(4)**2 + bunch(j)%part(ip)%cmp(6)**2 )
+		beta_beam_r = bunch(j)%part(ip)%cmp(4)/gamma ! r-component
+		beta_beam_z = bunch(j)%part(ip)%cmp(6)/gamma ! z-component
+
+		bunch(j)%part(ip)%cmp(1) = bunch(j)%part(ip)%cmp(1) + c*beta_beam_r*sim_parameters%dt
+		bunch(j)%part(ip)%cmp(3) = bunch(j)%part(ip)%cmp(3) + c*beta_beam_z*sim_parameters%dt
+		if(bunch(j)%part(ip)%cmp(1) < 0.) then
+			bunch(j)%part(ip)%cmp(1) = - bunch(j)%part(ip)%cmp(1)
+			bunch(j)%part(ip)%cmp(4) = - bunch(j)%part(ip)%cmp(4)
+		endif
+	endif !weighted case
 
 	enddo
 	enddo

@@ -64,9 +64,6 @@ module architect_class_structure
 	!~! 21 : Wz_s
 	!~! 22 : fraz
 	!~! 23 : fraz_s
-
-	! ---------------------------------------- !
-
  end type particle
 
  type static_background_ion
@@ -90,12 +87,11 @@ end module architect_class_structure
 
 
   !--- *** ---!
-  module pstruct_data
-    use architect_class_structure
-    implicit none
+module pstruct_data
+	use architect_class_structure
+	implicit none
 
-    type(species) :: bunch(6)
+	type(species) :: bunch(6)
 
-    type(static_background_ion),allocatable :: static_ion(:)
-
-  end module pstruct_data
+	type(static_background_ion), allocatable :: static_ion(:)
+end module pstruct_data
