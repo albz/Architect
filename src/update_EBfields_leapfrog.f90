@@ -59,9 +59,9 @@ CONTAINS
 !~	Node_end_r = Nr
 
 	!~! Adimensional integration step and cell sizes
-	!~DeltaR     = mesh_par%dxm
-	!~DeltaZ     = mesh_par%dzm
-	!~Dt         = sim_parameters%dt*plasma%omega_p
+	!~DeltaR     = mesh_par%dr
+	!~DeltaZ     = mesh_par%dz
+	!~Dt         = sim_parameters%dt_fs*plasma%omega_p
 
 	!------------------------------------------------------------------------!
 	!                           Z axis
@@ -99,7 +99,7 @@ CONTAINS
 	r_factor2     		= 0.
 	r_mesh_EM        	= 0.
 	do j=1,Node_max_r
-            r_mesh_EM(j) =  DeltaR*(j-1)
+            r_mesh_EM(j) =  mesh_par%dr*(j-1)
 	enddo
 
 	!----------------------!
@@ -195,8 +195,8 @@ CONTAINS
 	do i= Node_min_z,Node_max_z
     do j= Node_min_r,Node_max_r
 
-      Ez_new (i,j) = Ez (i,j) + Dt/DeltaR*( Bphi(i,j)*r_mesh_EM(j) - Bphi(i,j-1)*r_mesh_EM(j-1) )*2./(r_mesh_EM(j)+r_mesh_EM(j-1)) - Dt * Jpe_z(i,j)
-      Er_new (i,j) = Er (i,j) - Dt/DeltaZ*( Bphi  (i,j)            - Bphi(i-1,j  )              )                                  - Dt * Jpe_r(i,j)
+      Ez_new (i,j) = Ez (i,j) + sim_parameters%dt/mesh_par%dr*( Bphi(i,j)*r_mesh_EM(j) - Bphi(i,j-1)*r_mesh_EM(j-1) )*2./(r_mesh_EM(j)+r_mesh_EM(j-1)) + sim_parameters%dt * Jpe_z(i,j) !sign
+      Er_new (i,j) = Er (i,j) - sim_parameters%dt/mesh_par%dz*( Bphi  (i,j)            - Bphi(i-1,j  )              )                                  + sim_parameters%dt * Jpe_r(i,j) !sign
 
     enddo
 	enddo
@@ -217,7 +217,7 @@ CONTAINS
 		Er_new(i         ,1         ) = 0.
 		Ez_new(i         ,1         ) = Ez_new(i,Node_min_r)
 !         j=2
-!         Ez_new(i         ,j         ) = Ez (i,j) + Dt/DeltaR*( Bphi(i,j) )*8. - Dt * Jpe_z(i,j)
+!         Ez_new(i         ,j         ) = Ez (i,j) + sim_parameters%dt/mesh_par%dr*( Bphi(i,j) )*8. - sim_parameters%dt * Jpe_z(i,j)
     enddo
 
 	! left boundary
@@ -240,7 +240,7 @@ CONTAINS
 	do i= Node_min_z,Node_max_z
     do j= Node_min_r,Node_max_r
 
-      Bphi_new(i,j) = Bphi(i,j) + Dt/DeltaR*( Ez_new(i,j+1) - Ez_new(i,j)  ) - Dt/DeltaZ*( Er_new(i+1,j) - Er_new(i,j) )
+      Bphi_new(i,j) = Bphi(i,j) + sim_parameters%dt/mesh_par%dr*( Ez_new(i,j+1) - Ez_new(i,j)  ) - sim_parameters%dt/mesh_par%dz*( Er_new(i+1,j) - Er_new(i,j) )
 
     enddo
 	enddo
@@ -338,7 +338,7 @@ SUBROUTINE Kernel_Fields_FDTD_bunch
  r_factor2     		= 0.
  r_mesh_EM        	= 0.
  do j=1,Node_max_r
-           r_mesh_EM(j) =  DeltaR*(j-1)
+           r_mesh_EM(j) =  mesh_par%dr*(j-1)
  enddo
 
  !----------------------!
@@ -391,9 +391,9 @@ SUBROUTINE Kernel_Fields_FDTD_bunch
  do i= Node_min_z,Node_max_z
    do j= Node_min_r,Node_max_r
 
-     Ez_bunch_new(i,j) = Ez_bunch(i,j) + Dt/DeltaR*( Bphi_bunch(i,j)*r_mesh_EM(j) - Bphi_bunch(i,j-1)*r_mesh_EM(j-1) ) &
-                                                                *2./(r_mesh_EM(j)+r_mesh_EM(j-1)) - Dt * Jz(i,j)
-     Er_bunch_new (i,j) = Er_bunch(i,j) - Dt/DeltaZ*( Bphi_bunch  (i,j)- Bphi_bunch(i-1,j  ))- Dt * Jr(i,j)
+     Ez_bunch_new(i,j) = Ez_bunch(i,j) + sim_parameters%dt/mesh_par%dr*( Bphi_bunch(i,j)*r_mesh_EM(j) - Bphi_bunch(i,j-1)*r_mesh_EM(j-1) ) &
+                                                                *2./(r_mesh_EM(j)+r_mesh_EM(j-1)) - sim_parameters%dt * Jz(i,j)
+     Er_bunch_new (i,j) = Er_bunch(i,j) - sim_parameters%dt/mesh_par%dz*( Bphi_bunch  (i,j)- Bphi_bunch(i-1,j  ))- sim_parameters%dt * Jr(i,j)
 
    enddo
  enddo
@@ -435,8 +435,8 @@ SUBROUTINE Kernel_Fields_FDTD_bunch
  do i= Node_min_z,Node_max_z
    do j= Node_min_r,Node_max_r
 
-     Bphi_bunch_new(i,j) = Bphi_bunch(i,j) + Dt/DeltaR*( Ez_bunch_new(i,j+1) - Ez_bunch_new(i,j)  ) &
-                                          - Dt/DeltaZ*( Er_bunch_new(i+1,j) - Er_bunch_new(i,j) )
+     Bphi_bunch_new(i,j) = Bphi_bunch(i,j) + sim_parameters%dt/mesh_par%dr*( Ez_bunch_new(i,j+1) - Ez_bunch_new(i,j)  ) &
+                                          - sim_parameters%dt/mesh_par%dz*( Er_bunch_new(i+1,j) - Er_bunch_new(i,j) )
 
    enddo
  enddo

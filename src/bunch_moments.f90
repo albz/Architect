@@ -54,7 +54,7 @@
 
  !--- mean calculation
  if(component<7) then
-    if(trim(bunch_initialization%PWeights(number_bunch))=='weighted' .and. (component==1 .or. component==4) ) then
+    if(trim(bunchip%PWeights(number_bunch))=='weighted' .and. (component==1 .or. component==4) ) then
             mu_mean=0.D0
             weight   = sum( bunch(number_bunch)%part(:)%cmp(13),                                            mask=maskbunch )
     else
@@ -85,7 +85,7 @@
           * bunch(number_bunch)%part(:)%cmp(13), mask=maskbunch )
    moment  = moment / weight
  elseif ( trim(central)=='nocentral' .and. component<7) then
-        if(trim(bunch_initialization%PWeights(number_bunch))=='weighted' .and. (component==1 .or. component==4) ) then
+        if(trim(bunchip%PWeights(number_bunch))=='weighted' .and. (component==1 .or. component==4) ) then
             moment=0.D0
         else
             moment = sum( bunch(number_bunch)%part(:)%cmp(component)**nth *bunch(number_bunch)%part(:)%cmp(13), mask=maskbunch )
@@ -103,7 +103,7 @@
 
  !---
  deallocate(maskbunch)
- if(trim(bunch_initialization%PWeights(number_bunch))=='weighted' .and. (component==1) ) moment=moment/2.D0
+ if(trim(bunchip%PWeights(number_bunch))=='weighted' .and. (component==1) ) moment=moment/2.D0
  calculate_nth_moment = moment(1)
  END FUNCTION calculate_nth_moment
 
@@ -200,7 +200,7 @@
   call open_file(OSys%macwin,filename)
   !1  2   3   4   5    6    7     8      9      10     11      12      13     14    15    16     17       18       19       20        21
   !t,<X>,<Y>,<Z>,<Px>,<Py>,<Pz>,<rmsX>,<rmsY>,<rmsZ>,<rmsPx>,<rmsPy>,<rmsPz>,<Emx>,<Emy>,<Gam>,DGam/Gam,cov<xPx>,cov<yPy>,cov<zPz>,n_over_ne
-  write(11,'(100e14.5)') sim_parameters%sim_time*c,mu_x,mu_y,mu_z,mu_px,mu_py,mu_pz,s_x,s_y,s_z,s_px,s_py, &
+  write(11,'(100e14.5)') sim_parameters%sim_time*c,mu_x,mu_y,mu_z+mesh_par%z_max_moving_um,mu_px,mu_py,mu_pz,s_x,s_y,s_z,s_px,s_py, &
    s_pz,emittance_x,emittance_y,mu_gamma,dgamma_su_gamma,corr_x_px,corr_y_py,corr_z_pz, &
    background_density_value(1+int((mu_z(1)*plasma%k_p-mesh_par%z_min_moving)*one_over_dz),2)
   close(11)
@@ -276,7 +276,7 @@
   call open_file(OSys%macwin,filename)
   !1  2   3   4   5    6    7     8      9      10     11      12      13     14    15    16     17       18       19       20        21
   !t,<X>,<Y>,<Z>,<Px>,<Py>,<Pz>,<rmsX>,<rmsY>,<rmsZ>,<rmsPx>,<rmsPy>,<rmsPz>,<Emx>,<Emy>,<Gam>,DGam/Gam,cov<xPx>,cov<yPy>,cov<zPz>,n_over_ne
-  write(11,'(100e14.5)') sim_parameters%sim_time*c,mu_x,mu_y,mu_z,mu_px,mu_py,mu_pz,s_x,s_y,s_z,s_px,s_py, &
+  write(11,'(100e14.5)') sim_parameters%sim_time*c,mu_x,mu_y,mu_z+mesh_par%z_max_moving_um,mu_px,mu_py,mu_pz,s_x,s_y,s_z,s_px,s_py, &
    s_pz,emittance_x,emittance_y,mu_gamma,dgamma_su_gamma,corr_x_px,corr_y_py,corr_z_pz, &
    background_density_value(1+int((mu_z(1)*plasma%k_p-mesh_par%z_min_moving)*one_over_dz),2)
   close(11)

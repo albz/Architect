@@ -78,13 +78,13 @@ CONTAINS
 
     !--- cross check mesh resolution ---!
     resolution=1000.d0
-    if(Nint(Dz*resolution)==Nint(mesh_par%dzm/plasma%k_p*resolution)) then
+    if(Nint(Dz*resolution)==Nint(mesh_par%dz/plasma%k_p*resolution)) then
       write(*,*) 'the same resolution has been used for Dz mesh importing'
     else
       write(*,*) 'ERROR :: NOT the same resolution has been used for Dz mesh importing'
       stop
     endif
-    if(Nint(Dr*resolution)==Nint(mesh_par%dxm/plasma%k_p*resolution)) then
+    if(Nint(Dr*resolution)==Nint(mesh_par%dr/plasma%k_p*resolution)) then
       write(*,*) 'the same resolution has been used for Dr mesh importing'
     else
       write(*,*) 'ERROR :: NOT the same resolution has been used for Dr mesh importing'
@@ -100,7 +100,7 @@ CONTAINS
     real(8) :: dzm_um
 
     !--- *** ---!
-    dzm_um=mesh_par%dzm/plasma%k_p
+    dzm_um=mesh_par%dz/plasma%k_p
     background_density_value_external=0.d0
     !--- *** ---!
     dim1=size(mesh_util%ne_ext,1)

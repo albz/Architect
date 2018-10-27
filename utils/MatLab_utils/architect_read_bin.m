@@ -196,7 +196,43 @@ if(strcmp(kind,'section'))
         assignin('base', 'Zstar', Zstar);
         assignin('base', 'rho_i', rho_i);
         assignin('base', 'dist', dist);        
-    
+
+
+    elseif (output_version==5)
+
+        [kp,wp,dist,n0,dist_um,Nr,Nz,r_mesh,z_mesh,rho_b,rho_bck,Er,Er_bck,Er_b,Ez,Ez_bck,Ez_b,Bphi,Bphi_bck,Bphi_b,B_ex_poloidal,Jbr,Jbckr,Jbz,Jbckz,Zstar,rho_i] = architect_read_bin_section_v5(full_name);
+
+        assignin('base', 'Nr', Nr);
+        assignin('base', 'Nz', Nz);
+        assignin('base', 'r_mesh', r_mesh);
+        assignin('base', 'z_mesh', z_mesh);
+        assignin('base', 'rho', rho_b+rho_bck);
+        assignin('base', 'rho_b', rho_b);
+        assignin('base', 'rho_bck', rho_bck);
+        assignin('base', 'Er', Er);
+        assignin('base', 'Er_bck', Er_bck);
+        assignin('base', 'Er_b', Er_b);
+        assignin('base', 'Ez', Ez);
+        assignin('base', 'Ez_bck', Ez_bck);
+        assignin('base', 'Ez_b', Ez_b);
+        assignin('base', 'Bphi', Bphi);
+        assignin('base', 'Bphi_bck', Bphi_bck);
+        assignin('base', 'Bphi_b', Bphi_b);
+        assignin('base', 'B_ex_poloidal', B_ex_poloidal);
+        assignin('base', 'Jbr', Jbr);
+        assignin('base', 'Jbr', Jbr);
+        assignin('base', 'Jbckr', Jbckr);
+        assignin('base', 'Jbz', Jbz);
+        assignin('base', 'Jbckz', Jbckz);
+        assignin('base', 'Zstar', Zstar);
+        assignin('base', 'rho_i', rho_i);
+        assignin('base', 'dist', dist);
+        assignin('base', 'dist_um', dist_um);
+        assignin('base', 'wp', wp);
+        assignin('base', 'kp', kp);
+        assignin('base', 'n0', n0);
+
+
     end
 
 

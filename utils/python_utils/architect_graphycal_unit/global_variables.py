@@ -30,10 +30,15 @@ last_output=[]
 #--- ARCHITECT OUTPUT VARIABLES ---#
 #--- ***************************************** ---#
 #--- Scalars ---#
+output_version=0
+kp=0.
+wp=0.
+dist=0.
+np=0.
+dist_um=0.
+
 Nr=0
 Nz=0
-dist=0
-output_version=0
 
 #--- Vectors ---#
 r_mesh = []

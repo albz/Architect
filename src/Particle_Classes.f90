@@ -23,7 +23,7 @@
 module architect_class_structure
  implicit none
 
- integer,parameter :: P_ncmp=14
+ integer,parameter :: P_ncmp=16
 
  type particle
   real(8) :: cmp(P_ncmp)
@@ -47,23 +47,16 @@ module architect_class_structure
 	! 12 : part_charge (macroparticle charge)
 	! 13 : elperpart (electrons per macroparticle)
 
-  ! 14 : select particle for diagnostics
-  !      originally this part was called maskbunch a logical variable
-  !      used to select the particle, it comes to be more conveninet
-  !      to create a specific particle-component and then to convert
-  !      it to a logical variable
-  !      1 :: use it for diagnostics --- 0 :: exclude it
+	! 14 : select particle for diagnostics
+	!      originally this part was called maskbunch a logical variable
+	!      used to select the particle, it comes to be more conveninet
+	!      to create a specific particle-component and then to convert
+	!      it to a logical variable
+	!      1 :: use it for diagnostics --- 0 :: exclude it
 
-	!~! 14 : indx    --> to be converted in int
-	!~! 15 : indx_s  --> to be converted in int
-	!~! 16 : indz    --> to be converted in int
-	!~! 17 : indz_s  --> to be converted in int
-	!~! 18 : Wr
-	!~! 19 : Wz
-	!~! 20 : Wr_s
-	!~! 21 : Wz_s
-	!~! 22 : fraz
-	!~! 23 : fraz_s
+	! 15 : q, particle charge in unit of elementary charge (eg electron=-1.)
+	! 16 : m, particle mass in unit of electron mass (eg electron=1.)
+
  end type particle
 
  type static_background_ion

@@ -56,24 +56,24 @@ INTEGER Lapl_dim
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !            LOAD INPUT DATA, SET PARAMETERS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   sim_parameters%iter=0
+  sim_parameters%iter=0
 
-   call SetFileFlag('==started==')
-   call read_input
-   call write_read_nml
+  call SetFileFlag('==started==')
+  call read_input
+  call write_read_nml
 
-    total_run_distance = plasma%l_acc !in um
+  total_run_distance = plasma%l_acc !in um
 
-   call generate_output_tree
+  call generate_output_tree
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !    INITIALISE
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   call dimension_first_bunch
-   call init_window
-   call Kernel_Make_a_mesh
-   call init_bunch
-   call dt_calculation
+  call dimension_first_bunch
+  call init_window
+  call Kernel_Make_a_mesh
+  call init_bunch
+  call set_dt
 
 	! Initialize simulation time
 	sim_parameters%sim_time	= 0.
@@ -92,23 +92,23 @@ INTEGER Lapl_dim
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !            TIME EVOLUTION
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   ! Sets plasma background density,
-   ! computes charge and fields at first iteration
+  ! Sets plasma background density,
+  ! computes charge and fields at first iteration
 
-   !Self-consistent-bunch field initialization
-  if( bunch_initialization%self_consistent_field_bunch==0 ) then 		!no field initialization, only for comparison purposes
+  !Self-consistent-bunch field initialization
+  if( bunchip%self_consistent_field_bunch==0 ) then 		!no field initialization, only for comparison purposes
 		call init_null_EM_fields
 		call init_external_Bfields
 		call set_initial_background_condition
     call initialise_ion_background
 		call Kernel_ComputeCurrent_FDTD
-	elseif( bunch_initialization%self_consistent_field_bunch==1 ) then 	!coax shells
+	elseif( bunchip%self_consistent_field_bunch==1 ) then 	!coax shells
 		call set_initial_background_condition
     call initialise_ion_background
 		call Kernel_ComputeCurrent_FDTD
 		call init_EM_fields_coax_shells
 		call init_external_Bfields
-	elseif(bunch_initialization%self_consistent_field_bunch>1) then 	!LU or SOR: LU option (2), SOR option (3)
+	elseif(bunchip%self_consistent_field_bunch>1) then 	!LU or SOR: LU option (2), SOR option (3)
 		call init_EM_fields
 		call set_initial_background_condition
     call initialise_ion_background
@@ -190,8 +190,7 @@ INTEGER Lapl_dim
 
 
 	  ! Advance simulation time
-      !sim_parameters%sim_time=sim_parameters%sim_time+sim_parameters%dt
-      sim_parameters%sim_time=sim_parameters%iter*sim_parameters%dt
+      sim_parameters%sim_time=sim_parameters%iter*sim_parameters%dt_fs
 
       bunch(1)%part(:)%cmp(14)=1.
       if(abs(calculate_nth_moment(1,1,3,'nocentral')).gt.total_run_distance) then

@@ -37,7 +37,7 @@ CONTAINS
 
     !--- *** ---!
     if(.not.ionisation%L_ionisation) then
-      mesh(:,:)%n_plasma_i=mesh(:,:)%n_plasma_e
+      mesh(:,:)%ni_bck=mesh(:,:)%ne_bck
       return
     endif
 
@@ -66,18 +66,18 @@ CONTAINS
     integer :: i,j,k,idx_z,idx_r,ion_counter=0
     real(8) :: hz,hr,z_coord,r_coord
 
-    hz=mesh_par%dzm/real(ionisation%np_per_z+1)
-    hr=mesh_par%dxm/real(ionisation%np_per_r+1)
+    hz=mesh_par%dz/real(ionisation%np_per_z+1)
+    hr=mesh_par%dr/real(ionisation%np_per_r+1)
 
     do i=1,mesh_par%Nzm-1
       do j=1,mesh_par%Nxm-1
-        if( mesh_par%z_min_moving_um+(i-1)*mesh_par%dzm/plasma%k_p<bck_plasma%z_coordinate_um(1) .and. &
-            j<mesh_par%NRmax_plasma ) then
+        if( mesh_par%z_min_moving_um+(i-1)*mesh_par%dz/plasma%k_p<bck_plasma%z_coordinate_um(1) .and. &
+            j<mesh_par%Nr_plasma ) then
             do idx_z=1,ionisation%np_per_z
               do idx_r=1,ionisation%np_per_r
                 ion_counter=ion_counter+1
-                z_coord=mesh_par%z_min_moving+(i-1)*mesh_par%dzm+hz*idx_z
-                r_coord=(j-1)*mesh_par%dxm+hr*idx_r
+                z_coord=mesh_par%z_min_moving+(i-1)*mesh_par%dz+hz*idx_z
+                r_coord=(j-1)*mesh_par%dr+hr*idx_r
                 call initialise_ion(z_coord,r_coord,ionisation%mass_number,ionisation%atomic_number,1.d0,ion_counter)
               enddo
             enddo
@@ -95,8 +95,8 @@ CONTAINS
     integer, intent(in) :: ion_id
     integer :: i, j
 
-    i=int((z_coord-mesh_par%z_min_moving)/mesh_par%dzm)+2
-    j=int(r_coord/mesh_par%dxm)+2
+    i=int((z_coord-mesh_par%z_min_moving)/mesh_par%dz)+2
+    j=int(r_coord/mesh_par%dr)+2
 
     static_ion(ion_id)%cmp(1) = z_coord
     static_ion(ion_id)%cmp(2) = r_coord
@@ -206,21 +206,21 @@ CONTAINS
 		integer :: i,j,k,idx_z,idx_r
     real(8) :: hz,hr,z_coord,r_coord
 
-    hz=mesh_par%dzm/real(ionisation%np_per_z+1)
-    hr=mesh_par%dxm/real(ionisation%np_per_r+1)
+    hz=mesh_par%dz/real(ionisation%np_per_z+1)
+    hr=mesh_par%dr/real(ionisation%np_per_r+1)
 
 		i=2
-    do j=2,mesh_par%NRmax_plasma-1
+    do j=2,mesh_par%Nr_plasma-1
 	    do idx_z=1,ionisation%np_per_z
 	      do idx_r=1,ionisation%np_per_r
 					do k=1,ionisation%tot_ions
 						if(static_ion(k)%cmp(7)<=0.) goto 111
 					enddo
           111 continue
-          z_coord=mesh_par%z_min_moving+(i-2)*mesh_par%dzm+hz*idx_z
-          r_coord=(j-2)*mesh_par%dxm+hr*idx_r
+          z_coord=mesh_par%z_min_moving+(i-2)*mesh_par%dz+hz*idx_z
+          r_coord=(j-2)*mesh_par%dr+hr*idx_r
           call initialise_ion(z_coord,r_coord,ionisation%mass_number,ionisation%atomic_number,1.d0,k)
-          mesh(i,j)%n_plasma_i = mesh(i,j)%n_plasma_i + static_ion(k)%cmp(5)/real(ionisation%particle_per_cell) * static_ion(k)%cmp(6)
+          mesh(i,j)%ni_bck = mesh(i,j)%ni_bck + static_ion(k)%cmp(5)/real(ionisation%particle_per_cell) * static_ion(k)%cmp(6)
         enddo
       enddo
     enddo
@@ -238,29 +238,29 @@ CONTAINS
       mesh(:,:)%Zstar=0.d0
       do k=1,ionisation%tot_ions
         if(static_ion(k)%cmp(7)>0.d0) then
-          i=int((static_ion(k)%cmp(1)-mesh_par%z_min_moving)/mesh_par%dzm)
-          j=int( static_ion(k)%cmp(2)/mesh_par%dxm)
+          i=int((static_ion(k)%cmp(1)-mesh_par%z_min_moving)/mesh_par%dz)
+          j=int( static_ion(k)%cmp(2)/mesh_par%dr)
           mesh(i,j)%Zstar = mesh(i,j)%Zstar + static_ion(k)%cmp(5)/real(ionisation%particle_per_cell)
         endif
       enddo
     end subroutine from_particleZstart_to_meshZstar
 
 
-    !---from particle Zstart to mesh%n_plasma_i ---!
+    !---from particle Zstart to mesh%ni_bck ---!
     subroutine from_particleZstart_to_nplasmai
       integer :: i,j,k
 
       if(.not.ionisation%L_ionisation) then
-        mesh(:,:)%n_plasma_i=0.d0
+        mesh(:,:)%ni_bck=0.d0
         return
       endif
 
-      mesh(:,:)%n_plasma_i=0.d0
+      mesh(:,:)%ni_bck=0.d0
       do k=1,ionisation%tot_ions
         if(static_ion(k)%cmp(7)>0.d0) then
-          i=int((static_ion(k)%cmp(1)-mesh_par%z_min_moving)/mesh_par%dzm)
-          j=int( static_ion(k)%cmp(2)/mesh_par%dxm)
-          mesh(i,j)%n_plasma_i = mesh(i,j)%n_plasma_i + static_ion(k)%cmp(5)/real(ionisation%particle_per_cell) * static_ion(k)%cmp(6)
+          i=int((static_ion(k)%cmp(1)-mesh_par%z_min_moving)/mesh_par%dz)
+          j=int( static_ion(k)%cmp(2)/mesh_par%dr)
+          mesh(i,j)%ni_bck = mesh(i,j)%ni_bck + static_ion(k)%cmp(5)/real(ionisation%particle_per_cell) * static_ion(k)%cmp(6)
         endif
       enddo
     end subroutine from_particleZstart_to_nplasmai

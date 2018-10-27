@@ -108,17 +108,17 @@ subroutine ionise
 			w_adk=w_adk*((2./E_max)*Vn**3)**(2.*nstar-1.)
 			w_adk=max(w_adk,10.0)
 			w_adk=w_adk*exp((-2./3./E_max)*Vn**3)
-			W_one_lev=1.-exp(-sim_parameters%dt*w_adk)
+			W_one_lev=1.-exp(-sim_parameters%dt_fs*w_adk)
 
 			call random_number(rnd)
 			if(rnd <= W_one_lev) then
 				!print *,'yes'
 				static_ion(ion_id)%cmp(5) = static_ion(ion_id)%cmp(5)+1
 
-				i=int((static_ion(ion_id)%cmp(1)-mesh_par%z_min_moving)/mesh_par%dzm)+2
-		    j=int(static_ion(ion_id)%cmp(2)/mesh_par%dxm)+2
-				mesh(i,j)%n_plasma_e = mesh(i,j)%n_plasma_e + 1d0/real(ionisation%particle_per_cell) * static_ion(ion_id)%cmp(6)
-				mesh(i,j)%n_plasma_i = mesh(i,j)%n_plasma_i + 1d0/real(ionisation%particle_per_cell) * static_ion(ion_id)%cmp(6)
+				i=int((static_ion(ion_id)%cmp(1)-mesh_par%z_min_moving)/mesh_par%dz)+2
+		    j=int(static_ion(ion_id)%cmp(2)/mesh_par%dr)+2
+				mesh(i,j)%ne_bck = mesh(i,j)%ne_bck + 1d0/real(ionisation%particle_per_cell) * static_ion(ion_id)%cmp(6)
+				mesh(i,j)%ni_bck = mesh(i,j)%ni_bck + 1d0/real(ionisation%particle_per_cell) * static_ion(ion_id)%cmp(6)
 			endif
 
 

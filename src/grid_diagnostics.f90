@@ -61,7 +61,7 @@ subroutine density_lineout_2bunch_cm
 
   filename=TRIM(sim_parameters%path_integrated_diagnostics)//'density_lineout_2bunch_cm.dat'
   call open_file(OSys%macwin,filename)
-    write(11,'(1p1000e14.5)') ( mesh(idx_mu_z,ss)%n_plasma_e , ss=2,(mesh_par%Nxm-1),sim_parameters%jump_grid  )
+    write(11,'(1p1000e14.5)') ( mesh(idx_mu_z,ss)%ne_bck , ss=2,(mesh_par%Nxm-1),sim_parameters%jump_grid  )
   close(11)
 end subroutine density_lineout_2bunch_cm
 

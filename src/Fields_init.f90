@@ -42,7 +42,7 @@ contains
 	INTEGER, DIMENSION(:), ALLOCATABLE::Laplacian_matrix_sparse_vector_row,Laplacian_matrix_sparse_vector_column
 	REAL(8), DIMENSION(:), ALLOCATABLE  :: rho_vector,Phi_vector
 	INTEGER, DIMENSION(7) :: bunches_position
-	INTEGER:: b,dim,i,j,ierr
+	INTEGER:: b,dim,i,j,ierr,bunch_number
 	INTEGER :: left,right,bottom,up
 	INTEGER :: dim_Laplacian, count_non_null_elements
 	REAL(8), DIMENSION(3,3) :: A
@@ -50,9 +50,9 @@ contains
 	REAL(8) :: distance
 
 
-		dim_Lapl_r			=	bunch_initialization%init_width_r*mesh_par%Nsample_r/2
+		dim_Lapl_r			=	bunchip%init_width_r*mesh_par%Nsample_r/2
 		dim_Lapl_r			= min(dim_Lapl_r,Node_max_r) !force maximum matrix dimension
-		dim_Lapl_half_z	=	bunch_initialization%init_width_z*mesh_par%Nsample_z
+		dim_Lapl_half_z	=	bunchip%init_width_z*mesh_par%Nsample_z
 		dim_Lapl			  = 2*dim_Lapl_half_z*dim_Lapl_r
 		sim_parameters%dim_Laplacian = dim_Lapl
 
@@ -66,15 +66,15 @@ contains
 		!--- *** ---!
 
 
-		if(bunch_initialization%self_consistent_field_bunch==2) then
+		if(bunchip%self_consistent_field_bunch==2) then
 			if(.not.allocated(Laplacian_matrix)) ALLOCATE(Laplacian_matrix( dim_Lapl, dim_Lapl 	) )
-		else if(bunch_initialization%self_consistent_field_bunch==3) then
+		else if(bunchip%self_consistent_field_bunch==3) then
 			if(.not.allocated(Laplacian_matrix_sparse_vector)) ALLOCATE(Laplacian_matrix_sparse_vector			( 5*dim_Lapl ) )
 			if(.not.allocated(Laplacian_matrix_sparse_vector_row)) ALLOCATE(Laplacian_matrix_sparse_vector_row		( 5*dim_Lapl ) )
 			if(.not.allocated(Laplacian_matrix_sparse_vector_column)) ALLOCATE(Laplacian_matrix_sparse_vector_column	( 5*dim_Lapl ) )
-		else if(bunch_initialization%self_consistent_field_bunch==4) then
-			dim_Lapl_r			=	bunch_initialization%init_width_r*mesh_par%Nsample_r/2
-			dim_Lapl_half_z	=	bunch_initialization%init_width_z*mesh_par%Nsample_z
+		else if(bunchip%self_consistent_field_bunch==4) then
+			dim_Lapl_r			=	bunchip%init_width_r*mesh_par%Nsample_r/2
+			dim_Lapl_half_z	=	bunchip%init_width_z*mesh_par%Nsample_z
 			dim_Lapl			  = 2*dim_Lapl_half_z*dim_Lapl_r
 			sim_parameters%dim_Laplacian = dim_Lapl
 			if(.not.allocated(Laplacian_matrix_sparse_vector)) ALLOCATE(Laplacian_matrix_sparse_vector			( 5*dim_Lapl ) )
@@ -85,22 +85,22 @@ contains
 		ALLOCATE(Phi_whole_domain(mesh_par%Nzm,mesh_par%Nxm))
 		Phi_whole_domain=0.0
 
-		! -- finds bunches position in order to know where to cut the partial domain
-		do b=1,bunch_initialization%n_total_bunches
-			bunches_position(b) = 1 + abs(mesh_par%z_min)/mesh_par%dzm
-			! distance = calculate_nth_moment_bunch(b,1,3)-calculate_nth_moment_bunch(1,1,3)
-			bunch(b)%part(:)%cmp(14)=1.
-			distance = calculate_nth_moment(b,1,3,'nocentral') &
-			         - calculate_nth_moment(1,1,3,'nocentral')
-			distance = distance/mesh_par%dzm*plasma%k_p
-			bunches_position(b) = bunches_position(b) + int(distance)
+
+		!--- bunch z_cm in unit of mesh-cell ---!
+		do bunch_number = 1,bunchip%n_total_bunches
+			bunches_position( bunch_number ) = 1 + abs(mesh_par%z_min_um-bunchip%z_cm(bunch_number))/mesh_par%dz_um
+			bunch(bunch_number)%part(:)%cmp(14)=1.
+			! distance = calculate_nth_moment(b,1,3,'nocentral') &
+			!          - calculate_nth_moment(1,1,3,'nocentral')
+			! distance = distance/mesh_par%dz*plasma%k_p
+			! bunches_position(b) = bunches_position(b) + int(distance)
 		enddo
 
 
 
 		write(*,'(A)') 'Initializing EM fields:'
 
-		do b=1,bunch_initialization%n_total_bunches
+		do b=1,bunchip%n_total_bunches
 			write(*,'(A,I2)') 'Computing Potential for bunch:',b
 
 
@@ -108,25 +108,25 @@ contains
 			call Compute_beam_3current_bunch_FDTD(b)
 			!call analytic_rho_only_first_bunch
 
-			if(bunch_initialization%self_consistent_field_bunch==2) then
+			if(bunchip%self_consistent_field_bunch==2) then
 				! ---- Laplacian matrix for the Poisson problem
 				Laplacian_matrix(:,:)=0.
 				write(*,*) 'generating Laplacian matrix'
 				call Laplacian(Laplacian_matrix) !domain values
 				write(*,*) 'Laplacian matrix generated'
-			else if(bunch_initialization%self_consistent_field_bunch==3) then
+			else if(bunchip%self_consistent_field_bunch==3) then
 				! ---- Laplacian matrix for the Poisson problem
 				write(*,'(A)') 'generating sparse Laplacian matrix'
 				call Laplacian_sparse(Laplacian_matrix_sparse_vector,Laplacian_matrix_sparse_vector_row, &
 				Laplacian_matrix_sparse_vector_column,count_non_null_elements)
 				write(*,'(A)') 'Sparse Laplacian matrix generated'
-			else if(bunch_initialization%self_consistent_field_bunch==4) then
+			else if(bunchip%self_consistent_field_bunch==4) then
 				! ---- Laplacian matrix for the Poisson problem
 				write(*,'(A)') 'generating sparse Laplacian matrix'
 				call Laplacian_sparse(Laplacian_matrix_sparse_vector,Laplacian_matrix_sparse_vector_row, &
 				Laplacian_matrix_sparse_vector_column,count_non_null_elements)
 				write(*,'(A)') 'Sparse Laplacian matrix generated'
-			else if(bunch_initialization%self_consistent_field_bunch==5) then
+			else if(bunchip%self_consistent_field_bunch==5) then
 				! ---- Laplacian matrix for the Poisson problem
 				write(*,'(A)') 'generating sparse Laplacian matrix for the SOR cleaner version'
 				call Laplacian_sparse_SOR_new(ierr)
@@ -134,10 +134,16 @@ contains
 			endif
 
 			! ---- The part of the domain involved is around the bunch
-			left  =  max(2,(bunches_position(b)-dim_Lapl_half_z))
-			right =  min(mesh_par%Nzm-1, (bunches_position(b)+dim_Lapl_half_z-1))
+			write(*,*) bunches_position(b),dim_Lapl_half_z,bunches_position(b)-dim_Lapl_half_z
+			write(*,*) mesh_par%Nzm-1,bunches_position(b),dim_Lapl_half_z
+			! stop
+			! left  =  max(2,(bunches_position(b)-dim_Lapl_half_z)) 
+			! right =  min(mesh_par%Nzm-1, (bunches_position(b)+dim_Lapl_half_z-1))
+			left = max(2             , bunches_position(b)-dim_Lapl_half_z   )
+			right  = min(mesh_par%Nzm-1, bunches_position(b)+dim_Lapl_half_z-1 )
+			write(*,*) left,right,left-right,2*dim_Lapl_half_z
 			bottom = 2
-			if(bunch_initialization%self_consistent_field_bunch==5) bottom=1
+			if(bunchip%self_consistent_field_bunch==5) bottom=1
 			up     = (dim_Lapl_r+1)
 
 			if(.not.allocated(Phi_matrix)) ALLOCATE(Phi_matrix((right-left+1),(up-bottom+1)) )
@@ -149,42 +155,42 @@ contains
 
 
 
-			if(bunch_initialization%self_consistent_field_bunch==3) then
-					call from_M_to_v(mesh(left:right,bottom:up)%rho,rho_vector)
-			else if(bunch_initialization%self_consistent_field_bunch==4) then
-					call from_M_to_v2(mesh(left:right,bottom:Node_max_r)%rho,rho_vector)
+			if(bunchip%self_consistent_field_bunch==3) then
+					call from_M_to_v(mesh(left:right,bottom:up)%ne_b,rho_vector)
+			else if(bunchip%self_consistent_field_bunch==4) then
+					call from_M_to_v2(mesh(left:right,bottom:Node_max_r)%ne_b,rho_vector)
 			endif
 
 			! ---- Source for Poisson Problem
 			Phi_vector = -1.*rho_vector
 
 			! ---- Solution of the Poisson problem
-			if(bunch_initialization%self_consistent_field_bunch==2) then
+			if(bunchip%self_consistent_field_bunch==2) then
 				write(*,*) 'solving Laplacian matrix with LU technique'
 				call GaussEliminationLU(Laplacian_matrix,Phi_vector)
 				write(*,*) 'Laplacian matrix solved with LU'
-			else if(bunch_initialization%self_consistent_field_bunch==3) then
+			else if(bunchip%self_consistent_field_bunch==3) then
 				write(*,*) 'solving Laplacian matrix with SOR technique'
 				call SOR_sparse_Matrix_sparse(Laplacian_matrix_sparse_vector,Phi_vector, &
 					     Laplacian_matrix_sparse_vector_row,Laplacian_matrix_sparse_vector_column, &
-					     bunch_initialization%maxnorm,bunch_initialization%iter_max, &
-					     bunch_initialization%wsor,count_non_null_elements,(right-left+1)*(up-bottom+1))
+					     bunchip%maxnorm,bunchip%iter_max, &
+					     bunchip%wsor,count_non_null_elements,(right-left+1)*(up-bottom+1))
 				write(*,'(A)') 'Laplacian matrix solved with SOR'
-			else if(bunch_initialization%self_consistent_field_bunch==4) then
+			else if(bunchip%self_consistent_field_bunch==4) then
 				write(*,*) 'solving Laplacian matrix with SOR technique'
 				call SOR_sparse_Matrix_sparse(Laplacian_matrix_sparse_vector,Phi_vector, &
 					     Laplacian_matrix_sparse_vector_row,Laplacian_matrix_sparse_vector_column, &
-					     bunch_initialization%maxnorm,bunch_initialization%iter_max, &
-					     bunch_initialization%wsor,count_non_null_elements,(right-left+1)*(up-bottom+1))
+					     bunchip%maxnorm,bunchip%iter_max, &
+					     bunchip%wsor,count_non_null_elements,(right-left+1)*(up-bottom+1))
 				write(*,'(A)') 'Laplacian matrix solved with SOR'
-			! else if(bunch_initialization%self_consistent_field_bunch==3) then
+			! else if(bunchip%self_consistent_field_bunch==3) then
 			! 	write(*,*) 'solving Laplacian with Conjugate-Gradient technique'
 			! 	call CG_sparse(Laplacian_matrix_sparse_vector,Phi_vector, &
 			! 		     Laplacian_matrix_sparse_vector_row,Laplacian_matrix_sparse_vector_column, &
-			! 		     bunch_initialization%maxnorm,bunch_initialization%iter_max, &
-			! 		     bunch_initialization%wsor,count_non_null_elements,(right-left+1)*(up-bottom+1))
+			! 		     bunchip%maxnorm,bunchip%iter_max, &
+			! 		     bunchip%wsor,count_non_null_elements,(right-left+1)*(up-bottom+1))
 			! 	write(*,'(A)') 'Laplacian matrix solved with CG'
-		else if(bunch_initialization%self_consistent_field_bunch==5) then
+		else if(bunchip%self_consistent_field_bunch==5) then
 			write(*,*) 'solving Laplacian matrix with the SOR technique (clean code version)'
 			write(*,*) shape(a1(left:right,bottom:up))
 			call sor_homo( &
@@ -195,12 +201,12 @@ contains
 			a0(left:right,bottom:up), &
 			rhoR(left:right,bottom:up), & !right-hand-side
 			Phi_matrix, &
-			2, bunch_initialization%wsor, 0.8d0, bunch_initialization%maxnorm, bunch_initialization%iter_max, &
+			2, bunchip%wsor, 0.8d0, bunchip%maxnorm, bunchip%iter_max, &
 			100, .TRUE., .FALSE.)
 			write(*,'(A)') 'Laplacian matrix solved with SOR'
 			endif
 
-			if(bunch_initialization%self_consistent_field_bunch<5) call from_v_to_M(Phi_vector,Phi_matrix)
+			if(bunchip%self_consistent_field_bunch<5) call from_v_to_M(Phi_vector,Phi_matrix)
 			! ----- Put partial domain potential in its place in the whole domain, summing to the computed potentials
 
 			Phi_whole_domain(left:right,bottom:up) = Phi_whole_domain(left:right,bottom:up) + Phi_matrix(:,:)
@@ -252,20 +258,20 @@ contains
 		REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm), intent(in) :: Phi
 
 		!--- old version 2 points stencil ---!
-		!gamma_0 = bunch_initialization%bunch_gamma_m(1)
+		!gamma_0 = bunchip%bunch_gamma_m(1)
 		!do i=2,(mesh_par%Nzm-2)
 		!	do j=2,(mesh_par%Nxm-1)
-		!		mesh(i,j)%Ex_bunch = -1.*(Phi(i,j)-Phi(i,j-1))/mesh_par%dxm
-		!		mesh(i,j)%Ez_bunch = -1./gamma_0**2*(Phi(i,j)-Phi(i-1,j))/mesh_par%dzm
+		!		mesh(i,j)%Ex_bunch = -1.*(Phi(i,j)-Phi(i,j-1))/mesh_par%dr
+		!		mesh(i,j)%Ez_bunch = -1./gamma_0**2*(Phi(i,j)-Phi(i-1,j))/mesh_par%dz
 		!	enddo
 		!enddo
 
 		!---> using 3points stencil
-		gamma_0 = bunch_initialization%bunch_gamma_m(1)
+		gamma_0 = bunchip%bunch_gamma_m(1)
 		do i=2,(mesh_par%Nzm-2)
 			do j=2,(mesh_par%Nxm-1)
-				mesh(i,j)%Ex_bunch = -1.*(Phi(i,j+1)-Phi(i,j-1))/2./mesh_par%dxm
-				mesh(i,j)%Ez_bunch = -1./gamma_0**2*(Phi(i+1,j)-Phi(i-1,j))/2./mesh_par%dzm
+				mesh(i,j)%Ex_bunch = +1.*(Phi(i,j+1)-Phi(i,j-1))/2./mesh_par%dr            !sign
+				mesh(i,j)%Ez_bunch = +1./gamma_0**2*(Phi(i+1,j)-Phi(i-1,j))/2./mesh_par%dz !sign
 			enddo
 		enddo
 
@@ -298,7 +304,7 @@ contains
 		INTEGER bla
 
 			nn=2*dim_Lapl_half_z
-			gamma_0 = bunch_initialization%bunch_gamma_m(1)
+			gamma_0 = bunchip%bunch_gamma_m(1)
 
 			k=1
 			do j=2,(dim_Lapl_r+1)
@@ -310,22 +316,22 @@ contains
 
 			do k=1,dim_Lapl
 
-				Lapl_matrix(k,k) 		= 					- 2./mesh_par%dzm**2/gamma_0**2
-				Lapl_matrix(k,k) 		= Lapl_matrix(k,k) 	- 2./mesh_par%dxm**2
-				Lapl_matrix(k,k-1)  	= 1./mesh_par%dzm**2/gamma_0**2
+				Lapl_matrix(k,k) 		= 					- 2./mesh_par%dz**2/gamma_0**2
+				Lapl_matrix(k,k) 		= Lapl_matrix(k,k) 	- 2./mesh_par%dr**2
+				Lapl_matrix(k,k-1)  	= 1./mesh_par%dz**2/gamma_0**2
 
 				if(k.lt.(dim_Lapl-1)) then
-					Lapl_matrix(k,k+1)  = 1./mesh_par%dzm**2/gamma_0**2
+					Lapl_matrix(k,k+1)  = 1./mesh_par%dz**2/gamma_0**2
 				endif
 
 				if(radiusj(k).ne.0.) then
 
 					if (k.ge.(nn+1)) then
-						Lapl_matrix(k,k-nn) 	= 1./mesh_par%dxm**2 * (1.-mesh_par%dxm/2./radiusj(k))
+						Lapl_matrix(k,k-nn) 	= 1./mesh_par%dr**2 * (1.-mesh_par%dr/2./radiusj(k))
 					endif
 
 					if ((k+nn).le.dim_Lapl) then
-						Lapl_matrix(k,k+nn) = 1./mesh_par%dxm**2 * (1.+mesh_par%dxm/2./radiusj(k))
+						Lapl_matrix(k,k+nn) = 1./mesh_par%dr**2 * (1.+mesh_par%dr/2./radiusj(k))
 					endif
 
 				endif
@@ -376,12 +382,12 @@ contains
 			do j=2,(dim_Lapl_r+1)
 			do i=1,(2*dim_Lapl_half_z)
 					if (j.eq.2) then
-						Lapl_matrix(k,k) 	= -(1. + mesh_par%dxm/2./radiusj(k))/mesh_par%dxm**2 - 2./mesh_par%dzm**2/gamma_0**2
+						Lapl_matrix(k,k) 	= -(1. + mesh_par%dr/2./radiusj(k))/mesh_par%dr**2 - 2./mesh_par%dz**2/gamma_0**2
 						if (k.ge.(nn + 1)) then
 							Lapl_matrix(k,k-nn) = 0.
 						endif
 						if ( k.lt. (dim_Lapl-nn   )   ) then
-							Lapl_matrix(k,k+nn) =  (1. + mesh_par%dxm/2./radiusj(k))/mesh_par%dxm**2
+							Lapl_matrix(k,k+nn) =  (1. + mesh_par%dr/2./radiusj(k))/mesh_par%dr**2
 						endif
 					endif
 					k=k+1
@@ -406,7 +412,7 @@ contains
 			count_non_null_elements = 0
 
 			nn=2*dim_Lapl_half_z
-			gamma_0 = bunch_initialization%bunch_gamma_m(1)
+			gamma_0 = bunchip%bunch_gamma_m(1)
 			write(*,'(A,I10)') 'Laplacian matrix size: n x n, with n:',dim_Lapl
 			k=1
 			count=1
@@ -421,7 +427,7 @@ contains
 				! ------------ !
 				if(radiusj(k).ne.0.) then
 					if (k.ge.(nn+1)) then
-						Lapl_matrix_sparse_vector		(count)	= 1./mesh_par%dxm**2 * (1.-mesh_par%dxm/2./radiusj(k))
+						Lapl_matrix_sparse_vector		(count)	= 1./mesh_par%dr**2 * (1.-mesh_par%dr/2./radiusj(k))
 						Lapl_matrix_sparse_vector_row	(count)	= k
 						Lapl_matrix_sparse_vector_column(count)	= k-nn
 
@@ -439,7 +445,7 @@ contains
 				! Index k,k-1  !
 				! ------------ !
 				if (k.gt.1) then
-					Lapl_matrix_sparse_vector		(count) = 1./mesh_par%dzm**2/gamma_0**2
+					Lapl_matrix_sparse_vector		(count) = 1./mesh_par%dz**2/gamma_0**2
 					Lapl_matrix_sparse_vector_row	(count) = k
 					Lapl_matrix_sparse_vector_column(count) = k-1
 
@@ -457,14 +463,14 @@ contains
 				! ------------ !
 				! Index k,k    !
 				! ------------ !
-				Lapl_matrix_sparse_vector		(count) = - 2./mesh_par%dzm**2/gamma_0**2
-				Lapl_matrix_sparse_vector		(count) = Lapl_matrix_sparse_vector(count) - 2./mesh_par%dxm**2
+				Lapl_matrix_sparse_vector		(count) = - 2./mesh_par%dz**2/gamma_0**2
+				Lapl_matrix_sparse_vector		(count) = Lapl_matrix_sparse_vector(count) - 2./mesh_par%dr**2
 				Lapl_matrix_sparse_vector_row	(count) = k
 				Lapl_matrix_sparse_vector_column(count) = k
 
 
 				if (j.eq.2) then ! -- Lower Boundary BC
-					Lapl_matrix_sparse_vector		(count) = -(1. + mesh_par%dxm/2./radiusj(k))/mesh_par%dxm**2 - 2./mesh_par%dzm**2/gamma_0**2
+					Lapl_matrix_sparse_vector		(count) = -(1. + mesh_par%dr/2./radiusj(k))/mesh_par%dr**2 - 2./mesh_par%dz**2/gamma_0**2
 					Lapl_matrix_sparse_vector_row	(count) = k
 					Lapl_matrix_sparse_vector_column(count) = k
 				endif
@@ -475,7 +481,7 @@ contains
 				! Index k,k+1  !
 				! ------------ !
 				if(k.lt.(dim_Lapl)) then
-					Lapl_matrix_sparse_vector		(count) = 1./mesh_par%dzm**2/gamma_0**2
+					Lapl_matrix_sparse_vector		(count) = 1./mesh_par%dz**2/gamma_0**2
 					Lapl_matrix_sparse_vector_row	(count) = k
 					Lapl_matrix_sparse_vector_column(count) = k+1
 
@@ -493,7 +499,7 @@ contains
 				! ------------ !
 				if(radiusj(k).ne.0.) then
 					if (k.lt.(dim_Lapl-nn)) then
-						Lapl_matrix_sparse_vector		(count) = 1./mesh_par%dxm**2 * (1.+mesh_par%dxm/2./radiusj(k))
+						Lapl_matrix_sparse_vector		(count) = 1./mesh_par%dr**2 * (1.+mesh_par%dr/2./radiusj(k))
 						Lapl_matrix_sparse_vector_row	(count) = k
 						Lapl_matrix_sparse_vector_column(count) = k+nn
 
@@ -505,7 +511,7 @@ contains
 						endif
 
 						if (j.eq.2) then ! -- Lower Boundary BC
-							Lapl_matrix_sparse_vector		(count) = (1. + mesh_par%dxm/2./radiusj(k))/mesh_par%dxm**2
+							Lapl_matrix_sparse_vector		(count) = (1. + mesh_par%dr/2./radiusj(k))/mesh_par%dr**2
 							Lapl_matrix_sparse_vector_row	(count) = k
 							Lapl_matrix_sparse_vector_column(count) = k+nn
 						endif
@@ -544,13 +550,13 @@ contains
 		!--- matrix filling  ---!
 		do i=2,mesh_par%Nzm
 			do j=2,mesh_par%Nxm
-				a1(i,j)=mesh_par%dxm/mesh_par%dzm * (j-.5)*mesh_par%dxm
-				a2(i,j)=mesh_par%dzm/mesh_par%dxm * (j-1)*mesh_par%dxm
-				a3(i,j)=mesh_par%dxm/mesh_par%dzm * (j-.5)*mesh_par%dxm
-				a4(i,j)=mesh_par%dzm/mesh_par%dxm * (j-2)*mesh_par%dxm
+				a1(i,j)=mesh_par%dr/mesh_par%dz * (j-.5)*mesh_par%dr
+				a2(i,j)=mesh_par%dz/mesh_par%dr * (j-1)*mesh_par%dr
+				a3(i,j)=mesh_par%dr/mesh_par%dz * (j-.5)*mesh_par%dr
+				a4(i,j)=mesh_par%dz/mesh_par%dr * (j-2)*mesh_par%dr
 				a0(i,j)=-(a1(i,j)+a2(i,j)+a3(i,j)+a4(i,j))
-				radius1 = (j-1.5) * mesh_par%dxm
-				rhoR(i,j)=-mesh(i,j)%rho * radius1 * mesh_par%dzm*mesh_par%dxm
+				radius1 = (j-1.5) * mesh_par%dr
+				rhoR(i,j)=-mesh(i,j)%ne_b * radius1 * mesh_par%dz*mesh_par%dr
 			enddo
 			!--- adding a ghost cell at the bottom layer as a boundary condition ---!
 			j=1
@@ -618,18 +624,21 @@ contains
 	end subroutine from_v_to_M
 
 	subroutine init_B_field
-		REAL(8) beta_0
+		REAL(8) beta_0(1)
 		INTEGER i,j
 
 		! computes B field from E field, all in laboratory frame
 		! B = || beta_0 || unit vector_z x Efield
 		! all the bunches must have the same average initial gammma
 
-		beta_0 = sqrt( 1.-1./(bunch_initialization%bunch_gamma_m(1))**2 ) ! all the bunches must have the same average initial gammma
+		! beta_0 = sqrt( 1.-1./(bunchip%bunch_gamma_m(1))**2 ) ! all the bunches must have the same average initial gammma
+		!this definition also takes into account for the propagation direction 
+		!analytically correcting the Bphi sign depending on the direction of propagation
+		beta_0 = calculate_nth_moment(1,1,6,'nocentral')/calculate_nth_moment(1,1,7,'nocentral') !calculate_nth_moment(bunch_number,nth,cmp,'central')
 
 		do i=2,(mesh_par%Nzm-2)
 			do j=2,(mesh_par%Nxm-1)
-				mesh(i,j)%Bphi_bunch = beta_0*mesh(i,j)%Ex_bunch
+				mesh(i,j)%Bphi_bunch = -beta_0(1)*mesh(i,j)%Ex_bunch !sign
 			enddo
 		enddo
 
@@ -741,7 +750,7 @@ contains
 
 		mesh(:,:)%Ez_bunch=0. ! with this initialization Ez is completely null
 		mesh(:,:)%Ex_bunch=0.
-		gamma_0 = bunch_initialization%bunch_gamma_m(1)
+		gamma_0 = bunchip%bunch_gamma_m(1)
 
 		do j=2,(mesh_par%Nxm-2)
 			do j_prime=1,j
@@ -751,16 +760,16 @@ contains
 				if (j_prime.eq.1) then 		!contribution by axis cell
 
 					mesh(2:(mesh_par%Nzm-2),j)%Ex_bunch = mesh(2:(mesh_par%Nzm-2),j)%Ex_bunch + &
-					(0.25*mesh_par%dxm**2)*0.5*mesh(2:(mesh_par%Nzm-2),j_prime)%rho/gamma_0/(x_mesh_shifted(j))
+					(0.25*mesh_par%dr**2)*0.5*mesh(2:(mesh_par%Nzm-2),j_prime)%ne_b/gamma_0/(x_mesh_shifted(j))
 
 				else !contribution by cells not on axis
 
 					if(j_prime.eq.j) then 	!contribution by the cell itself
 						mesh(2:(mesh_par%Nzm-2),j)%Ex_bunch = mesh(2:(mesh_par%Nzm-2),j)%Ex_bunch + &
-						0.5*mesh(2:(mesh_par%Nzm-2),j_prime)%rho/gamma_0*(mesh_par%dxm-1./x_mesh_shifted(j_prime)*0.25*mesh_par%dxm**2)
+						0.5*mesh(2:(mesh_par%Nzm-2),j_prime)%ne_b/gamma_0*(mesh_par%dr-1./x_mesh_shifted(j_prime)*0.25*mesh_par%dr**2)
 					else 					! contribution by cells with smaller radius
 						mesh(2:(mesh_par%Nzm-2),j)%Ex_bunch = mesh(2:(mesh_par%Nzm-2),j)%Ex_bunch + &
-						2.*(x_mesh_shifted(j_prime)*mesh_par%dxm)*0.5*mesh(2:(mesh_par%Nzm-2),j_prime)%rho/gamma_0/(x_mesh_shifted(j)-x_mesh_shifted(j_prime))
+						2.*(x_mesh_shifted(j_prime)*mesh_par%dr)*0.5*mesh(2:(mesh_par%Nzm-2),j_prime)%ne_b/gamma_0/(x_mesh_shifted(j)-x_mesh_shifted(j_prime))
 					endif
 
 				endif
@@ -849,7 +858,7 @@ subroutine set_external_Bfield
 	!Bpoloidal%B_ex_poloidal   = Bpoloidal%B_ex_poloidal / (electron_mass*(plasma%omega_p*1e15)/electron_charge)
 
 	do i=2,(mesh_par%Nzm) !---*** ***---!
-		Zposition=(mesh_par%z_min+i*mesh_par%dzm)/plasma%k_p
+		Zposition=(mesh_par%z_min+i*mesh_par%dz)/plasma%k_p
 		if(Zposition < Bpoloidal%z_coordinate_um(1)) then
 			do j=2,(mesh_par%Nxm)
 

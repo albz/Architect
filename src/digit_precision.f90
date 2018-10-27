@@ -19,52 +19,19 @@
 !  along with architect.  If not, see <http://www.gnu.org/licenses/>.                                 !
 !*****************************************************************************************************!
 
-MODULE ComputeCurrentFDTD
-
-USE my_types
-USE use_my_types
-USE Compute_beam_current_FDTD
-USE Compute_plasma_current
-USE pstruct_data
-USE architect_class_structure
-USE utilities
-
-
+MODULE digit_precision
 
 IMPLICIT NONE
 
-CONTAINS
+!--- digit precision definition ---!
+integer, parameter :: sp = selected_real_kind(6, 37)
+integer, parameter :: dp = selected_real_kind(15, 307)
+integer, parameter :: dp_int = selected_int_kind(16)
+integer, parameter :: sp_int = selected_int_kind(8)
+integer, parameter :: hp_int = selected_int_kind(4)
+integer, parameter :: qp = selected_real_kind(33, 4931)
 
+real(dp), parameter :: zero_dp = 0.0
+real(dp), parameter :: one_dp  = 1.0
 
-
-
-   SUBROUTINE Kernel_ComputeCurrent_FDTD
-   IMPLICIT NONE
-   INTEGER inc,tt
-   REAL(8) :: k_0,conv
-
-   k_0 = plasma%k_p
-
-   call Compute_beam_3current_FDTD
-
-   ! Conversion factor
-   conv     = (1./(2.*pi*mesh_par%dz*mesh_par%dr))*(k_0*1.e4)**3   	!Divide by cell volume (1/r factor included in subroutine Compute_beam_3current_FDTD)
-   conv     = conv/plasma%n0           						!dimensionless
-
-   mesh%ne_b =   mesh%ne_b*conv
-   mesh%Jz  =   mesh%Jz*conv
-   mesh%Jr  =   mesh%Jr*conv
-
-   if ( sim_parameters%Fluid_Scheme==0 ) then
-	     write(*,*) 'error: old upwind centering is not supported in this version'
-	     stop
-   !call Compute_plasma_electron_current_FDTD
-   else if (sim_parameters%Fluid_Scheme==2   .or.   sim_parameters%Fluid_Scheme==1) then
-       call Compute_plasma_electron_current
-   endif
-
-   return
-   END SUBROUTINE
-
-
-END MODULE
+END MODULE digit_precision

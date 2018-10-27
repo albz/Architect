@@ -95,7 +95,7 @@ CONTAINS
    !-----------------------!
    ux  =	mesh(:,:)%ux
    uz  =	mesh(:,:)%uz
-   ne  =	mesh(:,:)%n_plasma_e
+   ne  =	mesh(:,:)%ne_bck
 
    ! Initialize auxiliary vectors and reals
    ne_ux_halfDt     = 0.D0
@@ -157,13 +157,13 @@ do q=1,3
 	!--- compute the low order solution
   do i= Node_min_lo_z,Node_max_lo_z
 	do j= Node_min_lo_r,Node_max_lo_r
-		quantity_td(i,j)= quantity(i,j) - Dt/Vol(j) * (Sr(j+1)*flux_lo_r(i,j+1)-Sr(j)*flux_lo_r(i,j))
+		quantity_td(i,j)= quantity(i,j) - sim_parameters%dt/Vol(j) * (Sr(j+1)*flux_lo_r(i,j+1)-Sr(j)*flux_lo_r(i,j))
 	end do
 	end do
 
 	do i= Node_min_lo_z,Node_max_lo_z
 	do j= Node_min_lo_r,Node_max_lo_r
-		quantity_td(i,j)= quantity_td(i,j) - Dt*Sz(j)/Vol(j) * (flux_lo_z(i+1,j)-flux_lo_z(i,j))
+		quantity_td(i,j)= quantity_td(i,j) - sim_parameters%dt*Sz(j)/Vol(j) * (flux_lo_z(i+1,j)-flux_lo_z(i,j))
 	end do
 	end do
 
@@ -263,8 +263,8 @@ enddo
 
 			endif
 
-  ux_new(i,j) = ux_temp + Dt*( Ex_f(i,j) - beta_z_halfDt*Bphi_f(i,j) )
-	uz_new(i,j) = uz_temp + Dt*( Ez_f(i,j) + beta_x_halfDt*Bphi_f(i,j) )
+  ux_new(i,j) = ux_temp - sim_parameters%dt*( Ex_f(i,j) - beta_z_halfDt*Bphi_f(i,j) ) !sign
+	uz_new(i,j) = uz_temp - sim_parameters%dt*( Ez_f(i,j) + beta_x_halfDt*Bphi_f(i,j) ) !sign
 
 			if ((ux_new(i,j).ne.ux_new(i,j)).or.(ux_new(i,j).ne.ux_new(i,j))) then
 				write(*,*) 'bla'
@@ -324,7 +324,7 @@ enddo
    !-----------------------------------------------------!
    ! Backward Substitution of the new fields in the mesh !
    !-----------------------------------------------------!
-   mesh(:,:)%n_plasma_e = ne_new(:,:)
+   mesh(:,:)%ne_bck = ne_new(:,:)
    mesh(:,:)%ux         = ux_new(:,:)
    mesh(:,:)%uz         = uz_new(:,:)
 
@@ -333,9 +333,9 @@ enddo
 
 	!--- *** ----!
 	Subroutine fluid_UpWind
-		call Upwind(Dt)
-		call EB_forces(Dt)
-		!call Upwind(Dt/2.)
+		call Upwind(sim_parameters%dt)
+		call EB_forces(sim_parameters%dt)
+		!call Upwind(sim_parameters%dt/2.)
 	end Subroutine fluid_UpWind
 
 	!--- *** ----!
@@ -355,9 +355,9 @@ enddo
 
       do q=1,3
       	quantity    = 0.
-      	if (q.eq.1) quantity = mesh%n_plasma_e
-      	if (q.eq.2) quantity = mesh%n_plasma_e*mesh%ux
-      	if (q.eq.3) quantity = mesh%n_plasma_e*mesh%uz
+      	if (q.eq.1) quantity = mesh%ne_bck
+      	if (q.eq.2) quantity = mesh%ne_bck*mesh%ux
+      	if (q.eq.3) quantity = mesh%ne_bck*mesh%uz
 
         !---> along r
       	do i= Node_min_lo_z,Node_max_lo_z
@@ -445,18 +445,18 @@ enddo
   	endif
 
     !   ------- backward substitution
-  	if (q.eq.1) mesh%n_plasma_e  = quantity
+  	if (q.eq.1) mesh%ne_bck  = quantity
   	if (q.eq.2) then
       do i= 1,Node_end_lo_z
       do j= 1,Node_end_lo_r
-        mesh(i,j)%ux = quantity(i,j)/max(mesh(i,j)%n_plasma_e,threshold_factor)
+        mesh(i,j)%ux = quantity(i,j)/max(mesh(i,j)%ne_bck,threshold_factor)
       end do
       end do
     endif
     if (q.eq.3) then
       do i= 1,Node_end_lo_z
       do j= 1,Node_end_lo_r
-        mesh(i,j)%uz = quantity(i,j)/max(mesh(i,j)%n_plasma_e,threshold_factor)
+        mesh(i,j)%uz = quantity(i,j)/max(mesh(i,j)%ne_bck,threshold_factor)
       end do
       end do
     endif
@@ -489,11 +489,11 @@ SUBROUTINE EB_forces(DeltaT)
       beta_r=mesh(i,j)%uz/sqrt( 1. + mesh(i,j)%ux**2 + mesh(i,j)%uz**2 + threshold_factor)
       beta_z=mesh(i,j)%uz/sqrt( 1. + mesh(i,j)%ux**2 + mesh(i,j)%uz**2 + threshold_factor)
 
-      ! ur_local = mesh(i,j)%ux*mesh(i,j)%n_plasma_e + DeltaT*( Er_fc - beta_z*Bphi_fc )
-      ! uz_local = mesh(i,j)%uz*mesh(i,j)%n_plasma_e + DeltaT*( Ez_fc + beta_r*Bphi_fc )
+      ! ur_local = mesh(i,j)%ux*mesh(i,j)%ne_bck + DeltaT*( Er_fc - beta_z*Bphi_fc )
+      ! uz_local = mesh(i,j)%uz*mesh(i,j)%ne_bck + DeltaT*( Ez_fc + beta_r*Bphi_fc )
       !
-      ! mesh(i,j)%ux = ur_local/max( mesh(i,j)%n_plasma_e, threshold_factor )
-      ! mesh(i,j)%uz = uz_local/max( mesh(i,j)%n_plasma_e, threshold_factor )
+      ! mesh(i,j)%ux = ur_local/max( mesh(i,j)%ne_bck, threshold_factor )
+      ! mesh(i,j)%uz = uz_local/max( mesh(i,j)%ne_bck, threshold_factor )
 
       mesh(i,j)%ux = mesh(i,j)%ux + DeltaT*( Er_fc - beta_z*Bphi_fc )
       mesh(i,j)%uz = mesh(i,j)%uz + DeltaT*( Ez_fc + beta_r*Bphi_fc )

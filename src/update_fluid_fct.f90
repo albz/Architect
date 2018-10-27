@@ -39,13 +39,10 @@ CONTAINS
 
 
    INTEGER :: i,j,iter,q
-   !~INTEGER :: Nz,Nr,Node_min_lo_z,Node_max_lo_z,Node_min_lo_r,Node_max_lo_r,Node_end_lo_z,Node_end_lo_r
-   !~INTEGER ::       Node_min_ho_z,Node_max_ho_z,Node_min_ho_r,Node_max_ho_r,Node_end_ho_z,Node_end_ho_r
    REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: ux,uz,ne,ux_halfDt,uz_halfDt,ux_new,uz_new,ne_new
    REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: Ex_f,Ez_f,Bphi_f
    REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm) :: ne_ux_halfDt,ne_uz_halfDt,ne_ux_new,ne_uz_new
 
-   !~REAL DeltaR,DeltaZ,Dt,threshold_factor
    REAL(8) threshold_factor
    REAL(8) one_over_three,one_over_six,five_over_six
 
@@ -73,9 +70,9 @@ CONTAINS
    !     Mesh     !
    !--------------!
 
-   !~DeltaR  = mesh_par%dxm
-   !~DeltaZ  = mesh_par%dzm
-   !~Dt      = sim_parameters%dt*plasma%omega_p
+   !~DeltaR  = mesh_par%dr
+   !~DeltaZ  = mesh_par%dz
+   !~Dt      = sim_parameters%dt_fs*plasma%omega_p
 
    threshold_factor = 1e-12
    one_over_three   = 1.D0/3.D0
@@ -147,7 +144,7 @@ CONTAINS
    !-----------------------!
    ux               =	mesh(:,:)%ux
    uz               =	mesh(:,:)%uz
-   ne               =	mesh(:,:)%n_plasma_e
+   ne               =	mesh(:,:)%ne_bck
 
    ! Initialize auxiliary vectors and reals
 
@@ -260,13 +257,13 @@ do q=1,3
   !--- compute the low order solution
   do i= Node_min_lo_z,Node_max_lo_z
 	do j= Node_min_lo_r,Node_max_lo_r
-		quantity_td(i,j)= quantity(i,j)    - Dt/Vol(j) * (Sr(j+1)*flux_lo_r(i,j+1)-Sr(j)*flux_lo_r(i,j))
+		quantity_td(i,j)= quantity(i,j)    - sim_parameters%dt/Vol(j) * (Sr(j+1)*flux_lo_r(i,j+1)-Sr(j)*flux_lo_r(i,j))
 	end do
 	end do
 
 	do i= Node_min_lo_z,Node_max_lo_z
 	do j= Node_min_lo_r,Node_max_lo_r
-		quantity_td(i,j)= quantity_td(i,j) - Dt*Sz(j)/Vol(j) * (flux_lo_z(i+1,j)-flux_lo_z(i,j))
+		quantity_td(i,j)= quantity_td(i,j) - sim_parameters%dt*Sz(j)/Vol(j) * (flux_lo_z(i+1,j)-flux_lo_z(i,j))
 	end do
 	end do
 	!---------------------------------------------!
@@ -422,7 +419,7 @@ do q=1,3
 		A_c_down       = C_down (i  ,j  )*A_down (i  ,j  ) * Sr(j  )
 		A_c_up         = C_down (i  ,j+1)*A_down (i  ,j+1) * Sr(j+1)
 
-		quantity(i,j) = quantity_td(i,j) - Dt/Vol(j) * &
+		quantity(i,j) = quantity_td(i,j) - sim_parameters%dt/Vol(j) * &
 		               (A_c_right-A_c_left+A_c_up-A_c_down)
 	end do
 	end do
@@ -578,8 +575,8 @@ enddo
 
 			endif
 
-    ux_new       (i,j) = ux_temp + Dt*( Ex_f(i,j) - beta_z_halfDt*Bphi_f(i,j) )
-  	uz_new       (i,j) = uz_temp + Dt*( Ez_f(i,j) + beta_x_halfDt*Bphi_f(i,j) )
+    ux_new       (i,j) = ux_temp + sim_parameters%dt*( Ex_f(i,j) - beta_z_halfDt*Bphi_f(i,j) )
+  	uz_new       (i,j) = uz_temp + sim_parameters%dt*( Ez_f(i,j) + beta_x_halfDt*Bphi_f(i,j) )
 
 			if ((ux_new(i,j).ne.ux_new(i,j)).or.(ux_new(i,j).ne.ux_new(i,j))) then
 				write(*,*) 'bla'
@@ -640,7 +637,7 @@ enddo
    ! Substitution of the new fields in the mesh !
    !--------------------------------------------!
 
-   mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%n_plasma_e =      ne_new     (1:Node_end_lo_z,1:Node_end_lo_r)
+   mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%ne_bck     =      ne_new     (1:Node_end_lo_z,1:Node_end_lo_r)
    mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%ux         =      ux_new     (1:Node_end_lo_z,1:Node_end_lo_r)
    mesh(1:mesh_par%Nzm,1:mesh_par%Nxm)%uz         =      uz_new     (1:Node_end_lo_z,1:Node_end_lo_r)
 

@@ -21,11 +21,12 @@
 
 MODULE MoveParticle_FDTD
 
- USE my_types
- USE use_my_types
- USE pstruct_data
- USE architect_class_structure
- USE utilities
+use digit_precision
+use my_types
+use use_my_types
+use pstruct_data
+use architect_class_structure
+use utilities
 
 IMPLICIT NONE
 
@@ -45,7 +46,10 @@ CONTAINS
 
 
    INTEGER ip,i,j
-   REAL(8) :: ai,Exi,Ezi,Bphii,gamma,gammaend
+   REAL(8) :: gamma,gammaend
+   REAL(8) :: Er_onparticle,Ez_onparticle,Bphi_onparticle 				!original fields interpolated on particle position
+   REAL(8) :: Ex_onparticle,Ey_onparticle,Bx_onparticle,By_onparticle	!Er-Bphi on particle position projected on {x,y} components
+   REAL(8) :: q,m
    REAL(8) :: xacc,yacc,zacc,racc
    REAL(8) :: Beta_beam_x,Beta_beam_y,beta_beam_r,Beta_beam_z
    INTEGER :: indz,indx,indz_s,indx_s
@@ -61,110 +65,112 @@ CONTAINS
    !                             Cycle on every particle                            !
    !--------------------------------------------------------------------------------!
    do j =1,sim_parameters%Nbunches
-   do ip=1,bunch_initialization%n_particles(j)
+   do ip=1,bunchip%n_particles(j)
 
 		! ----- Field weighting on grid
 
-		if (bunch(j)%part(ip)%cmp(7).eq. 1.) then ! particle in moving window --> weight force from the grid
+		if (bunch(j)%part(ip)%cmp(7).eq. 1.) then ! particle inside the moving window --> weight force from the grid
 			call weights_particle_ongrid(1,bunch(j)%part(ip)%cmp(1),bunch(j)%part(ip)%cmp(2) ,bunch(j)%part(ip)%cmp(3) , &
 											 bunch(j)%part(ip)%cmp(9),bunch(j)%part(ip)%cmp(10),bunch(j)%part(ip)%cmp(11), &
 											 Wr,Wz,Wr_s,Wz_s,fraz,fraz_s,pos_r,pos_z,indx,indx_s,indz,indz_s)
-		! ----- Exi -------
+		
 
+			!--- Er on particle ---!
 			call particle_weights(3,Wr,Wz,Wr_s,Wz_s,fraz,fraz_s,indx,indx_s,pos_r,w00,w10,w01,w11)
 
-			Exi   =mesh(indz    ,indx_s  )%Ex  		* w00 &
-						+mesh(indz    ,indx_s+1)%Ex  		* w01 &
-						+mesh(indz+1  ,indx_s  )%Ex  		* w10 &
-						+mesh(indz+1  ,indx_s+1)%Ex  		* w11
-			if(sim_parameters%L_selffield) Exi = Exi &
-                                          + mesh(indz    ,indx_s  )%Ex_bunch	* w00 &
-      			                          + mesh(indz    ,indx_s+1)%Ex_bunch	* w01 &
-      			                          + mesh(indz+1  ,indx_s  )%Ex_bunch	* w10 &
-      			                          + mesh(indz+1  ,indx_s+1)%Ex_bunch	* w11
+			Er_onparticle = mesh(indz    ,indx_s  )%Ex  		* w00 &
+						  + mesh(indz    ,indx_s+1)%Ex  		* w01 &
+						  + mesh(indz+1  ,indx_s  )%Ex  		* w10 &
+						  + mesh(indz+1  ,indx_s+1)%Ex  		* w11
+			if(sim_parameters%L_selffield) Er_onparticle = Er_onparticle &
+                          + mesh(indz    ,indx_s  )%Ex_bunch	* w00 &
+      			          + mesh(indz    ,indx_s+1)%Ex_bunch	* w01 &
+      			          + mesh(indz+1  ,indx_s  )%Ex_bunch	* w10 &
+      			          + mesh(indz+1  ,indx_s+1)%Ex_bunch	* w11
 
-
-		! ----- Ezi -------
+			!--- Ez on particle ---!
 			call particle_weights(4,Wr,Wz,Wr_s,Wz_s,fraz,fraz_s,indx,indx_s,pos_r,w00,w10,w01,w11)
 
-			Ezi   =   mesh(indz_s    ,indx  )%Ez  		* w00 &
-						   +mesh(indz_s    ,indx+1)%Ez  		* w01 &
-						   +mesh(indz_s+1  ,indx  )%Ez   		* w10 &
-						   +mesh(indz_s+1  ,indx+1)%Ez      * w11
-			if(sim_parameters%L_selffield)  Ezi = Ezi &
-			                               + mesh(indz_s    ,indx  )%Ez_bunch * w00 &
-         			                       + mesh(indz_s    ,indx+1)%Ez_bunch * w01 &
-         			                       + mesh(indz_s+1  ,indx  )%Ez_bunch * w10 &
-         			                       + mesh(indz_s+1  ,indx+1)%Ez_bunch * w11
+			Ez_onparticle  = mesh(indz_s    ,indx  )%Ez  		* w00 &
+						   + mesh(indz_s    ,indx+1)%Ez  		* w01 &
+						   + mesh(indz_s+1  ,indx  )%Ez   		* w10 &
+						   + mesh(indz_s+1  ,indx+1)%Ez         * w11
+			if(sim_parameters%L_selffield)  Ez_onparticle = Ez_onparticle &
+			               + mesh(indz_s    ,indx  )%Ez_bunch   * w00 &
+         			       + mesh(indz_s    ,indx+1)%Ez_bunch   * w01 &
+         			       + mesh(indz_s+1  ,indx  )%Ez_bunch   * w10 &
+         			       + mesh(indz_s+1  ,indx+1)%Ez_bunch   * w11
 
-		! ----- Bphii ----- (please remember, B must be interpolated between new and old value )
+			!--- Bphi on particle ---!
+			!--- Bphi must be interpolated between new and old value ---!
 			call particle_weights(5,Wr,Wz,Wr_s,Wz_s,fraz,fraz_s,indx,indx_s,pos_r,w00,w10,w01,w11)
 
-			Bphii =	0.5*(mesh(indz_s  ,indx_s  )%Bphi     	* w00 &
-						      +mesh(indz_s  ,indx_s+1)%Bphi     	* w01 &
-					      	+mesh(indz_s+1,indx_s  )%Bphi     	* w10 &
-							  +mesh(indz_s+1,indx_s+1)%Bphi     	* w11	)
-			if(sim_parameters%L_selffield) Bphii = Bphii &
-                                          + 0.5*(mesh(indz_s  ,indx_s  )%Bphi_bunch  * w00 &
-      	                                  + mesh(indz_s  ,indx_s+1)%Bphi_bunch  * w01 &
-      		                              + mesh(indz_s+1,indx_s  )%Bphi_bunch  * w10 &
-      	                                  + mesh(indz_s+1,indx_s+1)%Bphi_bunch  * w11	)
+			Bphi_onparticle = 0.5*(   mesh(indz_s  ,indx_s  )%Bphi     	* w00 &
+						            + mesh(indz_s  ,indx_s+1)%Bphi     	* w01 &
+					      	        + mesh(indz_s+1,indx_s  )%Bphi     	* w10 &
+							        + mesh(indz_s+1,indx_s+1)%Bphi     	* w11 )
+			if(sim_parameters%L_selffield) Bphi_onparticle = Bphi_onparticle &
+                            + 0.5*(   mesh(indz_s  ,indx_s  )%Bphi_bunch  * w00 &
+      	                            + mesh(indz_s  ,indx_s+1)%Bphi_bunch  * w01 &
+      		                        + mesh(indz_s+1,indx_s  )%Bphi_bunch  * w10 &
+      	                            + mesh(indz_s+1,indx_s+1)%Bphi_bunch  * w11	)
+			
+			Bphi_onparticle = Bphi_onparticle + &
+					          0.5*(   mesh(indz_s  ,indx_s  )%Bphi_old 	* w00 &
+						    +         mesh(indz_s  ,indx_s+1)%Bphi_old 	* w01 &
+						    +         mesh(indz_s+1,indx_s  )%Bphi_old 	* w10 &
+						    +         mesh(indz_s+1,indx_s+1)%Bphi_old 	* w11 )
+			if(sim_parameters%L_selffield) Bphi_onparticle = Bphi_onparticle &
+            		        + 0.5*(   mesh(indz_s  ,indx_s  )%Bphi_old_bunch 	* w00 &
+  									+ mesh(indz_s  ,indx_s+1)%Bphi_old_bunch	* w01 &
+  									+ mesh(indz_s+1,indx_s  )%Bphi_old_bunch	* w10 &
+  									+ mesh(indz_s+1,indx_s+1)%Bphi_old_bunch	* w11 )
 
-			Bphii = Bphii + &
-					0.5*(mesh(indz_s  ,indx_s  )%Bphi_old 	* w00 &
-						+mesh(indz_s  ,indx_s+1)%Bphi_old 	* w01 &
-						+mesh(indz_s+1,indx_s  )%Bphi_old 	* w10 &
-						+mesh(indz_s+1,indx_s+1)%Bphi_old 	* w11	)
-			if(sim_parameters%L_selffield) Bphii = Bphii &
-            								+ 0.5*(mesh(indz_s  ,indx_s  )%Bphi_old_bunch 	* w00 &
-  											+ mesh(indz_s  ,indx_s+1)%Bphi_old_bunch	* w01 &
-  											+ mesh(indz_s+1,indx_s  )%Bphi_old_bunch	* w10 &
-  										  	+ mesh(indz_s+1,indx_s+1)%Bphi_old_bunch	* w11	)
-
-      !External poloidal effect
-      if(Bpoloidal%L_Bpoloidal) then
-        Bphii = Bphii + &
-  					  (mesh(indz_s  ,indx_s  )%B_ex_poloidal 	* w00 &
+      !--- add External poloidal effect ---!
+      		if(Bpoloidal%L_Bpoloidal) then
+        		Bphi_onparticle = Bphi_onparticle + &
+  					    (mesh(indz_s  ,indx_s  )%B_ex_poloidal 	* w00 &
   						+mesh(indz_s  ,indx_s+1)%B_ex_poloidal 	* w01 &
   						+mesh(indz_s+1,indx_s  )%B_ex_poloidal 	* w10 &
   						+mesh(indz_s+1,indx_s+1)%B_ex_poloidal 	* w11	)
-      end if
+      		end if
 
 
 		else ! particle out of window, no dynamical evolution
-			Ezi   = 0.
-			Exi   = 0.
-			Bphii = 0.
-      pos_z = plasma%k_p*     ( bunch(j)%part(ip)%cmp(3)-sim_parameters%zg )
-      pos_r = plasma%k_p* sqrt( bunch(j)%part(ip)%cmp(1)**2+bunch(j)%part(ip)%cmp(2)**2 )
+			Ez_onparticle   = 0.
+			Er_onparticle   = 0.
+			Bphi_onparticle = 0.
+      		pos_z = plasma%k_p*     ( bunch(j)%part(ip)%cmp(3)-sim_parameters%zg )
+      		pos_r = plasma%k_p* sqrt( bunch(j)%part(ip)%cmp(1)**2+bunch(j)%part(ip)%cmp(2)**2 )
 		endif
 
+	! ----- Leap-Frog with Boris rotation for 'equal' particle ----- !
+	if( trim(bunchip%PWeights(j))=='equal' .and. .not. sim_parameters%L_vay) then
 
-		! ----- Leap-Frog with Boris rotation for 'equal' particle ----- !
-		if( trim(bunch_initialization%PWeights(j))=='equal' .and. .not. sim_parameters%L_vay) then
+		cos_theta      = plasma%k_p* bunch(j)%part(ip)%cmp(1)/pos_r  ! x/r
+		sin_theta      = plasma%k_p* bunch(j)%part(ip)%cmp(2)/pos_r	! y/r
 
-		cos_theta = plasma%k_p* bunch(j)%part(ip)%cmp(1)/pos_r  ! x/r
-		sin_theta = plasma%k_p* bunch(j)%part(ip)%cmp(2)/pos_r	! y/r
+		Ex_onparticle  = Er_onparticle * cos_theta
+		Ey_onparticle  = Er_onparticle * sin_theta
 
-		Ex        = Exi * cos_theta
-		Ey        = Exi * sin_theta
-
-		Bx        = -Bphii*sin_theta
-		By        =  Bphii*cos_theta
+		Bx_onparticle  = -Bphi_onparticle * sin_theta
+		By_onparticle  =  Bphi_onparticle * cos_theta
 		!Bz=0
 
-		ux        = bunch(j)%part(ip)%cmp(4)
-		uy        = bunch(j)%part(ip)%cmp(5)
-		uz        = bunch(j)%part(ip)%cmp(6)
+		ux             = bunch(j)%part(ip)%cmp(4) !beta-x * gamma
+		uy             = bunch(j)%part(ip)%cmp(5) !beta-y * gamma
+		uz             = bunch(j)%part(ip)%cmp(6) !beta-z * gamma
+		q              = bunch(j)%part(ip)%cmp(15)
+		m              = bunch(j)%part(ip)%cmp(16)
 
-		ux_minus  = ux + 0.5*Ex * plasma%omega_p * sim_parameters%dt
-		uy_minus  = uy + 0.5*Ey * plasma%omega_p * sim_parameters%dt
-		uz_minus  = uz + 0.5*Ezi* plasma%omega_p * sim_parameters%dt
+		ux_minus  = ux + q/m * 0.5*Ex_onparticle * sim_parameters%dt
+		uy_minus  = uy + q/m * 0.5*Ey_onparticle * sim_parameters%dt
+		uz_minus  = uz + q/m * 0.5*Ez_onparticle * sim_parameters%dt
 
 		gamma_half_timestep = sqrt(1. + ux_minus**2 + uy_minus**2 + uz_minus**2 )
 
-		tx        = 0.5*Bx/gamma_half_timestep * plasma%omega_p * sim_parameters%dt
-		ty        = 0.5*By/gamma_half_timestep * plasma%omega_p * sim_parameters%dt
+		tx        = q/m * 0.5*Bx_onparticle/gamma_half_timestep * sim_parameters%dt
+		ty        = q/m * 0.5*By_onparticle/gamma_half_timestep * sim_parameters%dt
 		!tz=0
 
 		ux_prime  = ux_minus - uz_minus*ty !+uy_minus*tz
@@ -179,9 +185,9 @@ CONTAINS
 		uy_plus   = uy_minus + uz_prime*sx !-ux_prime*sz
 		uz_plus   = uz_minus + ux_prime*sy - uy_prime*sx
 
-		ux_new    = ux_plus + 0.5*Ex * plasma%omega_p * sim_parameters%dt
-		uy_new    = uy_plus + 0.5*Ey * plasma%omega_p * sim_parameters%dt
-		uz_new    = uz_plus + 0.5*Ezi* plasma%omega_p * sim_parameters%dt
+		ux_new    = ux_plus + q/m * 0.5*Ex_onparticle * sim_parameters%dt
+		uy_new    = uy_plus + q/m * 0.5*Ey_onparticle * sim_parameters%dt
+		uz_new    = uz_plus + q/m * 0.5*Ez_onparticle * sim_parameters%dt
 
 		gammaend  = sqrt(1. + ux_new**2 + uy_new**2 + uz_new**2)
 
@@ -189,9 +195,9 @@ CONTAINS
 		Beta_beam_y = uy_new/gammaend !updated velocity
 		Beta_beam_z = uz_new/gammaend !updated velocity
 
-		xacc  = bunch(j)%part(ip)%cmp(1)+c*Beta_beam_x*sim_parameters%dt
-		yacc  = bunch(j)%part(ip)%cmp(2)+c*Beta_beam_y*sim_parameters%dt
-		zacc  = bunch(j)%part(ip)%cmp(3)+c*Beta_beam_z*sim_parameters%dt
+		xacc  = bunch(j)%part(ip)%cmp(1)+c*Beta_beam_x*sim_parameters%dt_fs
+		yacc  = bunch(j)%part(ip)%cmp(2)+c*Beta_beam_y*sim_parameters%dt_fs
+		zacc  = bunch(j)%part(ip)%cmp(3)+c*Beta_beam_z*sim_parameters%dt_fs
 
 
 		! ------------------ Diagnostics for Nan and Infinity after advancement -------- !
@@ -213,13 +219,13 @@ CONTAINS
 			write(*,*) 'P_z start = ',bunch(j)%part(ip)%cmp(6)
 			write(*,*) '   '
 			write(*,*) 'rlocal = ',pos_r
-			write(*,*) 'Ezi = ',Ezi
+			write(*,*) 'Ez_onparticle = ',Ez_onparticle
 			write(*,*) 'fraz = ',fraz
 			write(*,*) 'fraz_s = ',fraz_s
 			write(*,*) 'indx = ',indx
 			write(*,*) 'indx_s = ',indx_s
-			write(*,*) 'Exi = ',Exi
-			write(*,*) 'Bphii = ',Bphii
+			write(*,*) 'Er_onparticle = ',Er_onparticle
+			write(*,*) 'Bphi_onparticle = ',Bphi_onparticle
 			write(*,*) '   '
 			write(*,*) 'Beta_x = ',Beta_beam_x
 			write(*,*) 'Beta_y = ',Beta_beam_y
@@ -264,48 +270,51 @@ CONTAINS
 
 	endif !casse for 'equal particles' and with no vay pusher
 
-
-
-
-		!--- Leap-Frog with VAY pusher ---!
-		if( trim(bunch_initialization%PWeights(j))=='equal' .and. sim_parameters%L_vay) then
+	!--- Leap-Frog with VAY pusher ---!
+	if( trim(bunchip%PWeights(j))=='equal' .and. sim_parameters%L_vay) then
 		cos_theta = plasma%k_p* bunch(j)%part(ip)%cmp(1)/pos_r  ! x/r
 		sin_theta = plasma%k_p* bunch(j)%part(ip)%cmp(2)/pos_r	! y/r
 
-		Ex        = Exi * cos_theta
-		Ey        = Exi * sin_theta
+		Ex_onparticle = Er_onparticle * cos_theta
+		Ey_onparticle = Er_onparticle * sin_theta
 
-		Bx        = -Bphii*sin_theta
-		By        =  Bphii*cos_theta
+		Bx_onparticle = -Bphi_onparticle * sin_theta
+		By_onparticle =  Bphi_onparticle * cos_theta
 		!Bz=0
+
+		ux             = bunch(j)%part(ip)%cmp(4) !beta-x * gamma
+		uy             = bunch(j)%part(ip)%cmp(5) !beta-y * gamma
+		uz             = bunch(j)%part(ip)%cmp(6) !beta-z * gamma
+		q              = bunch(j)%part(ip)%cmp(15)
+		m              = bunch(j)%part(ip)%cmp(16)
 		
-		inv_gamma = one/sqrt(one + bunch(j)%part(ip)%cmp(4)**2 + bunch(j)%part(ip)%cmp(5)**2 + bunch(j)%part(ip)%cmp(6)**2 )
+		inv_gamma = one_dp/sqrt(one_dp + ux**2 + uy**2 + uz**2 )
 
-		upx        = bunch(j)%part(ip)%cmp(4) + plasma%omega_p*sim_parameters%dt * Ex
-		upy        = bunch(j)%part(ip)%cmp(5) + plasma%omega_p*sim_parameters%dt * Ey
-		upz        = bunch(j)%part(ip)%cmp(6) + plasma%omega_p*sim_parameters%dt * Ezi
+		upx  = ux + q/m * sim_parameters%dt * Ex_onparticle
+		upy  = uy + q/m * sim_parameters%dt * Ey_onparticle
+		upz  = uz + q/m * sim_parameters%dt * Ez_onparticle
 
-        Tx  = plasma%omega_p*sim_parameters%dt/2.* Bx
-        Ty  = plasma%omega_p*sim_parameters%dt/2.* By
-        Tz  = plasma%omega_p*sim_parameters%dt/2.* zero
+        Tx   = q/m * sim_parameters%dt/2.* Bx_onparticle
+        Ty   = q/m * sim_parameters%dt/2.* By_onparticle
+        Tz   = q/m * sim_parameters%dt/2.* zero_dp
 
-        upx = upx + inv_gamma*(bunch(j)%part(ip)%cmp(5)*Tz - bunch(j)%part(ip)%cmp(6)*Ty) 
-        upy = upy + inv_gamma*(bunch(j)%part(ip)%cmp(6)*Tx - bunch(j)%part(ip)%cmp(4)*Tz)
-        upz = upz + inv_gamma*(bunch(j)%part(ip)%cmp(4)*Ty - bunch(j)%part(ip)%cmp(5)*Tx)
+        upx = upx + inv_gamma*(uy*Tz - uz*Ty) 
+        upy = upy + inv_gamma*(uz*Tx - ux*Tz)
+        upz = upz + inv_gamma*(ux*Ty - uy*Tx)
 
-        alpha = one + upx*upx + upy*upy + upz*upz
+        alpha = one_dp + upx*upx + upy*upy + upz*upz
         T2    = Tx**2 + Ty**2 + Tz**2
 
         s     = alpha - T2
         us2   = (upx*Tx + upy*Ty + upz*Tz)**2
 
-		alpha = one/sqrt(0.5*(s + sqrt(s**2 + 4.0*( T2 + us2 ))))
+		alpha = one_dp/sqrt(0.5*(s + sqrt(s**2 + 4.0*( T2 + us2 ))))
 
         Tx = alpha *Tx
         Ty = alpha *Ty
         Tz = alpha *Tz
 
-        s = one/(one+Tx**2+Ty**2+Tz**2)
+        s = one_dp/(one_dp+Tx**2+Ty**2+Tz**2)
         alpha   = upx*Tx + upy*Ty + upz*Tz
         
         pxsm = s*(upx + alpha*Tx + Tz*upy - Ty*upz)
@@ -329,27 +338,21 @@ CONTAINS
 		Beta_beam_y = pysm/gammaend !updated velocity
 		Beta_beam_z = pzsm/gammaend !updated velocity
 
-		bunch(j)%part(ip)%cmp(1)  = bunch(j)%part(ip)%cmp(1) + c*Beta_beam_x*sim_parameters%dt
-		bunch(j)%part(ip)%cmp(2)  = bunch(j)%part(ip)%cmp(2) + c*Beta_beam_y*sim_parameters%dt
-		bunch(j)%part(ip)%cmp(3)  = bunch(j)%part(ip)%cmp(3) + c*Beta_beam_z*sim_parameters%dt
+		bunch(j)%part(ip)%cmp(1)  = bunch(j)%part(ip)%cmp(1) + c*Beta_beam_x*sim_parameters%dt_fs
+		bunch(j)%part(ip)%cmp(2)  = bunch(j)%part(ip)%cmp(2) + c*Beta_beam_y*sim_parameters%dt_fs
+		bunch(j)%part(ip)%cmp(3)  = bunch(j)%part(ip)%cmp(3) + c*Beta_beam_z*sim_parameters%dt_fs
 
 	endif !casse for 'equal particles' with VAY pusher
 
 
-
-
-
-
-
-
 	! ----- Leap-Frog with Boris rotation for 'weighted' particle ----- !
-	if(trim(bunch_initialization%PWeights(j))=='weighted') then
+	if(trim(bunchip%PWeights(j))=='weighted') then
 		gamma       = sqrt(1.D0 + bunch(j)%part(ip)%cmp(4)**2 + bunch(j)%part(ip)%cmp(6)**2 )
 		beta_beam_r = bunch(j)%part(ip)%cmp(4)/gamma ! r-component
 		beta_beam_z = bunch(j)%part(ip)%cmp(6)/gamma ! z-component
 
-		bunch(j)%part(ip)%cmp(4) = bunch(j)%part(ip)%cmp(4) + (Exi-beta_beam_z*Bphii) * plasma%omega_p*sim_parameters%dt
-		bunch(j)%part(ip)%cmp(6) = bunch(j)%part(ip)%cmp(6) + (Ezi+beta_beam_r*Bphii) * plasma%omega_p*sim_parameters%dt
+		bunch(j)%part(ip)%cmp(4) = bunch(j)%part(ip)%cmp(4) + (Er_onparticle-beta_beam_z*Bphi_onparticle) * sim_parameters%dt
+		bunch(j)%part(ip)%cmp(6) = bunch(j)%part(ip)%cmp(6) + (Ez_onparticle+beta_beam_r*Bphi_onparticle) * sim_parameters%dt
 
 		!--- storing old position ---!
 		bunch(j)%part(ip)%cmp(9 )=bunch(j)%part(ip)%cmp(1)
@@ -360,8 +363,8 @@ CONTAINS
 		beta_beam_r = bunch(j)%part(ip)%cmp(4)/gamma ! r-component
 		beta_beam_z = bunch(j)%part(ip)%cmp(6)/gamma ! z-component
 
-		bunch(j)%part(ip)%cmp(1) = bunch(j)%part(ip)%cmp(1) + c*beta_beam_r*sim_parameters%dt
-		bunch(j)%part(ip)%cmp(3) = bunch(j)%part(ip)%cmp(3) + c*beta_beam_z*sim_parameters%dt
+		bunch(j)%part(ip)%cmp(1) = bunch(j)%part(ip)%cmp(1) + c*beta_beam_r*sim_parameters%dt_fs
+		bunch(j)%part(ip)%cmp(3) = bunch(j)%part(ip)%cmp(3) + c*beta_beam_z*sim_parameters%dt_fs
 		if(bunch(j)%part(ip)%cmp(1) < 0.) then
 			bunch(j)%part(ip)%cmp(1) = - bunch(j)%part(ip)%cmp(1)
 			bunch(j)%part(ip)%cmp(4) = - bunch(j)%part(ip)%cmp(4)

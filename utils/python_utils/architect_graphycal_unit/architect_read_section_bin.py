@@ -343,7 +343,140 @@ def read_Architect_bin_section_output_v_4(dir_path,file_name):
 	f        = open(path,'rb')
 
 	var.output_version = struct.unpack('i', f.read(4))[0]
-	var.dist = struct.unpack('i', f.read(4))[0] # distance traveled
+	var.dist_um = struct.unpack('i', f.read(4))[0] # distance traveled
+	#- vector length -#
+	var.Nr = struct.unpack('i', f.read(4))[0] # half-plane axis dim (radial direction      )
+	var.Nz = struct.unpack('i', f.read(4))[0] # z dim 				(longitudinal direction)
+
+	#--- Grid data ---#
+
+	# r_mesh axis
+	var.r_mesh = np.zeros(var.Nr)
+	for j in range(0,var.Nr): # read r axis
+		r = struct.unpack('d', f.read(8))[0]
+		var.r_mesh[j] = r
+
+	# z_mesh axis
+	var.z_mesh = np.zeros(var.Nz)
+	for i in range(0,var.Nz): # read z axis
+		z = struct.unpack('d', f.read(8))[0]
+		var.z_mesh[i] = z
+
+	# rho_b  -  bunch electron density
+	var.rho_b = np.zeros((var.Nr,var.Nz))
+	for j in range(0,var.Nr):
+		for i in range(0,var.Nz):
+			var.rho_b[j,i] = struct.unpack('d', f.read(8))[0]
+
+	# rho_bck - plasma electron density
+	var.rho_bck = np.zeros((var.Nr,var.Nz))
+	for j in range(0,var.Nr):
+		for i in range(0,var.Nz):
+			var.rho_bck[j,i] = struct.unpack('d', f.read(8))[0]
+
+	var.rho = np.zeros((var.Nr,var.Nz))
+	var.rho = var.rho_b+var.rho_bck
+
+	# Er fields
+	var.Er = np.zeros((var.Nr,var.Nz))
+	for j in range(0,var.Nr):
+		for i in range(0,var.Nz):
+			var.Er[j,i] = struct.unpack('d', f.read(8))[0]
+
+	var.Er_bck = np.zeros((var.Nr,var.Nz))
+	for j in range(0,var.Nr):
+		for i in range(0,var.Nz):
+			var.Er_bck[j,i] = struct.unpack('d', f.read(8))[0]
+
+	var.Er_b = np.zeros((var.Nr,var.Nz))
+	for j in range(0,var.Nr):
+		for i in range(0,var.Nz):
+			var.Er_b[j,i] = struct.unpack('d', f.read(8))[0]
+
+	# Ez - Electric field, longitudinal
+	var.Ez = np.zeros((var.Nr,var.Nz))      # total field
+	for j in range(0,var.Nr):
+		for i in range(0,var.Nz):
+			var.Ez[j,i] = struct.unpack('d', f.read(8))[0]
+
+	var.Ez_bck = np.zeros((var.Nr,var.Nz))	# background field
+	for j in range(0,var.Nr):
+		for i in range(0,var.Nz):
+			var.Ez_bck[j,i] = struct.unpack('d', f.read(8))[0]
+
+	var.Ez_b = np.zeros((var.Nr,var.Nz))	# bunch field
+	for j in range(0,var.Nr):
+		for i in range(0,var.Nz):
+			var.Ez_b[j,i] = struct.unpack('d', f.read(8))[0]
+
+	# Bphi - Magnetic field, azimuthal
+	var.Bphi = np.zeros((var.Nr,var.Nz))      # total field
+	for j in range(0,var.Nr):
+		for i in range(0,var.Nz):
+			var.Bphi[j,i] = struct.unpack('d', f.read(8))[0]
+
+	var.Bphi_bck = np.zeros((var.Nr,var.Nz))	# background field
+	for j in range(0,var.Nr):
+		for i in range(0,var.Nz):
+			var.Bphi_bck[j,i] = struct.unpack('d', f.read(8))[0]
+
+	var.Bphi_b = np.zeros((var.Nr,var.Nz))	# bunch field
+	for j in range(0,var.Nr):
+		for i in range(0,var.Nz):
+			var.Bphi_b[j,i] = struct.unpack('d', f.read(8))[0]
+
+	var.Bphi_ex = np.zeros((var.Nr,var.Nz))	# bunch field
+	for j in range(0,var.Nr):
+		for i in range(0,var.Nz):
+			var.Bphi_ex[j,i] = struct.unpack('d', f.read(8))[0]
+
+	# Radial Current Jr
+	var.Jr_b = np.zeros((var.Nr,var.Nz))      # total field
+	for j in range(0,var.Nr):
+		for i in range(0,var.Nz):
+			var.Jr_b[j,i] = struct.unpack('d', f.read(8))[0]
+
+	#Plasma current density, transverse
+	var.Jr_bck = np.zeros((var.Nr,var.Nz))	# background field
+	for j in range(0,var.Nr):
+		for i in range(0,var.Nz):
+			var.Jr_bck[j,i] = struct.unpack('d', f.read(8))[0]
+
+	var.Jr = np.zeros((var.Nr,var.Nz))
+	var.Jr = var.Jr_b+var.Jr_bck
+
+	# Jbr - Bunch current density, transverse
+	var.Jz_b = np.zeros((var.Nr,var.Nz))      # total field
+	for j in range(0,var.Nr):
+		for i in range(0,var.Nz):
+			var.Jz_b[j,i] = struct.unpack('d', f.read(8))[0]
+
+	# Jbckr - Plasma current density, transverse
+	var.Jz_bck = np.zeros((var.Nr,var.Nz))	# background field
+	for j in range(0,var.Nr):
+		for i in range(0,var.Nz):
+			var.Jz_bck[j,i] = struct.unpack('d', f.read(8))[0]
+
+	var.Jz = np.zeros((var.Nr,var.Nz))
+	var.Jz = var.Jz_b+var.Jz_bck
+
+	f.close()
+
+
+def read_Architect_bin_section_output_v_5(dir_path,file_name):
+	# - #
+	path  = os.path.join(os.path.join(dir_path,file_name))
+	f        = open(path,'rb')
+
+	var.output_version = struct.unpack('i', f.read(4))[0]
+
+	#--- parameters ---#
+	var.kp      = struct.unpack('d', f.read(8))[0]
+	var.wp      = struct.unpack('d', f.read(8))[0]
+	var.dist    = struct.unpack('d', f.read(8))[0]
+	var.np      = struct.unpack('d', f.read(8))[0]
+	var.dist_um = struct.unpack('d', f.read(8))[0]
+
 	#- vector length -#
 	var.Nr = struct.unpack('i', f.read(4))[0] # half-plane axis dim (radial direction      )
 	var.Nz = struct.unpack('i', f.read(4))[0] # z dim 				(longitudinal direction)

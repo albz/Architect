@@ -38,7 +38,7 @@
 
  subroutine init_bunch
 
-	INTEGER :: nb,i,j
+	INTEGER :: nb,i,j,bunch_number
 	REAL(8) mu_z,Zb
 	REAL(8), DIMENSION(:,:), ALLOCATABLE ::  bunch_init
   REAL(8) :: alphaTwiss, betaTwiss, ax11,ay11,ax12,ay12,s_x,s_y,eps_x,eps_y
@@ -48,234 +48,45 @@
   write(*,'(A)') ' --- Bunch(es) Initialisation ---'
 
     !init-bunch(es)   --- Internal init
-    if(bunch_initialization%l_bunch_internal_init) then
+    if(bunchip%l_bunch_internal_init) then
 
       !here I need a funciton to calculate the number of particles, so I can inialize the class
-      do nb = 1,bunch_initialization%n_total_bunches
-        bunch_initialization%n_particles(nb) = calculate_bunch_number_of_particles( &
-                                                nb,bunch_initialization%shape(nb), &
-                                                bunch_initialization%PWeights(nb), &
-                                                bunch_initialization%n_particles(nb))
-        allocate(   bunch(nb)%part(bunch_initialization%n_particles(nb)) )
-        write(*,'(A,I1,A,I8,A)') 'Bunch(',nb,') :: initialised with >>> ', bunch_initialization%n_particles(nb),' particles'
+      do bunch_number = 1,bunchip%n_total_bunches
+        bunchip%n_particles(bunch_number) = calculate_bunch_number_of_particles( &
+                                                          bunch_number,bunchip%shape(bunch_number), &
+                                                          bunchip%PWeights(bunch_number), &
+                                                          bunchip%n_particles(bunch_number) )
+        allocate(   bunch(bunch_number)%part(bunchip%n_particles(bunch_number)) )
+        write(*,'(A,I1,A,I8,A)') 'Bunch(',bunch_number,') :: initialised with >>> ', bunchip%n_particles(bunch_number),' particles'
       enddo
 
 
-      do i=1,bunch_initialization%n_total_bunches
-        allocate( bunch_init(8,bunch_initialization%n_particles(i)) )
-        sim_parameters%rB0(i)    = bunch_initialization%bunch_s_x(i)
-  			sim_parameters%lbunch(i) = bunch_initialization%bunch_s_z(i)
+      do bunch_number = 1,bunchip%n_total_bunches
+        allocate( bunch_init(8,bunchip%n_particles(bunch_number)) )
+        sim_parameters%rB0(bunch_number)    = bunchip%bunch_s_x(bunch_number)
+  			sim_parameters%lbunch(bunch_number) = bunchip%bunch_s_z(bunch_number)
 
-        !--- BiGaussian + Equal particles + no optimisation
-        if(   trim(bunch_initialization%shape(i))=='bigaussian'  &
-        .and. trim(bunch_initialization%PWeights(i))=='equal'    &
-        .and. trim(bunch_initialization%optimisation(i))=='no')  &
-                call generate_bunch_bigaussian_equal(i, 0.D0 , 0.D0, 0.D0,&
-              				bunch_initialization%bunch_s_x(i), &
-              				bunch_initialization%bunch_s_y(i), &
-              				bunch_initialization%bunch_s_z(i), &
-              				bunch_initialization%bunch_gamma_m(i),&
-              				bunch_initialization%bunch_eps_x(i), &
-              				bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
-              				bunch_initialization%n_particles(i),bunch_initialization%ChargeB(i), &
-                      bunch_initialization%sigma_cut(i))
-
-        !--- BiGaussian + Equal particles + yes optimisation
-        if(   trim(bunch_initialization%shape(i))=='bigaussian'  &
-        .and. trim(bunch_initialization%PWeights(i))=='equal'    &
-        .and. trim(bunch_initialization%optimisation(i))=='yes')  &
-                call generate_bunch_bigaussian_equal_optimised(i, 0.D0 , 0.D0, 0.D0,&
-              				bunch_initialization%bunch_s_x(i), &
-              				bunch_initialization%bunch_s_y(i), &
-              				bunch_initialization%bunch_s_z(i), &
-              				bunch_initialization%bunch_gamma_m(i),&
-              				bunch_initialization%bunch_eps_x(i), &
-              				bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
-              				bunch_initialization%n_particles(i),bunch_initialization%ChargeB(i), &
-                      bunch_initialization%sigma_cut(i))
-
-        !--- BiGaussian + weighted particles + no optimisation
-        if(   trim(bunch_initialization%shape(i))=='bigaussian'  &
-        .and. trim(bunch_initialization%PWeights(i))=='weighted'    &
-        .and. trim(bunch_initialization%optimisation(i))=='no')  &
-                call generate_bunch_bigaussian_weighted(i, 0.D0 , 0.D0, 0.D0,&
-                      bunch_initialization%bunch_s_x(i), &
-                      bunch_initialization%bunch_s_y(i), &
-                      bunch_initialization%bunch_s_z(i), &
-                      bunch_initialization%bunch_gamma_m(i),&
-                      bunch_initialization%bunch_eps_x(i), &
-                      bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
-                      bunch_initialization%n_particles(i),bunch_initialization%ChargeB(i),&
-                      bunch_initialization%npZ(i), &
-                      bunch_initialization%npR(i), bunch_initialization%sigma_cut(i))
-
-        !--- BiGaussian + weighted particles + yes optimisation
-        if(   trim(bunch_initialization%shape(i))=='bigaussian'  &
-        .and. trim(bunch_initialization%PWeights(i))=='weighted'    &
-        .and. trim(bunch_initialization%optimisation(i))=='yes')  &
-                call generate_bunch_bigaussian_weighted_optimised(i, 0.D0 , 0.D0, 0.D0,&
-                      bunch_initialization%bunch_s_x(i), &
-                      bunch_initialization%bunch_s_y(i), &
-                      bunch_initialization%bunch_s_z(i), &
-                      bunch_initialization%bunch_gamma_m(i),&
-                      bunch_initialization%bunch_eps_x(i), &
-                      bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
-                      bunch_initialization%n_particles(i),bunch_initialization%ChargeB(i),&
-                      bunch_initialization%npZ(i), &
-                      bunch_initialization%npR(i), bunch_initialization%sigma_cut(i))
-
-
-        !--- cylindrical + equal particles + no optimisation
-        if(   trim(bunch_initialization%shape(i))=='cylindrical'  &
-        .and. trim(bunch_initialization%PWeights(i))=='equal'     &
-        .and. trim(bunch_initialization%optimisation(i))=='no')   &
-                      call generate_bunch_trapezoidalZ_uniformR_equal( &
-                          i, 0.D0 , 0.D0, 0.D0,&
-                          bunch_initialization%bunch_s_x(i), &
-                          bunch_initialization%bunch_s_y(i), &
-                          bunch_initialization%bunch_s_z(i),&
-                          bunch_initialization%bunch_gamma_m(i),&
-                          bunch_initialization%bunch_eps_x(i), &
-                          bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
-                          bunch_initialization%n_particles(i),&
-                          bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i), &
-                          bunch_initialization%ChargeB(i))
-
-          !--- cylindrical + equal particles + yes optimisation
-          if(   trim(bunch_initialization%shape(i))=='cylindrical'  &
-          .and. trim(bunch_initialization%PWeights(i))=='equal'     &
-          .and. trim(bunch_initialization%optimisation(i))=='yes')   &
-                        call generate_bunch_trapezoidalZ_uniformR_equal_optimised( &
-                            i, 0.D0 , 0.D0, 0.D0,&
-                            bunch_initialization%bunch_s_x(i), &
-                            bunch_initialization%bunch_s_y(i), &
-                            bunch_initialization%bunch_s_z(i),&
-                            bunch_initialization%bunch_gamma_m(i),&
-                            bunch_initialization%bunch_eps_x(i), &
-                            bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
-                            bunch_initialization%n_particles(i),&
-                            bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i), &
-                            bunch_initialization%ChargeB(i))
-
-            !--- cylindrical + weighted particles + no optimisation
-            if(   trim(bunch_initialization%shape(i))=='cylindrical'  &
-            .and. trim(bunch_initialization%PWeights(i))=='weighted'     &
-            .and. trim(bunch_initialization%optimisation(i))=='no')   &
-                          call generate_bunch_trapezoidalZ_uniformR_weighted( &
-                              i, 0.D0 , 0.D0, 0.D0,&
-                              bunch_initialization%bunch_s_x(i), &
-                              bunch_initialization%bunch_s_y(i), &
-                              bunch_initialization%bunch_s_z(i),&
-                              bunch_initialization%bunch_gamma_m(i),&
-                              bunch_initialization%bunch_eps_x(i), &
-                              bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
-                              bunch_initialization%n_particles(i),&
-                              bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i), &
-                              bunch_initialization%ChargeB(i), &
-                              bunch_initialization%npZ(i),bunch_initialization%npR(i))
-
-              !--- cylindrical + weighted particles + yes optimisation
-              if(   trim(bunch_initialization%shape(i))=='cylindrical'  &
-              .and. trim(bunch_initialization%PWeights(i))=='weighted'     &
-              .and. trim(bunch_initialization%optimisation(i))=='yes')   &
-                            call generate_bunch_trapezoidalZ_uniformR_weighted_optimised( &
-                                i, 0.D0 , 0.D0, 0.D0,&
-                                bunch_initialization%bunch_s_x(i), &
-                                bunch_initialization%bunch_s_y(i), &
-                                bunch_initialization%bunch_s_z(i),&
-                                bunch_initialization%bunch_gamma_m(i),&
-                                bunch_initialization%bunch_eps_x(i), &
-                                bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
-                                bunch_initialization%n_particles(i),&
-                                bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i), &
-                                bunch_initialization%ChargeB(i), &
-                                bunch_initialization%npZ(i),bunch_initialization%npR(i))
-
-
-
-                !--- trapezoidal + equal particles + no optimisation
-                if(   trim(bunch_initialization%shape(i))=='trapezoidal'  &
-                .and. trim(bunch_initialization%PWeights(i))=='equal'     &
-                .and. trim(bunch_initialization%optimisation(i))=='no')   &
-                              call generate_bunch_trapezoidalZ_gaussianR_equal( &
-                                    i, 0.D0 , 0.D0, 0.D0,&
-                            				bunch_initialization%bunch_s_x(i), &
-                            				bunch_initialization%bunch_s_y(i), &
-                            				bunch_initialization%bunch_s_z(i),&
-                            				bunch_initialization%bunch_gamma_m(i),&
-                            				bunch_initialization%bunch_eps_x(i), &
-                            				bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
-                            				bunch_initialization%n_particles(i),&
-                                    bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i), &
-                                    bunch_initialization%sigma_cut(i),bunch_initialization%ChargeB(i))
-
-                  !--- trapezoidal + equal particles + yes optimisation
-                  if(   trim(bunch_initialization%shape(i))=='trapezoidal'  &
-                  .and. trim(bunch_initialization%PWeights(i))=='equal'     &
-                  .and. trim(bunch_initialization%optimisation(i))=='yes')   &
-                                call generate_bunch_trapezoidalZ_gaussianR_equal_optimised( &
-                                      i, 0.D0 , 0.D0, 0.D0,&
-                              				bunch_initialization%bunch_s_x(i), &
-                              				bunch_initialization%bunch_s_y(i), &
-                              				bunch_initialization%bunch_s_z(i),&
-                              				bunch_initialization%bunch_gamma_m(i),&
-                              				bunch_initialization%bunch_eps_x(i), &
-                              				bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
-                              				bunch_initialization%n_particles(i),&
-                                      bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i), &
-                                      bunch_initialization%sigma_cut(i),bunch_initialization%ChargeB(i))
-
-                    !--- trapezoidal + weighted particles + no optimisation
-                    if(   trim(bunch_initialization%shape(i))=='trapezoidal'  &
-                    .and.  trim(bunch_initialization%PWeights(i))=='weighted' &
-                    .and. trim(bunch_initialization%optimisation(i))=='no')   &
-                                  call generate_bunch_trapezoidalZ_gaussianR_weighted( &
-                                        i, 0.D0 , 0.D0, 0.D0,&
-                                        bunch_initialization%bunch_s_x(i), &
-                                        bunch_initialization%bunch_s_y(i), &
-                                        bunch_initialization%bunch_s_z(i),&
-                                        bunch_initialization%bunch_gamma_m(i),&
-                                        bunch_initialization%bunch_eps_x(i), &
-                                        bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
-                                        bunch_initialization%n_particles(i),&
-                                        bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i), &
-                                        bunch_initialization%ChargeB(i), &
-                                        bunch_initialization%npZ(i), bunch_initialization%npR(i), &
-                                        bunch_initialization%sigma_cut(i))
-
-                      !--- trapezoidal + weighted particles + yes optimisation
-                      if(   trim(bunch_initialization%shape(i))=='trapezoidal'  &
-                      .and. trim(bunch_initialization%PWeights(i))=='weighted'     &
-                      .and. trim(bunch_initialization%optimisation(i))=='yes')   &
-                                    call generate_bunch_trapezoidalZ_gaussianR_weighted_optimised( &
-                                        i, 0.D0 , 0.D0, 0.D0,&
-                                        bunch_initialization%bunch_s_x(i), &
-                                        bunch_initialization%bunch_s_y(i), &
-                                        bunch_initialization%bunch_s_z(i),&
-                                        bunch_initialization%bunch_gamma_m(i),&
-                                        bunch_initialization%bunch_eps_x(i), &
-                                        bunch_initialization%bunch_eps_y(i),bunch_initialization%bunch_dgamma(i),&
-                                        bunch_initialization%n_particles(i),&
-                                        bunch_initialization%Charge_right(i),bunch_initialization%Charge_left(i), &
-                                        bunch_initialization%ChargeB(i), &
-                                        bunch_initialization%npZ(i), bunch_initialization%npR(i), &
-                                        bunch_initialization%sigma_cut(i))
-
-      !---!
-			if (allocated(bunch_init)) deallocate(bunch_init)
-	enddo
+        if( trim(bunchip%shape(bunch_number))=='bigaussian'  .and. trim(bunchip%PWeights(bunch_number))=='equal')    call generate_bunch_bigaussian_equal(bunch_number)
+        if( trim(bunchip%shape(bunch_number))=='bigaussian'  .and. trim(bunchip%PWeights(bunch_number))=='weighted') call generate_bunch_bigaussian_weighted(bunch_number)
+        if( trim(bunchip%shape(bunch_number))=='cylindrical' .and. trim(bunchip%PWeights(bunch_number))=='equal')    call generate_bunch_trapezoidalZ_uniformR_equal(bunch_number) 
+        if( trim(bunchip%shape(bunch_number))=='cylindrical' .and. trim(bunchip%PWeights(bunch_number))=='weighted') call generate_bunch_trapezoidalZ_uniformR_weighted(bunch_number)
+        if( trim(bunchip%shape(bunch_number))=='trapezoidal' .and. trim(bunchip%PWeights(bunch_number))=='equal')    call generate_bunch_trapezoidalZ_gaussianR_equal(bunch_number)
+        if( trim(bunchip%shape(bunch_number))=='trapezoidal' .and. trim(bunchip%PWeights(bunch_number))=='weighted') call generate_bunch_trapezoidalZ_gaussianR_weighted(bunch_number)
+        !---!
+        if (allocated(bunch_init)) deallocate(bunch_init)
+      enddo
 
       else !read from external file
-            do i=1,bunch_initialization%n_total_bunches
-                name_file = bunch_initialization%inbunch(i)
+            do i=1,bunchip%n_total_bunches
+                name_file = bunchip%inbunch(i)
                 write(*,*) name_file
-                call read_header_external_file(name_file,bunch_initialization%chargeB(i),bunch_initialization%n_particles(i))
-                bunch_initialization%chargeB(i)=-bunch_initialization%chargeB(i)
-                allocate( bunch_init(6,bunch_initialization%n_particles(i)) )
-                allocate( bunch(i)%part(bunch_initialization%n_particles(i)) )! ,STAT=AllocStatus)
-                call read_from_external_file(name_file,bunch_initialization%n_particles(i),bunch_init)
+                call read_header_external_file(name_file,bunchip%chargeB(i),bunchip%n_particles(i))
+                bunchip%chargeB(i)=-bunchip%chargeB(i)
+                allocate( bunch_init(6,bunchip%n_particles(i)) )
+                allocate( bunch(i)%part(bunchip%n_particles(i)) )! ,STAT=AllocStatus)
+                call read_from_external_file(name_file,bunchip%n_particles(i),bunch_init)
 
-                do j=1,bunch_initialization%n_particles(i)
+                do j=1,bunchip%n_particles(i)
                     bunch(i)%part(j)%cmp(1)=bunch_init(1,j)
                     bunch(i)%part(j)%cmp(2)=bunch_init(2,j)
                     bunch(i)%part(j)%cmp(3)=bunch_init(3,j)
@@ -289,10 +100,12 @@
                     bunch(i)%part(j)%cmp(10)=bunch_init(2,j) !Yold
                     bunch(i)%part(j)%cmp(11)=bunch_init(3,j) !Zold
 
-                    bunch(i)%part(j)%cmp(12) = bunch_initialization%ChargeB(i)/bunch_initialization%n_particles(i) ! macroparticle charge
+                    bunch(i)%part(j)%cmp(12) = bunchip%ChargeB(i)/bunchip%n_particles(i) ! macroparticle charge
                     bunch(i)%part(j)%cmp(13) = 1.e10*bunch(i)%part(j)%cmp(12)/1.6021766 						! electrons per macroparticle
 
                     bunch(i)%part(j)%cmp(14)=1.0 !particle diagnostic counting
+                    bunch(i)%part(j)%cmp(15)=-1.0
+                    bunch(i)%part(j)%cmp(16)=1.0
                 enddo
             		if (allocated(bunch_init)) deallocate(bunch_init)
                 sim_parameters%rB0(i)    = sqrt( calculate_nth_moment(i,2,1,'central') )
@@ -301,22 +114,22 @@
    endif
 
 !--- Apply Twiss Rotation ---!
-  do i=1,bunch_initialization%n_total_bunches
+  do i=1,bunchip%n_total_bunches
    if( twiss%L_TWISS(i)  ) then
 
      alphaTwiss = twiss%alpha_new_factor(i)
      betaTwiss  =	twiss%beta_new_factor(i)
-     eps_x=bunch_initialization%bunch_eps_x(i)
-     eps_y=bunch_initialization%bunch_eps_y(i)
-     s_x=bunch_initialization%bunch_s_x(i)
-     s_y=bunch_initialization%bunch_s_y(i)
+     eps_x=bunchip%bunch_eps_x(i)
+     eps_y=bunchip%bunch_eps_y(i)
+     s_x=bunchip%bunch_s_x(i)
+     s_y=bunchip%bunch_s_y(i)
 
      ax11=sqrt( eps_x*betaTwiss/(s_x**2+s_x**2*alphaTwiss**2) )
      ay11=sqrt( eps_y*betaTwiss/(s_y**2+s_y**2*alphaTwiss**2) )
      ax12=-ax11*alphaTwiss*s_x**2/eps_x
      ay12=-ay11*alphaTwiss*s_y**2/eps_y
 
-     do j=1,bunch_initialization%n_particles(i)
+     do j=1,bunchip%n_particles(i)
         bunch(i)%part(j)%cmp(1)=ax11*bunch(i)%part(j)%cmp(1)+ax12*bunch(i)%part(j)%cmp(4)
         bunch(i)%part(j)%cmp(2)=ay11*bunch(i)%part(j)%cmp(2)+ay12*bunch(i)%part(j)%cmp(5)
         bunch(i)%part(j)%cmp(3)=bunch(i)%part(j)%cmp(3)
@@ -338,28 +151,28 @@ enddo
 !------------------------------------------------------!
 
 !--- calculate bunch charge for the non-gaussian bunches and write a diagnostic---!
-  do i=1,bunch_initialization%n_total_bunches
-    if(trim(bunch_initialization%shape(i))=='bigaussian') write(*,'(A,I1,A,f8.4,A)') 'Charge Bunch(',i,') :: ', bunch_initialization%ChargeB(i),'[nC] --- selected from nml file'
-    if(trim(bunch_initialization%shape(i))=='cylindrical') write(*,'(A,I1,A,f8.4,A)') 'Charge Bunch(',i,') :: ', bunch_initialization%ChargeB(i),'[nC] --- computed'
-    if(trim(bunch_initialization%shape(i))=='trapezoidal') write(*,'(A,I1,A,f8.4,A)') 'Charge Bunch(',i,') :: ',bunch_initialization%ChargeB(i),'[nC] --- computed'
+  do i=1,bunchip%n_total_bunches
+    if(trim(bunchip%shape(i))=='bigaussian') write(*,'(A,I1,A,f8.4,A)') 'Charge Bunch(',i,') :: ', bunchip%ChargeB(i),'[nC] --- selected from nml file'
+    if(trim(bunchip%shape(i))=='cylindrical') write(*,'(A,I1,A,f8.4,A)') 'Charge Bunch(',i,') :: ', bunchip%ChargeB(i),'[nC] --- computed'
+    if(trim(bunchip%shape(i))=='trapezoidal') write(*,'(A,I1,A,f8.4,A)') 'Charge Bunch(',i,') :: ',bunchip%ChargeB(i),'[nC] --- computed'
   enddo
   write(*,'(A)')
 
 
   !--- apply shifting ---!
    Zb=0.
-    do i=1,bunch_initialization%n_total_bunches
+    do i=1,bunchip%n_total_bunches
       bunch(i)%part(:)%cmp(14)=1.
       ! mu_z = abs(calculate_nth_moment(i,1,3,'nocentral'))
-      if (i.ge.1) Zb = Zb+int((bunch_initialization%db(i)*plasma%lambda_p)/(mesh_par%dzm/plasma%k_p))*(mesh_par%dzm/plasma%k_p)
+      if (i.ge.1) Zb = Zb+int((bunchip%db(i)*plasma%lambda_p)/(mesh_par%dz/plasma%k_p))*(mesh_par%dz/plasma%k_p)
       write(*,'(A,f11.3)') 'distance between bunches (um)',Zb
       bunch(i)%part(:)%cmp(3)  = bunch(i)%part(:)%cmp(3) + Zb		! shift Z of bunch
       bunch(i)%part(:)%cmp(11) = bunch(i)%part(:)%cmp(3)  			! change Z_old accordingly
     enddo
 
    !---initial diagnostic
-      do i=1,bunch_initialization%n_total_bunches
-        write(*,'(A,I1,A,A)') 'Bunch(',i,') :: shape > ',trim(bunch_initialization%shape(i))
+      do i=1,bunchip%n_total_bunches
+        write(*,'(A,I1,A,A)') 'Bunch(',i,') :: shape > ',trim(bunchip%shape(i))
         write(*,'(A,I1,A,f11.3)') 'Bunch(',i,') :: sigma_x (um) =',sqrt( calculate_nth_moment(i,2,1,'central') )
         write(*,'(A,I1,A,f11.3)') 'Bunch(',i,') :: sigma_z (um) =',sqrt( calculate_nth_moment(i,2,3,'central') )
       enddo
@@ -368,10 +181,10 @@ enddo
 
 
    ! Computes total charge and number of electrons
-   sim_parameters%Charge=sum(bunch_initialization%ChargeB(1:bunch_initialization%n_total_bunches))
-   sim_parameters%NelectronsB(1:bunch_initialization%n_total_bunches) = &
-    1.e10*bunch_initialization%ChargeB(1:bunch_initialization%n_total_bunches)/1.6021766 !Electrons of every macroparticle
-	!1.e10*bunch_initialization%ChargeB(1:bunch_initialization%n_total_bunches)/1.6 !Electrons of every macroparticle
+   sim_parameters%Charge=sum(bunchip%ChargeB(1:bunchip%n_total_bunches))
+   sim_parameters%NelectronsB(1:bunchip%n_total_bunches) = &
+    1.e10*bunchip%ChargeB(1:bunchip%n_total_bunches)/1.6021766 !Electrons of every macroparticle
+	!1.e10*bunchip%ChargeB(1:bunchip%n_total_bunches)/1.6 !Electrons of every macroparticle
 
 
 
@@ -384,7 +197,7 @@ enddo
 
  subroutine modify_bunch(in_bunch,nb)
     integer nb
-    real(8) :: in_bunch(6,bunch_initialization%n_particles(nb)),stats(9)
+    real(8) :: in_bunch(6,bunchip%n_particles(nb)),stats(9)
     real(8) :: Tmatrix_X(2,2),Tmatrix_Y(2,2)
 
     call def_stats(stats,in_bunch,nb)
@@ -428,11 +241,11 @@ enddo
 ! Calculates the beam parameters sigma_x,y, sigma_px,py and sigma_xpx,ypy
 ! Structure of vector stats is (Sx,Spx,Sxpx,Sy,Spy,Sypy,enx,eny)
     integer nb,np
-    real(8) :: in_bunch(6,bunch_initialization%n_particles(nb)),stats(9)
+    real(8) :: in_bunch(6,bunchip%n_particles(nb)),stats(9)
     real(8) :: mx=0.,mpx=0.,my=0.,mpy=0.
 
     stats=0.
-    np=bunch_initialization%n_particles(nb)
+    np=bunchip%n_particles(nb)
 
 
     mx=sum(in_bunch(1,:))/real(np)
@@ -501,11 +314,11 @@ enddo
  subroutine set_twiss_parameters(in_bunch,Tx,Ty,nb)
 ! Applies the Tx and Ty transport matrices
    integer i,nb
-   real in_bunch(6,bunch_initialization%n_particles(nb)),out_bunch(6,bunch_initialization%n_particles(nb)),Tx(2,2),Ty(2,2)
+   real in_bunch(6,bunchip%n_particles(nb)),out_bunch(6,bunchip%n_particles(nb)),Tx(2,2),Ty(2,2)
 
    out_bunch=in_bunch
 
-   do i=1,bunch_initialization%n_particles(nb)
+   do i=1,bunchip%n_particles(nb)
       out_bunch(1,i)=Tx(1,1)*in_bunch(1,i)+Tx(1,2)*in_bunch(4,i)
       out_bunch(4,i)=Tx(2,1)*in_bunch(1,i)+Tx(2,2)*in_bunch(4,i)
       out_bunch(2,i)=Ty(1,1)*in_bunch(2,i)+Ty(1,2)*in_bunch(5,i)
@@ -531,17 +344,17 @@ subroutine dimension_first_bunch
  write(*,'(A)')
  write(*,'(A)') ' >>> Initialisation :: Identify dimension for the first bunch <<<'
 
-  if(bunch_initialization%l_bunch_internal_init) then !from input file
-    sim_parameters%rB0(1)    = bunch_initialization%bunch_s_x(1)
-    sim_parameters%lbunch(1) = bunch_initialization%bunch_s_z(1)
+  if(bunchip%l_bunch_internal_init) then !from input file
+    sim_parameters%rB0(1)    = bunchip%bunch_s_x(1)
+    sim_parameters%lbunch(1) = bunchip%bunch_s_z(1)
   else !read from external file
-    name_file = bunch_initialization%inbunch(1)
-    call read_header_external_file(name_file,bunch_initialization%chargeB(1),bunch_initialization%n_particles(1))
-    bunch_initialization%chargeB(1)=-bunch_initialization%chargeB(1)
-    allocate( bunch_init(6,bunch_initialization%n_particles(1)) )
-    allocate( bunch(1)%part(bunch_initialization%n_particles(1)) )
-    call read_from_external_file(name_file,bunch_initialization%n_particles(1),bunch_init)
-    do j=1,bunch_initialization%n_particles(1)
+    name_file = bunchip%inbunch(1)
+    call read_header_external_file(name_file,bunchip%chargeB(1),bunchip%n_particles(1))
+    bunchip%chargeB(1)=-bunchip%chargeB(1)
+    allocate( bunch_init(6,bunchip%n_particles(1)) )
+    allocate( bunch(1)%part(bunchip%n_particles(1)) )
+    call read_from_external_file(name_file,bunchip%n_particles(1),bunch_init)
+    do j=1,bunchip%n_particles(1)
       bunch(1)%part(j)%cmp(1)=bunch_init(1,j)
       bunch(1)%part(j)%cmp(2)=bunch_init(2,j)
       bunch(1)%part(j)%cmp(3)=bunch_init(3,j)
@@ -553,7 +366,7 @@ subroutine dimension_first_bunch
       bunch(1)%part(j)%cmp(9)=bunch_init(1,j)  !Xold
       bunch(1)%part(j)%cmp(10)=bunch_init(2,j) !Yold
       bunch(1)%part(j)%cmp(11)=bunch_init(3,j) !Zold
-      bunch(1)%part(j)%cmp(12)= bunch_initialization%ChargeB(1)/bunch_initialization%n_particles(1) ! macroparticle charge
+      bunch(1)%part(j)%cmp(12)= bunchip%ChargeB(1)/bunchip%n_particles(1) ! macroparticle charge
       bunch(1)%part(j)%cmp(13)= 1.e10*bunch(1)%part(j)%cmp(12)/1.6021766 						! electrons per macroparticle
       bunch(1)%part(j)%cmp(14)=1.0 !particle diagnostic counting
     enddo

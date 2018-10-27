@@ -108,38 +108,38 @@ CONTAINS
   do i= 1,Node_end_z
   do j= 1,Node_end_r
 
-    if ( mesh(i,j)%n_plasma_e.le.threshold_factor) then
+    if ( mesh(i,j)%ne_bck.le.threshold_factor) then
       Jpe_r(i,j) = 0.
       Jpe_z(i,j) = 0.
     else
       beta_x(i,j) = mesh(i,j)%ux/sqrt( 1. + mesh(i,j)%ux**2+ mesh(i,j)%uz**2 + 1e-10 )
       beta_z(i,j) = mesh(i,j)%uz/sqrt( 1. + mesh(i,j)%ux**2+ mesh(i,j)%uz**2 + 1e-10 )
 
-      Jpe_r(i,j) = mesh(i,j)%n_plasma_e*beta_x(i,j) !face centered
-      Jpe_z(i,j) = mesh(i,j)%n_plasma_e*beta_z(i,j) !face centered
+      Jpe_r(i,j) = mesh(i,j)%ne_bck*beta_x(i,j) !face centered
+      Jpe_z(i,j) = mesh(i,j)%ne_bck*beta_z(i,j) !face centered
 
       !--- with smoothing ---!
       ! if(i.ge.2 .and. j.ge.3 .and. i.le.Node_end_z-1 .and. j.le.Node_end_r-1) then
       ! Jpe_r(i,j) = &
-      !              ( mesh(i  ,j  )%n_plasma_e*beta_x(i  ,j  )*((j-1)**2-(j-2)**2) &
-      !              ! + mesh(i-1,j  )%n_plasma_e*beta_x(i-1,j  )*((j-1)**2-(j-2)**2) &
-      !              ! + mesh(i+1,j  )%n_plasma_e*beta_x(i+1,j  )*((j-1)**2-(j-2)**2) &
-      !              + mesh(i  ,j+1)%n_plasma_e*beta_x(i  ,j+1)*((j+0)**2-(j-1)**2) &
-      !              ! + mesh(i-1,j+1)%n_plasma_e*beta_x(i-1,j+1)*((j+0)**2-(j-1)**2) &
-      !              ! + mesh(i+1,j+1)%n_plasma_e*beta_x(i+1,j+1)*((j+0)**2-(j-1)**2) &
-      !              + mesh(i  ,j-1)%n_plasma_e*beta_x(i  ,j-1)*((j-2)**2-(j-3)**2) &
-      !              ! + mesh(i+1,j-1)%n_plasma_e*beta_x(i+1,j-1)*((j-2)**2-(j-3)**2) &
-      !              ! + mesh(i-1,j-1)%n_plasma_e*beta_x(i-1,j-1)*((j-2)**2-(j-3)**2) ) &
+      !              ( mesh(i  ,j  )%ne_bck*beta_x(i  ,j  )*((j-1)**2-(j-2)**2) &
+      !              ! + mesh(i-1,j  )%ne_bck*beta_x(i-1,j  )*((j-1)**2-(j-2)**2) &
+      !              ! + mesh(i+1,j  )%ne_bck*beta_x(i+1,j  )*((j-1)**2-(j-2)**2) &
+      !              + mesh(i  ,j+1)%ne_bck*beta_x(i  ,j+1)*((j+0)**2-(j-1)**2) &
+      !              ! + mesh(i-1,j+1)%ne_bck*beta_x(i-1,j+1)*((j+0)**2-(j-1)**2) &
+      !              ! + mesh(i+1,j+1)%ne_bck*beta_x(i+1,j+1)*((j+0)**2-(j-1)**2) &
+      !              + mesh(i  ,j-1)%ne_bck*beta_x(i  ,j-1)*((j-2)**2-(j-3)**2) &
+      !              ! + mesh(i+1,j-1)%ne_bck*beta_x(i+1,j-1)*((j-2)**2-(j-3)**2) &
+      !              ! + mesh(i-1,j-1)%ne_bck*beta_x(i-1,j-1)*((j-2)**2-(j-3)**2) ) &
       !              ) / (((j+0)**2-(j-3)**2)*1.)
       ! endif
       ! if(j.eq.2 .and. i.ge.2 .and. i.le.Node_end_z-1) then
       !   Jpe_r(i,j) = &
-      !             ( mesh(i  ,j  )%n_plasma_e*beta_x(i  ,j  )*((j-1)**2-(j-2)**2) &
-      !             ! + mesh(i-1,j  )%n_plasma_e*beta_x(i-1,j  )*((j-1)**2-(j-2)**2) &
-      !             ! + mesh(i+1,j  )%n_plasma_e*beta_x(i+1,j  )*((j-1)**2-(j-2)**2) &
-      !             + mesh(i  ,j+1)%n_plasma_e*beta_x(i  ,j+1)*((j+0)**2-(j-1)**2) &
-      !             ! + mesh(i-1,j+1)%n_plasma_e*beta_x(i-1,j+1)*((j+0)**2-(j-1)**2) &
-      !             ! + mesh(i+1,j+1)%n_plasma_e*beta_x(i+1,j+1)*((j+0)**2-(j-1)**2) ) &
+      !             ( mesh(i  ,j  )%ne_bck*beta_x(i  ,j  )*((j-1)**2-(j-2)**2) &
+      !             ! + mesh(i-1,j  )%ne_bck*beta_x(i-1,j  )*((j-1)**2-(j-2)**2) &
+      !             ! + mesh(i+1,j  )%ne_bck*beta_x(i+1,j  )*((j-1)**2-(j-2)**2) &
+      !             + mesh(i  ,j+1)%ne_bck*beta_x(i  ,j+1)*((j+0)**2-(j-1)**2) &
+      !             ! + mesh(i-1,j+1)%ne_bck*beta_x(i-1,j+1)*((j+0)**2-(j-1)**2) &
+      !             ! + mesh(i+1,j+1)%ne_bck*beta_x(i+1,j+1)*((j+0)**2-(j-1)**2) ) &
       !             ) / (((j+0)**2-(j-2)**2)*1.) ! (((2+0)**2-(0)**2)*3.)
       ! endif
       !--- end smoothing ---!
@@ -181,12 +181,12 @@ CONTAINS
     !--- ---!
     ! Jpe_r_for_FDTD(i,2)  = 0.5*(Jpe_r_for_FDTD(i,1)+Jpe_r_for_FDTD(i,3))
     !--- ---!
-		mesh(i,1)%n_plasma_e = mesh(i,Node_min_r)%n_plasma_e
+		mesh(i,1)%ne_bck = mesh(i,Node_min_r)%ne_bck
   enddo
   ! upper boundary
   Jpe_r_for_FDTD(:,Node_end_r)  = Jpe_r_for_FDTD(:,Node_max_r)
   Jpe_z_for_FDTD(:,Node_end_r)  = Jpe_z_for_FDTD(:,Node_max_r)
-  mesh(:,Node_end_r)%n_plasma_e = mesh(:,Node_max_r)%n_plasma_e
+  mesh(:,Node_end_r)%ne_bck = mesh(:,Node_max_r)%ne_bck
 
   !---backward substitution---!
   mesh(:,:)%Jpe_r      = Jpe_r_for_FDTD(:,:)
@@ -212,12 +212,12 @@ CONTAINS
 
     !--- *** ---!
     bck_plasma%z_coordinate=bck_plasma%z_coordinate_um*plasma%k_p
-    mesh(:,:)%n_plasma_e 	= 0.d0
+    mesh(:,:)%ne_bck 	= 0.d0
     !--- *** ---!
 
     do i=2,mesh_par%Nzm
           do j=2,mesh_par%Nxm
-            mesh(i,j)%n_plasma_e=background_density_value(i,j)
+            mesh(i,j)%ne_bck=background_density_value(i,j)
       enddo
     enddo
 	END SUBROUTINE set_initial_plasma_density
@@ -253,17 +253,17 @@ CONTAINS
     !--- *** ---! assign velocity
     do i=1,Node_max_z
       do j=1,Node_max_r
-        if(mesh(i,j)%n_plasma_e>0.) mesh(i,j)%uz=sim_parameters%velocity_background
+        if(mesh(i,j)%ne_bck>0.) mesh(i,j)%uz=sim_parameters%velocity_background
       enddo
     enddo
 
     !--- *** ---! caluclate Bphi
     i=2
     do j=1,Node_max_r
-      mesh(i,j)%Bphi=(mesh(i,j)%uz*mesh(i,j)%n_plasma_e)*j*mesh_par%dxm/2.
-      if(j>mesh_par%NRmax_plasma) then
-        mesh(i,j)%Bphi=(mesh(i,mesh_par%NRmax_plasma-10)%uz*mesh(i,mesh_par%NRmax_plasma-10)%n_plasma_e) &
-        *(mesh_par%NRmax_plasma*mesh_par%dxm)**2/2./j/mesh_par%dxm
+      mesh(i,j)%Bphi=(mesh(i,j)%uz*mesh(i,j)%ne_bck)*j*mesh_par%dr/2.
+      if(j>mesh_par%Nr_plasma) then
+        mesh(i,j)%Bphi=(mesh(i,mesh_par%Nr_plasma-10)%uz*mesh(i,mesh_par%Nr_plasma-10)%ne_bck) &
+        *(mesh_par%Nr_plasma*mesh_par%dr)**2/2./j/mesh_par%dr
       endif
       !---
       mesh_util%Bphi_BC_Left(j)=mesh(i,j)%Bphi
@@ -300,13 +300,13 @@ END FUNCTION background_density_value
     i_eff=real(i-2)+.5d0
     j_eff=real(j-2)+.5d0
 
-    radius = j_eff*mesh_par%dxm/plasma%k_p
+    radius = j_eff*mesh_par%dr/plasma%k_p
 
     background_density_value_analytical=0.d0
-    Zposition=mesh_par%z_min_moving_um+i_eff*mesh_par%dzm/plasma%k_p
+    Zposition=mesh_par%z_min_moving_um+i_eff*mesh_par%dz/plasma%k_p
 
     !--vacuum layer---!
-    !if(j>=mesh_par%NRmax_plasma) return
+    !if(j>=mesh_par%Nr_plasma) return
     !----------------------!
 
     weightR=1.d0

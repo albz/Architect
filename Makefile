@@ -18,7 +18,8 @@ else
 STDCPP_LINK     = -lstdc++
 endif
 
-FILES  =  my_types.f90 \
+FILES  =  digit_precision.f90 \
+					my_types.f90 \
 					use_types.f90 \
 					random_numbers_functions.f90 \
 					shapiro_wilks.f90 \
@@ -96,7 +97,13 @@ gf49  : all
 
 
 #--- ---#
-$(OBJ_FOLDER)/my_types.o: $(SRC_FOLDER)/my_types.f90
+$(OBJ_FOLDER)/digit_precision.o: $(SRC_FOLDER)/digit_precision.f90
+	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
+$(OBJ_FOLDER)/digit_precision.mod: $(SRC_FOLDER)/digit_precision.f90 $(OBJ_FOLDER)/digit_precision.o
+	@true
+
+$(OBJ_FOLDER)/my_types.o: $(SRC_FOLDER)/my_types.f90 \
+														$(SRC_FOLDER)/digit_precision.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/my_types.mod: $(SRC_FOLDER)/my_types.f90 $(OBJ_FOLDER)/my_types.o
 	@true
@@ -173,6 +180,7 @@ $(OBJ_FOLDER)/external_background_density.mod: $(SRC_FOLDER)/external_background
 
 
 $(OBJ_FOLDER)/mesh_generator.o: $(SRC_FOLDER)/mesh_generator.f90 \
+																$(OBJ_FOLDER)/digit_precision.mod \
 																$(OBJ_FOLDER)/my_types.mod \
 																$(OBJ_FOLDER)/use_types.mod \
 																$(OBJ_FOLDER)/external_background_density.mod
@@ -267,6 +275,7 @@ $(OBJ_FOLDER)/update_fluid_manager.mod: $(SRC_FOLDER)/update_fluid_manager.f90 $
 	@true
 
 $(OBJ_FOLDER)/particle_pusher.o: $(SRC_FOLDER)/particle_pusher.f90 \
+																	$(OBJ_FOLDER)/digit_precision.mod \
 																	$(OBJ_FOLDER)/my_types.mod \
 																	$(OBJ_FOLDER)/use_types.mod \
 																	$(OBJ_FOLDER)/utilities.mod \
@@ -299,6 +308,7 @@ $(OBJ_FOLDER)/ionisation.mod: $(SRC_FOLDER)/ionisation.f90 $(OBJ_FOLDER)/ionisat
 		@true
 
 $(OBJ_FOLDER)/window_shifting.o: $(SRC_FOLDER)/window_shifting.f90 \
+																	$(OBJ_FOLDER)/digit_precision.mod \
 																	$(OBJ_FOLDER)/my_types.mod \
 																	$(OBJ_FOLDER)/use_types.mod \
 																	$(OBJ_FOLDER)/bunch_moments.mod \
@@ -329,12 +339,13 @@ $(OBJ_FOLDER)/grid_diagnostics.mod: $(SRC_FOLDER)/grid_diagnostics.f90 $(OBJ_FOL
 	@true
 
 $(OBJ_FOLDER)/data_dump.o: $(SRC_FOLDER)/data_dump.f90 \
-	                         $(OBJ_FOLDER)/my_types.mod \
-													 $(OBJ_FOLDER)/use_types.mod \
-													 $(OBJ_FOLDER)/pstruct_data.mod \
-													 $(OBJ_FOLDER)/architect_class_structure.mod \
-													 $(OBJ_FOLDER)/ion_background.mod \
-													 $(OBJ_FOLDER)/grid_diagnostics.mod
+														$(OBJ_FOLDER)/my_types.mod \
+														$(OBJ_FOLDER)/use_types.mod \
+														$(OBJ_FOLDER)/pstruct_data.mod \
+														$(OBJ_FOLDER)/architect_class_structure.mod \
+														$(OBJ_FOLDER)/ion_background.mod \
+														$(OBJ_FOLDER)/bunch_moments.mod \
+														$(OBJ_FOLDER)/grid_diagnostics.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/data_dump.mod: $(SRC_FOLDER)/data_dump.f90 $(OBJ_FOLDER)/data_dump.o
 	@true

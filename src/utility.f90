@@ -55,20 +55,17 @@ end subroutine open_file
 ! -------------------------------------------------------------------------!
 	subroutine inwindow(j,ip)
 	integer, intent(in) :: j,ip !j is the number of the bunch, ip is the number of the particle within the j-th bunch
-	real(8) pos_z,pos_r
+	real(dp) coo_z,coo_r
 
 		! in or out with respect of particle pusher
 		if(bunch(j)%part(ip)%cmp(7)==1.) then
-			pos_z = bunch(j)%part(ip)%cmp(3)-sim_parameters%zg
-			pos_r = sqrt( (bunch(j)%part(ip)%cmp(1))**2 +(bunch(j)%part(ip)%cmp(2))**2 )
-			pos_z = plasma%k_p * pos_z
-			pos_r = plasma%k_p * pos_r
+			coo_z = bunch(j)%part(ip)%cmp(3)
+			coo_r = sqrt( (bunch(j)%part(ip)%cmp(1))**2 +(bunch(j)%part(ip)%cmp(2))**2 )
 
-			if( pos_z .le. (minval(z_mesh_shifted)+20.*mesh_par%dzm)                  )  bunch(j)%part(ip)%cmp(7)=0.
-			if( pos_z .ge. (maxval(z_mesh_shifted)-20.*mesh_par%dzm)                  )  bunch(j)%part(ip)%cmp(7)=0.
-			if( pos_r .ge. plasma%k_p*maxval(bck_plasma%radius_um(:))-2.*mesh_par%dxm )  bunch(j)%part(ip)%cmp(7)=0.
+			if( coo_z .ge. mesh_par%z_max_um - 10. * mesh_par%dz_um  ) bunch(j)%part(ip)%cmp(7)=0.
+			if( coo_z .le. mesh_par%z_min_um + 10. * mesh_par%dz_um  ) bunch(j)%part(ip)%cmp(7)=0.
+			if( coo_r .ge. mesh_par%R_plasma_um - 2. * mesh_par%dr_um) bunch(j)%part(ip)%cmp(7)=0.
 	    endif
-
 	end subroutine
 
 
@@ -107,7 +104,7 @@ end subroutine open_file
 			endif
 
 		case (1) !--> grid_choice=1 - Jz
-			if ((idr.eq.2).and.(r.le.(0.5*mesh_par%dxm))) then !onaxis
+			if ((idr.eq.2).and.(r.le.(0.5*mesh_par%dr))) then !onaxis
 				w00=Wz_s				  *inv_R(idr)
 				w10=(1.-Wz_s)			  *inv_R(idr)
 			else
@@ -119,9 +116,9 @@ end subroutine open_file
 
 		case (2) !--> grid_choice=2 - rho
 			if (idrs.eq.1) then !onaxis
-				w00=Wz_s	 *fraz_s*Wr_s		  *2./mesh_par%dxm*4. 	!*inv_R_shifted(idrs)
+				w00=Wz_s	 *fraz_s*Wr_s		  *2./mesh_par%dr*4. 	!*inv_R_shifted(idrs)
 				w01=Wz_s	 *(1.-fraz_s*Wr_s)*inv_R_shifted(idrs+1)
-				w10=(1.-Wz_s)*fraz_s*Wr_s	  *2./mesh_par%dxm*4.	!*inv_R_shifted(idrs)
+				w10=(1.-Wz_s)*fraz_s*Wr_s	  *2./mesh_par%dr*4.	!*inv_R_shifted(idrs)
 				w11=(1.-Wz_s)*(1.-fraz_s*Wr_s)*inv_R_shifted(idrs+1)
 			else
 				w00=Wz_s	 *fraz_s*Wr_s		  *inv_R_shifted(idrs)
@@ -144,7 +141,7 @@ end subroutine open_file
 			endif
 
 		case (4) !--> grid_choice=4 - Ez
-			if ((idr.eq.2).and.(r.le.(0.5*mesh_par%dxm))) then !onaxis
+			if ((idr.eq.2).and.(r.le.(0.5*mesh_par%dr))) then !onaxis
 				w00=Wz_s
 				w10=(1.-Wz_s)
 			else
@@ -199,15 +196,15 @@ end subroutine open_file
 		indz_s= 0
 
   		!RZ coordinates
-		pos_z = plasma%k_p*     ( 0.5D0*(znew+zold)-sim_parameters%zg )
+		pos_z = plasma%k_p*     ( 0.5D0*(znew+zold) )
 		pos_r = plasma%k_p* sqrt( (xnew+xold)**2+(ynew+yold)**2 )*0.5D0
 
 		select case (routine_choice)
 			case (0) !--> routine_choice=0 - charge and current deposition
-				pos_z = plasma%k_p*     ( 0.5D0*(znew+zold)-sim_parameters%zg )
+				pos_z = plasma%k_p*     ( 0.5D0*(znew+zold) )
 				pos_r = plasma%k_p* sqrt( (xnew+xold)**2+(ynew+yold)**2 )*0.5D0
 			case (1) !--> routine_choice=1 - pusher
-				pos_z = plasma%k_p*     (  znew-sim_parameters%zg )
+				pos_z = plasma%k_p*     (  znew )
 				pos_r = plasma%k_p* sqrt( (xnew)**2+(ynew)**2 )
 		end select
 
@@ -234,7 +231,7 @@ end subroutine open_file
 				/ (2.D0*x_mesh_shifted(indx_s)*one_over_dx + 1.D0  )
 
 
-		if ((indx.eq.2).and.(pos_r.le.(0.5D0*mesh_par%dxm))) then
+		if ((indx.eq.2).and.(pos_r.le.(0.5D0*mesh_par%dr))) then
 			!do nothing
 		else
 			Wr    = 1.D0-(f_pos_r - indx+1.D0 )
@@ -249,7 +246,7 @@ end subroutine open_file
 				write(*,*) 'wz_s',Wz_s
 				write(*,*) '-----------------'
 				write(*,*) 'pos_z',pos_z
-				write(*,*) 'dz',mesh_par%dzm
+				write(*,*) 'dz',mesh_par%dz
 				write(*,*) 'indz',indz
 				write(*,*) 'indz_s',indz_s
 				write(*,*) '           '
@@ -272,7 +269,7 @@ end subroutine open_file
 				write(*,*) 'wr_s',Wr_s
 				write(*,*) '-----------------'
 				write(*,*) 'pos_r',pos_r
-				write(*,*) 'dx',mesh_par%dxm
+				write(*,*) 'dx',mesh_par%dr
 				write(*,*) 'indx_s',indx_s
 				write(*,*) '           '
 				write(*,*) 'x_mesh_shifted(indx_s-1)',x_mesh_shifted(indx_s-1)
@@ -290,7 +287,7 @@ end subroutine open_file
 				write(*,*) 'wr',Wr
 				write(*,*) '-----------------'
 				write(*,*) 'pos_r',pos_r
-				write(*,*) 'dx',mesh_par%dxm
+				write(*,*) 'dx',mesh_par%dr
 				write(*,*) 'indx',indx
 				write(*,*) '           '
 				write(*,*) 'x_mesh(indx-1)',x_mesh(indx-1)
@@ -307,7 +304,7 @@ end subroutine open_file
 				write(*,*) 'Error in index'
 				write(*,*) '-----------------'
 				write(*,*) 'pos_z',pos_z
-				write(*,*) 'dz',mesh_par%dzm
+				write(*,*) 'dz',mesh_par%dz
 				write(*,*) 'indz',indz
 				write(*,*) 'indz_s',indz_s
 				write(*,*) 'pos_r',pos_r

@@ -20,20 +20,13 @@
 !*****************************************************************************************************!
 
 MODULE my_types
+use digit_precision
 
 IMPLICIT NONE
 
- !--- code precision ---!
- integer, parameter :: sp = selected_real_kind(6, 37)
- integer, parameter :: dp = selected_real_kind(15, 307)
- integer, parameter :: dp_int = selected_int_kind(16)
- integer, parameter :: hp_int = selected_int_kind(4)
- integer, parameter :: qp = selected_real_kind(33, 4931)
- !------------------------------------------------------!
+  TYPE :: simul_param	 ! sim_parameters
 
-   TYPE :: simul_param	 ! sim_parameters
-
-    REAL(8) :: sim_time,dt
+    REAL(8) :: sim_time,dt,dt_fs
     INTEGER :: Np,iter,NelectronsB(6),Np_cut,Npc,Npcz,Nbunches
     INTEGER :: jfirst_cut,j_cut,diff_order,deposition,Ndr
     REAL(8) :: Charge,CFL,scalesx,scalesz
@@ -79,16 +72,20 @@ IMPLICIT NONE
 
    END TYPE
 
-   TYPE :: mesh_param   ! mesh_par
-      INTEGER :: NRmax_plasma
+  TYPE :: mesh_param   ! mesh_par
+      INTEGER :: Nr_plasma
       INTEGER :: Nxm,Nzm,Nsample_r,Nsample_z,Nxm_old,Nzm_old
+      INTEGER :: Nr,Nz
       REAL(8) :: Left_Domain_boundary,Right_Domain_boundary
-      REAL(8) :: ScaleX,ScaleZ,ScaleR,L_mesh,R_mesh,dzm,dxm,dzm_old,dxm_old
+      REAL(8) :: ScaleX,ScaleZ,ScaleR,L_mesh,dxm,dzm_old,dxm_old
+      REAL(8) :: R_mesh, R_mesh_um, R_plasma, R_plasma_um
+      REAL(8) :: dr,dr_um
+      REAL(8) :: dz,dz_um
       REAL(8) :: z_min,z_max,z_min_um,z_max_um
       REAL(8) :: z_min_moving,z_max_moving,z_min_moving_um,z_max_moving_um
       REAL(8) :: Left_mesh,Right_mesh !input-parameters
       REAL(8) :: Rmax
-   END TYPE
+  END TYPE
 
    !--- define the background plasma profile ---!
    TYPE :: background_plasma_profile   ! bck_plasma
@@ -101,8 +98,8 @@ IMPLICIT NONE
    END TYPE
 
    TYPE :: mesh_phys   ! mesh
-      REAL(8) :: n_plasma_e,n_plasma_i,Zstar
-      REAL(8) :: rho,n0,Jz,Jr,ux,uz,Ez,Ex,Bphi,Bphi_old,Jpe_r,Jpe_z
+      REAL(8) :: ne_b,ne_bck,ni_bck,Zstar
+      REAL(8) :: n0,Jz,Jr,ux,uz,Ez,Ex,Bphi,Bphi_old,Jpe_r,Jpe_z
       REAL(8) :: Ez_bunch,Ex_bunch,Bphi_bunch,Bphi_old_bunch
       REAL(8) :: B_ex_poloidal
    END TYPE
@@ -151,17 +148,19 @@ IMPLICIT NONE
 	END TYPE
 
 	!Bunch-initialisation-parameters
-	TYPE :: bunch_inside_initialization
-		LOGICAL :: l_bunch_internal_init
-		INTEGER :: n_total_bunches=1,n_particles(7)=0,self_consistent_field_bunch
-		REAL(8)    :: bunch_s_x(7)=0.,bunch_s_y(7)=0.,bunch_s_z(7)=0.
-		REAL(8)    :: bunch_gamma_m(7)=0.,bunch_eps_x(7)=0.,bunch_eps_y(7)=0.,bunch_dgamma(7)=0.
-    real(8)    :: Charge_right(7),Charge_left(7),sigma_cut(7)
-		REAL(8)    :: maxnorm,wsor
-		INTEGER    :: init_width_r, init_width_z, iter_max
-    INTEGER    :: npZ(8), npR(8)
-		REAL(8)    :: ChargeB(7)=0., db(7)=0.
-    CHARACTER  :: inbunch(7)*30,PWeights(7)*30,shape(7)*30,optimisation(7)*3
+	TYPE :: bunch_init_parameters
+		LOGICAL   :: l_bunch_internal_init
+    INTEGER   :: n_total_bunches=1,n_particles(7)=0,self_consistent_field_bunch
+    REAL      :: z_cm(7)
+		REAL(8)   :: bunch_s_x(7)=0.,bunch_s_y(7)=0.,bunch_s_z(7)=0.
+		REAL(8)   :: bunch_gamma_m(7)=0.,bunch_eps_x(7)=0.,bunch_eps_y(7)=0.,bunch_dgamma(7)=0.
+    real(8)   :: Charge_right(7),Charge_left(7),sigma_cut(7)
+    real(8)   :: particle_charge(7),particle_mass(7)
+		REAL(8)   :: maxnorm,wsor
+		INTEGER   :: init_width_r, init_width_z, iter_max
+    INTEGER   :: npZ(8), npR(8)
+		REAL(8)   :: ChargeB(7)=0., db(7)=0.
+    CHARACTER :: inbunch(7)*30,PWeights(7)*30,shape(7)*30,optimisation(7)*3
 	END TYPE
 
   !--- dump and restart variables ---!
@@ -182,7 +181,7 @@ IMPLICIT NONE
 	INTEGER :: Nz,Nr,Node_min_z,Node_max_z,Node_min_r,Node_max_r,Node_end_z,Node_end_r
 	INTEGER :: Node_min_lo_z,Node_max_lo_z,Node_min_lo_r,Node_max_lo_r,Node_end_lo_z,Node_end_lo_r
 	INTEGER :: Node_min_ho_z,Node_max_ho_z,Node_min_ho_r,Node_max_ho_r,Node_end_ho_z,Node_end_ho_r
-	REAL(8) :: DeltaR,DeltaZ,Dt,one_over_dx,one_over_dz
+	REAL(8) :: one_over_dx,one_over_dz
 
 
 
@@ -195,7 +194,4 @@ IMPLICIT NONE
   PARAMETER (mu0=1.25663706D-6)
   CHARACTER :: path*90,command*200
   
-  real(dp), parameter :: zero = 0.0
-  real(dp), parameter :: one = 1.0
-
 END MODULE my_types

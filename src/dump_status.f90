@@ -68,9 +68,9 @@ SUBROUTINE dump_whole_status
 						write(15) plasma
 						close(15)
 
-						filename=TRIM(sim_parameters%path_dumprestart)//'bunch_initialization.arch'
+						filename=TRIM(sim_parameters%path_dumprestart)//'bunch.arch'
 						open(15,file=filename,status='replace',access='stream')
-						write(15) bunch_initialization
+						write(15) bunchip
 						close(15)
 
 						filename=TRIM(sim_parameters%path_dumprestart)//'OSys.arch'
@@ -124,7 +124,7 @@ SUBROUTINE read_whole_dumped_status
 			call read_dumped_mesh_par
 			call read_dumped_mesh
 			call read_dumped_plasma
-			call read_dumped_bunch_initialization
+			call read_dumped_bunch
 			call read_dumped_OSys
 			call read_dumped_twiss
 			call read_dumped_Bpoloidal
@@ -165,13 +165,13 @@ SUBROUTINE read_dumped_plasma
 			close(15)
 END SUBROUTINE read_dumped_plasma
 
-SUBROUTINE read_dumped_bunch_initialization
+SUBROUTINE read_dumped_bunch
 			CHARACTER(255) :: filename
-			filename='dumprestart/bunch_initialization.arch'
+			filename='dumprestart/bunch.arch'
 			open(15,file=filename,status='old',access='stream')
-			read(15) bunch_initialization
+			read(15) bunchip
 			close(15)
-END SUBROUTINE read_dumped_bunch_initialization
+END SUBROUTINE read_dumped_bunch
 
 SUBROUTINE read_dumped_OSys
 			CHARACTER(255) :: filename

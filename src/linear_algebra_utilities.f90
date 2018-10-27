@@ -29,14 +29,14 @@ USE use_my_types
 	! LU Gauss Elimination
 	subroutine GaussEliminationLU(AAA,bbb)
 
-	real(8), dimension(2*bunch_initialization%init_width_z*mesh_par%Nsample_z*(bunch_initialization%init_width_r*mesh_par%Nsample_r/2), &
-	2*bunch_initialization%init_width_z*mesh_par%Nsample_z*(bunch_initialization%init_width_r*mesh_par%Nsample_r/2)), intent(inout) :: AAA
-	real(8), dimension((bunch_initialization%init_width_r*mesh_par%Nsample_r/2)*2*bunch_initialization%init_width_z*mesh_par%Nsample_z), intent(inout) :: bbb
+	real(8), dimension(2*bunchip%init_width_z*mesh_par%Nsample_z*(bunchip%init_width_r*mesh_par%Nsample_r/2), &
+	2*bunchip%init_width_z*mesh_par%Nsample_z*(bunchip%init_width_r*mesh_par%Nsample_r/2)), intent(inout) :: AAA
+	real(8), dimension((bunchip%init_width_r*mesh_par%Nsample_r/2)*2*bunchip%init_width_z*mesh_par%Nsample_z), intent(inout) :: bbb
 
   INTEGER n,i,j,k
 	REAL(8) f,one
 
-	n=2*bunch_initialization%init_width_z*mesh_par%Nsample_z*(bunch_initialization%init_width_r*mesh_par%Nsample_r/2)
+	n=2*bunchip%init_width_z*mesh_par%Nsample_z*(bunchip%init_width_r*mesh_par%Nsample_r/2)
 
     !---LU factorization---!
     DO i=1,n
@@ -64,12 +64,12 @@ USE use_my_types
 
 	! Compute U matrix for Gauss Elimination
 	subroutine Compute_U_matrix(AAA)
-	real(8), dimension(2*bunch_initialization%init_width_z*mesh_par%Nsample_z*(bunch_initialization%init_width_r*mesh_par%Nsample_r/2), &
-	2*bunch_initialization%init_width_z*mesh_par%Nsample_z*(bunch_initialization%init_width_r*mesh_par%Nsample_r/2)), intent(inout) :: AAA
+	real(8), dimension(2*bunchip%init_width_z*mesh_par%Nsample_z*(bunchip%init_width_r*mesh_par%Nsample_r/2), &
+	2*bunchip%init_width_z*mesh_par%Nsample_z*(bunchip%init_width_r*mesh_par%Nsample_r/2)), intent(inout) :: AAA
     INTEGER n,i,j,k
 	REAL(8) f,one
 
-	n=2*bunch_initialization%init_width_z*mesh_par%Nsample_z*(bunch_initialization%init_width_r*mesh_par%Nsample_r/2)
+	n=2*bunchip%init_width_z*mesh_par%Nsample_z*(bunchip%init_width_r*mesh_par%Nsample_r/2)
 
     !---LU factorization---!
     !write(*,*)
@@ -89,16 +89,16 @@ USE use_my_types
 
 	! Backward substitution for Gauss Elimination
 	subroutine Backward_substitution_Gauss_Elimination(AAA,BBB,ccc)
-	real(8), dimension(2*bunch_initialization%init_width_z*mesh_par%Nsample_z*(bunch_initialization%init_width_r*mesh_par%Nsample_r/2), &
-	2*bunch_initialization%init_width_z*mesh_par%Nsample_z*(bunch_initialization%init_width_r*mesh_par%Nsample_r/2)), intent(inout) :: AAA,BBB
-	real(8), dimension((bunch_initialization%init_width_r*mesh_par%Nsample_r/2)*2*bunch_initialization%init_width_z*mesh_par%Nsample_z), intent(inout) :: ccc
+	real(8), dimension(2*bunchip%init_width_z*mesh_par%Nsample_z*(bunchip%init_width_r*mesh_par%Nsample_r/2), &
+	2*bunchip%init_width_z*mesh_par%Nsample_z*(bunchip%init_width_r*mesh_par%Nsample_r/2)), intent(inout) :: AAA,BBB
+	real(8), dimension((bunchip%init_width_r*mesh_par%Nsample_r/2)*2*bunchip%init_width_z*mesh_par%Nsample_z), intent(inout) :: ccc
     INTEGER n,i,j,k
 	REAL(8) f,one
 
 	! AAA is the coefficient matrix in the system AAA*x=ccc
 	! BBB is the Upper triangular matrix from the LU decomposition of A
 
-	n=2*bunch_initialization%init_width_z*mesh_par%Nsample_z*(bunch_initialization%init_width_r*mesh_par%Nsample_r/2)
+	n=2*bunchip%init_width_z*mesh_par%Nsample_z*(bunchip%init_width_r*mesh_par%Nsample_r/2)
 
 	!---compute L^(-1) * ccc ---!
     DO i=1,n

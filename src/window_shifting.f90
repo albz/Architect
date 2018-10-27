@@ -21,7 +21,7 @@
 
 MODULE Move_Window_FDTD
 
-
+USE digit_precision
 USE my_types
 USE use_my_types
 USE pstruct_data
@@ -38,52 +38,49 @@ CONTAINS
 !Move window FDTD version
 
 	SUBROUTINE init_window
-	   ! Initialize Moving window position - center in first driver center of mass
-	   sim_parameters%zg  						= 0.D0
-	   sim_parameters%zg_old 					= sim_parameters%zg
-	   sim_parameters%window_shifted_cells      = 0
-
-   END SUBROUTINE init_window
-
-
-   SUBROUTINE control_window
-		real :: dz_eff,zg_delta
-
-   		dz_eff=mesh_par%dzm/plasma%k_p
 		if (sim_parameters%window_mode.eq.0) then ! window moves with first bunch center
-			bunch(1)%part(:)%cmp(14)=1.
-			sim_parameters%zg = calculate_nth_moment(1,1,3,'nocentral')
+			bunch(1)%part(:)%cmp(14) =1.
+			sim_parameters%zg        = bunchip%z_cm(1)
+			sim_parameters%zg_old    = bunchip%z_cm(1)
 		else if (sim_parameters%window_mode.eq.1) then ! window moves with constant speed
-			sim_parameters%zg = - sim_parameters%moving_window_speed*c*(sim_parameters%iter+1.)*sim_parameters%dt
+			sim_parameters%zg     = zero_dp
+			sim_parameters%zg_old = zero_dp
 		endif
+		sim_parameters%window_shifted_cells     = zero_dp
+	END SUBROUTINE init_window
 
-		zg_delta = abs(sim_parameters%zg-sim_parameters%zg_old)
+	SUBROUTINE control_window
+	real :: zg_delta
 
-		!--- begin to shift---!
-		if ( zg_delta>dz_eff .and. zg_delta<2.*dz_eff ) then
-			sim_parameters%zg_old = sim_parameters%zg
-			sim_parameters%window_shifted_cells = sim_parameters%window_shifted_cells + 1
+	if (sim_parameters%window_mode.eq.0) then ! window moves with first bunch center
+		bunch(1)%part(:)%cmp(14)=1.
+		sim_parameters%zg = calculate_nth_moment(1,1,3,'nocentral')
+	else if (sim_parameters%window_mode.eq.1) then ! window moves with constant speed
+		sim_parameters%zg = - sim_parameters%moving_window_speed*c*(sim_parameters%iter+1.)*sim_parameters%dt_fs
+	endif
 
-			mesh_par%z_min_moving_um = sim_parameters%zg + mesh_par%z_min/plasma%k_p
-			mesh_par%z_max_moving_um = sim_parameters%zg + mesh_par%z_max/plasma%k_p
-			mesh_par%z_min_moving = mesh_par%z_min_moving_um*plasma%k_p
-			mesh_par%z_max_moving = mesh_par%z_max_moving_um*plasma%k_p
+	zg_delta = abs(sim_parameters%zg-sim_parameters%zg_old)
 
-			call Move_Window_FDTD_version_COMB
-			if(Bpoloidal%L_Bpoloidal)   call Move_Window_Bexternal_field
-			if(ionisation%L_ionisation) call Move_Windows_ion_background
+	!--- begin to shift---!
+	if ( zg_delta>mesh_par%dz_um .and. zg_delta<2.*mesh_par%dz_um ) then
+		sim_parameters%zg_old               = sim_parameters%zg
+		sim_parameters%window_shifted_cells = sim_parameters%window_shifted_cells + 1
 
-		elseif( zg_delta>2.*dz_eff .and. zg_delta<3.*dz_eff ) then
-			write(*,'(A)') 'two steps moving window - stop'
-			stop
-			sim_parameters%zg_old = sim_parameters%zg
-			sim_parameters%window_shifted_cells = sim_parameters%window_shifted_cells + 2
-			call Move_Window_FDTD_version_COMB
-			write(*,*) 'Error: Moving window moved of 2 cells'
-		elseif( zg_delta>=3.*dz_eff ) then
-			write(*,*) 'Error: Moving window'
-				stop
-		endif
+		!--- edge shifting ---!
+		mesh_par%z_min_moving_um = mesh_par%z_min_moving_um - mesh_par%dz_um
+		mesh_par%z_max_moving_um = mesh_par%z_max_moving_um - mesh_par%dz_um
+		mesh_par%z_min_moving    = mesh_par%z_min_moving    - mesh_par%dz
+		mesh_par%z_max_moving    = mesh_par%z_max_moving    - mesh_par%dz
+
+		call Move_Window_FDTD_version_COMB
+		call Recentrate_particle_inwindow
+		if(Bpoloidal%L_Bpoloidal)   call Move_Window_Bexternal_field
+		if(ionisation%L_ionisation) call Move_Windows_ion_background
+
+	elseif( zg_delta>=2.*mesh_par%dz_um ) then
+		write(*,*) 'Error: Moving window'
+		stop
+	endif
 
    END SUBROUTINE control_window
 
@@ -91,7 +88,6 @@ CONTAINS
 	 SUBROUTINE Move_Window_FDTD_version_COMB
    IMPLICIT NONE
    INTEGER cells_advanced,i,j
-   REAL(8) :: DeltaR,DeltaZ
 
 	!----------------------------------------------!
 	!       Longitudinal shift by one cell         !
@@ -105,8 +101,8 @@ CONTAINS
 
 		mesh(i,:)%uz         = mesh(i-1,:)%uz
 		mesh(i,:)%ux         = mesh(i-1,:)%ux
-		mesh(i,:)%n_plasma_e = mesh(i-1,:)%n_plasma_e
-		mesh(i,:)%n_plasma_i = mesh(i-1,:)%n_plasma_i
+		mesh(i,:)%ne_bck = mesh(i-1,:)%ne_bck
+		mesh(i,:)%ni_bck = mesh(i-1,:)%ni_bck
 
 		if(sim_parameters%L_Bunch_evolve) then
 			mesh(i,:)%Ex_bunch			  = mesh(i-1,:)%Ex_bunch
@@ -119,7 +115,7 @@ CONTAINS
 	mesh(1:2,:)%Ex = 0.D0
 	mesh(1:2,:)%Ez = 0.D0
 	mesh(1:2,:)%Bphi = 0.D0
-  mesh(1:2,:)%Bphi_old= 0.D0
+	mesh(1:2,:)%Bphi_old= 0.D0
 	mesh(1:2,:)%uz= 0.D0
 	mesh(1:2,:)%ux= 0.D0
 
@@ -133,17 +129,17 @@ CONTAINS
 
 	!---background density---!
  	do j= 2,mesh_par%Nxm-1
- 	 		mesh(2,j)%n_plasma_e = background_density_value(2,j)
-			mesh(1,j)%n_plasma_e = background_density_value(1,j)
-			if(.not.ionisation%L_ionisation) mesh(2,j)%n_plasma_i=mesh(2,j)%n_plasma_e
+ 	 		mesh(2,j)%ne_bck = background_density_value(2,j)
+			mesh(1,j)%ne_bck = background_density_value(1,j)
+			if(.not.ionisation%L_ionisation) mesh(2,j)%ni_bck=mesh(2,j)%ne_bck
  	enddo
  	!BC
- 	mesh(2,mesh_par%Nxm-1)%n_plasma_e = mesh(2,mesh_par%Nxm-1)%n_plasma_e ! upper boundary
- 	mesh(2,1             )%n_plasma_e = mesh(2,2             )%n_plasma_e ! lower boundary
- 	mesh(1,:             )%n_plasma_e = mesh(2,:             )%n_plasma_e ! left  boundary
+ 	mesh(2,mesh_par%Nxm-1)%ne_bck = mesh(2,mesh_par%Nxm-1)%ne_bck ! upper boundary
+ 	mesh(2,1             )%ne_bck = mesh(2,2             )%ne_bck ! lower boundary
+ 	mesh(1,:             )%ne_bck = mesh(2,:             )%ne_bck ! left  boundary
 	if(.not.ionisation%L_ionisation) then
-	 	mesh(2,1)%n_plasma_i = mesh(2,2)%n_plasma_i ! lower boundary
-	 	mesh(1,:)%n_plasma_i = mesh(2,:)%n_plasma_i ! left  boundary
+	 	mesh(2,1)%ni_bck = mesh(2,2)%ni_bck ! lower boundary
+	 	mesh(1,:)%ni_bck = mesh(2,:)%ni_bck ! left  boundary
 	endif
  	!--- ---!
 
@@ -238,5 +234,16 @@ CONTAINS
 		call remove_outofboundaries_ions
 		call inject_ions
 	end subroutine Move_Windows_ion_background
+
+
+	subroutine Recentrate_particle_inwindow
+		integer :: bunch_number, particle_number
+
+		do bunch_number = 1,sim_parameters%Nbunches
+			do particle_number = 1,bunchip%n_particles(bunch_number)
+				bunch(bunch_number)%part(particle_number)%cmp(3) = bunch(bunch_number)%part(particle_number)%cmp(3)+mesh_par%dz_um
+			enddo
+		enddo
+	end subroutine Recentrate_particle_inwindow
 
 END MODULE

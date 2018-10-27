@@ -34,7 +34,7 @@ CONTAINS
 
 ! Compute_beam_3current_FDTD
 ! Computes the density and current distribution of a bunch in the
-! longitudinal (bunch%Z) and transverse (bunch%X) direction.
+! longitudinal (bunchip%Z) and transverse (bunchip%X) direction.
 	SUBROUTINE Compute_beam_3current_FDTD
 
    	IMPLICIT NONE
@@ -64,7 +64,7 @@ CONTAINS
 	sim_parameters%gridDeltaOutput=abs(sim_parameters%sim_time*c-sim_parameters%gridLastOutput)
     if ((mod(sim_parameters%iter,sim_parameters%output_grid_nstep).eq.0 ).or.(sim_parameters%iter.eq.1) &
         .or. sim_parameters%gridDeltaOutput>sim_parameters%output_grid_dist) then
-		mesh%rho         = 0.
+		mesh%ne_b         = 0.
 		L_dump_particle_ongrid=.true.
 	endif
 
@@ -76,7 +76,7 @@ CONTAINS
 
 	if(L_CheckParticle) then
 		do j  = 1,sim_parameters%Nbunches
-	    do ip = 1,bunch_initialization%n_particles(j)
+	    do ip = 1,bunchip%n_particles(j)
 				call inwindow(j,ip)
 			enddo
 		enddo
@@ -85,7 +85,7 @@ CONTAINS
 
   if(L_dump_particle_ongrid .or. L_dump_particle_ongrid .or. sim_parameters%L_Bunch_evolve) then
 	do j  = 1,sim_parameters%Nbunches
-    do ip = 1,bunch_initialization%n_particles(j)
+    do ip = 1,bunchip%n_particles(j)
 
 		nel	  = bunch(j)%part(ip)%cmp(13)
 
@@ -134,10 +134,10 @@ CONTAINS
 			! being unnecessary to compute the fields, it is computed only in the iterations in which it is written on file
 			if(L_dump_particle_ongrid) then
  				call particle_weights(2,Wr,Wz,Wr_s,Wz_s,fraz,fraz_s,indx,indx_s,pos_r,w00,w10,w01,w11)
-				mesh(indz_s  ,indx_s  )%rho    = mesh(indz_s  ,indx_s  )%rho+nel*w00
-				mesh(indz_s+1,indx_s+1)%rho    = mesh(indz_s+1,indx_s+1)%rho+nel*w11
-				mesh(indz_s+1,indx_s  )%rho    = mesh(indz_s+1,indx_s  )%rho+nel*w10
-				mesh(indz_s  ,indx_s+1)%rho    = mesh(indz_s  ,indx_s+1)%rho+nel*w01
+				mesh(indz_s  ,indx_s  )%ne_b    = mesh(indz_s  ,indx_s  )%ne_b+nel*w00
+				mesh(indz_s+1,indx_s+1)%ne_b    = mesh(indz_s+1,indx_s+1)%ne_b+nel*w11
+				mesh(indz_s+1,indx_s  )%ne_b    = mesh(indz_s+1,indx_s  )%ne_b+nel*w10
+				mesh(indz_s  ,indx_s+1)%ne_b    = mesh(indz_s  ,indx_s+1)%ne_b+nel*w01
 			endif
 
 		endif
@@ -188,10 +188,10 @@ endif
 
    	mesh%Jz          = 0.
    	mesh%Jr          = 0.
-	mesh%rho         = 0.
+	mesh%ne_b         = 0.
 
 	j  = nbunch !nth bunch
-    do ip = 1,bunch_initialization%n_particles(j)
+    do ip = 1,bunchip%n_particles(j)
 
 
 		nel	  = bunch(j)%part(ip)%cmp(13)
@@ -202,25 +202,25 @@ endif
 
 
 			call weights_particle_ongrid(0,bunch(j)%part(ip)%cmp(1),bunch(j)%part(ip)%cmp(2) ,bunch(j)%part(ip)%cmp(3) , &
-										 bunch(j)%part(ip)%cmp(9),bunch(j)%part(ip)%cmp(10),bunch(j)%part(ip)%cmp(11), &
-										 Wr,Wz,Wr_s,Wz_s,fraz,fraz_s,pos_r,pos_z,indx,indx_s,indz,indz_s)
+										bunch(j)%part(ip)%cmp(9),bunch(j)%part(ip)%cmp(10),bunch(j)%part(ip)%cmp(11), &
+										Wr,Wz,Wr_s,Wz_s,fraz,fraz_s,pos_r,pos_z,indx,indx_s,indz,indz_s)
 
 			! ---- rho ---
 			! being unnecessary to compute the fields, it is computed only in the iterations in which it is written on file
 			call particle_weights(2,Wr,Wz,Wr_s,Wz_s,fraz,fraz_s,indx,indx_s,pos_r,w00,w10,w01,w11)
 
-			mesh(indz_s  ,indx_s  )%rho    = mesh(indz_s  ,indx_s  )%rho+nel*w00
-			mesh(indz_s+1,indx_s+1)%rho    = mesh(indz_s+1,indx_s+1)%rho+nel*w11
-			mesh(indz_s+1,indx_s  )%rho    = mesh(indz_s+1,indx_s  )%rho+nel*w10
-			mesh(indz_s  ,indx_s+1)%rho    = mesh(indz_s  ,indx_s+1)%rho+nel*w01
+			mesh(indz_s  ,indx_s  )%ne_b    = mesh(indz_s  ,indx_s  )%ne_b+nel*w00
+			mesh(indz_s+1,indx_s+1)%ne_b    = mesh(indz_s+1,indx_s+1)%ne_b+nel*w11
+			mesh(indz_s+1,indx_s  )%ne_b    = mesh(indz_s+1,indx_s  )%ne_b+nel*w10
+			mesh(indz_s  ,indx_s+1)%ne_b    = mesh(indz_s  ,indx_s+1)%ne_b+nel*w01
 
 		endif !inside window
 
 	enddo
 
-   conv     = (1./(2.*pi*mesh_par%dzm*mesh_par%dxm))*(plasma%k_p*1.e4)**3   	!Divide by cell volume (1/r factor included in subroutine Compute_beam_3current_FDTD)
+   conv     = (1./(2.*pi*mesh_par%dz*mesh_par%dr))*(plasma%k_p*1.e4)**3   	!Divide by cell volume (1/r factor included in subroutine Compute_beam_3current_FDTD)
    conv     = conv/plasma%n0  						!dimentionless
-   mesh(:,:)%rho = conv*mesh(:,:)%rho
+   mesh(:,:)%ne_b = conv*mesh(:,:)%ne_b
 
 
    return
@@ -248,10 +248,10 @@ endif
   !                   Beam charge on grid                         !
   ! --------------------------------------------------------------!
 
-	mesh%rho         = 0.
+	mesh%ne_b         = 0.
 
 	do j  = 1,sim_parameters%Nbunches
-    do ip = 1,bunch_initialization%n_particles(j)
+    do ip = 1,bunchip%n_particles(j)
 
 
 		nel	  = bunch(j)%part(ip)%cmp(13)
@@ -267,19 +267,19 @@ endif
 
 			! ---- rho ---
 			call particle_weights(2,Wr,Wz,Wr_s,Wz_s,fraz,fraz_s,indx,indx_s,pos_r,w00,w10,w01,w11)
-			mesh(indz_s  ,indx_s  )%rho    = mesh(indz_s  ,indx_s  )%rho+nel*w00
-			mesh(indz_s+1,indx_s+1)%rho    = mesh(indz_s+1,indx_s+1)%rho+nel*w11
-			mesh(indz_s+1,indx_s  )%rho    = mesh(indz_s+1,indx_s  )%rho+nel*w10
-			mesh(indz_s  ,indx_s+1)%rho    = mesh(indz_s  ,indx_s+1)%rho+nel*w01
+			mesh(indz_s  ,indx_s  )%ne_b    = mesh(indz_s  ,indx_s  )%ne_b+nel*w00
+			mesh(indz_s+1,indx_s+1)%ne_b    = mesh(indz_s+1,indx_s+1)%ne_b+nel*w11
+			mesh(indz_s+1,indx_s  )%ne_b    = mesh(indz_s+1,indx_s  )%ne_b+nel*w10
+			mesh(indz_s  ,indx_s+1)%ne_b    = mesh(indz_s  ,indx_s+1)%ne_b+nel*w01
 
 		endif
 
 	enddo
 	enddo
 
-   conv     = (1./(2.*pi*mesh_par%dzm*mesh_par%dxm))*(plasma%k_p*1.e4)**3   	!Divide by cell volume (1/r factor included in subroutine Compute_beam_3current_FDTD)
+   conv     = (1./(2.*pi*mesh_par%dz*mesh_par%dr))*(plasma%k_p*1.e4)**3   	!Divide by cell volume (1/r factor included in subroutine Compute_beam_3current_FDTD)
    conv     = conv/plasma%n0  						!dimensionless
-   mesh(:,:)%rho = conv*mesh(:,:)%rho
+   mesh(:,:)%ne_b = conv*mesh(:,:)%ne_b
 
 
 
@@ -299,32 +299,32 @@ endif
 	REAL(8)    :: gamma_0,beta_0,alpha,sigma_r,sigma_z
 	INTEGER :: i,j
 
-	gamma_0 = bunch_initialization%bunch_gamma_m(1)
+	gamma_0 = bunchip%bunch_gamma_m(1)
 	beta_0  = sqrt(1-1/gamma_0**2.)
 
 	! bunch normalized peak density
-	alpha   = bunch_initialization%ChargeB(1)*1e-9/(plasma%n0*1e6)/1.602e-19
-	alpha   = alpha/(2.*pi)**1.5/bunch_initialization%bunch_s_x(1)/bunch_initialization%bunch_s_y(1)/bunch_initialization%bunch_s_z(1)/1e-18
+	alpha   = bunchip%ChargeB(1)*1e-9/(plasma%n0*1e6)/1.602e-19
+	alpha   = alpha/(2.*pi)**1.5/bunchip%bunch_s_x(1)/bunchip%bunch_s_y(1)/bunchip%bunch_s_z(1)/1e-18
 
 	! adimensional bunch dimensions
-	sigma_r = bunch_initialization%bunch_s_x(1)*plasma%k_p
-	sigma_z = bunch_initialization%bunch_s_z(1)*plasma%k_p
+	sigma_r = bunchip%bunch_s_x(1)*plasma%k_p
+	sigma_z = bunchip%bunch_s_z(1)*plasma%k_p
 
 	! force rho to analytic value of multivariate gaussian
-	mesh(:,:)%rho = 0.
+	mesh(:,:)%ne_b = 0.
 	mesh(:,:)%Jz  = 0.
 	mesh(:,:)%Jr  = 0.
 
 	do i= Node_min_z,Node_max_z
     	do j= Node_min_r,Node_max_r
-      	mesh(i,j)%rho    = alpha*exp(-x_mesh(j)**2./2./sigma_r**2)*exp(-z_mesh(i)**2./2./sigma_z**2)
-      	mesh(i,j)%Jz     = mesh(i,j)%rho * beta_0
+      	mesh(i,j)%ne_b    = alpha*exp(-x_mesh(j)**2./2./sigma_r**2)*exp(-z_mesh(i)**2./2./sigma_z**2)
+      	mesh(i,j)%Jz     = mesh(i,j)%ne_b * beta_0
     	enddo
 	enddo
 
 	! BC on lower boundary
 	do i=Node_min_z,Node_max_z
-		mesh(i,1)%rho = mesh(i,2)%rho
+		mesh(i,1)%ne_b = mesh(i,2)%ne_b
 		mesh(i,1)%Jz  = mesh(i,2)%Jz
 	enddo
 

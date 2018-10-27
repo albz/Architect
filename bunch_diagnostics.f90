@@ -36,14 +36,14 @@ CONTAINS
   SUBROUTINE bunch_diagnostics_Integrated_AllBunches
   integer :: bunch_number, n,n1,n2,ier
 
-  do bunch_number=1,bunch_initialization%n_total_bunches
+  do bunch_number=1,bunchip%n_total_bunches
     call bunch_integrated_diagnostics(bunch_number)
     if(sim_parameters%L_SW_test) call bunch_shapiro_wilks(bunch_number)
   enddo
 
   if (sim_parameters%diagnostics_with_dcut.eq.1) then
     call apply_Sigma_cut(sim_parameters,plasma%k_p)
-    do bunch_number=1,bunch_initialization%n_total_bunches
+    do bunch_number=1,bunchip%n_total_bunches
       call bunch_integrated_diagnostics_for_dcutparticles(bunch_number)
     enddo
   endif
@@ -80,9 +80,9 @@ USE architect_class_structure
 
     do iparticle=1,size(bunch(ibunch)%part(:))
  			if( bunch(ibunch)%part(iparticle)%cmp(8) .eq. 1.) then
-        if( abs(bunch(ibunch)%part(iparticle)%cmp(1)-mu_x(1)) > 4.*bunch_initialization%bunch_s_x(ibunch) ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
-        if( abs(bunch(ibunch)%part(iparticle)%cmp(2)-mu_y(1)) > 4.*bunch_initialization%bunch_s_y(ibunch) ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
-        if( abs(bunch(ibunch)%part(iparticle)%cmp(3)-mu_z(1)) > 4.*bunch_initialization%bunch_s_z(ibunch) ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
+        if( abs(bunch(ibunch)%part(iparticle)%cmp(1)-mu_x(1)) > 4.*bunchip%bunch_s_x(ibunch) ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
+        if( abs(bunch(ibunch)%part(iparticle)%cmp(2)-mu_y(1)) > 4.*bunchip%bunch_s_y(ibunch) ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
+        if( abs(bunch(ibunch)%part(iparticle)%cmp(3)-mu_z(1)) > 4.*bunchip%bunch_s_z(ibunch) ) bunch(ibunch)%part(iparticle)%cmp(8)=0.
  			endif
  		enddo
 

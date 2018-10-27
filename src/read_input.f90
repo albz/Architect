@@ -86,8 +86,8 @@ subroutine read_input
 
     !--- ---!
 		write(*,*) 'preset :: read :: bunch initilisation and self-consistent fields initialisation technique'
-		call preset_bunch_initialization
-		call read_nml_bunch_initialization
+		call preset_bunch
+		call read_nml_bunch
     !--- ---!
 
     !--- ---!
@@ -116,36 +116,16 @@ subroutine read_input
         endif
 
 
-
-		! !---parameters control for Laplacian matrix---!
-    ! !--- not clear procedure :: to be changed
-		! bunch_initialization%init_width_r	=	int(min(mesh_par%Rmax,1.*bunch_initialization%init_width_r))
-    ! bunch_initialization%init_width_z	=	min(17,bunch_initialization%init_width_z)
-
-		!--- ---!
-
-
-
         !---simulation and plasma parameters---!
-        sim_parameters%Nbunches	= bunch_initialization%n_total_bunches 	! number of bunches
-        plasma%lambda_p			= sqrt(1.11491e21/(plasma%n0))			! Plasma wavelength (um)
-        plasma%k_p				= 2.*pi/plasma%lambda_p					! Plasma wavenumber (rad/um)
-        plasma%omega_p 			= plasma%k_p*c   						! Plasma pulsation (rad/fs)
+        sim_parameters%Nbunches	= bunchip%n_total_bunches 	     ! number of bunches
+        plasma%lambda_p			    = sqrt(1.11491e21/(plasma%n0))	 ! Plasma wavelength (um)
+        plasma%k_p				      = 2.*pi/plasma%lambda_p					 ! Plasma wavenumber (rad/um)
+        plasma%omega_p 			    = plasma%k_p*c   						     ! Plasma pulsation (rad/fs)
 
         ! number of particles
-        sim_parameters%Np=sum(bunch_initialization%n_particles(1:bunch_initialization%n_total_bunches))
+        sim_parameters%Np=sum(bunchip%n_particles(1:bunchip%n_total_bunches))
 
-        ! !-from CFL to Dt in (fs)-!
-        ! Delta = min( 2.*bunch_initialization%bunch_s_x(1)*1e-6/real(mesh_par%Nsample_r) , &
-        !                 bunch_initialization%bunch_s_z(1)*1e-6/real(mesh_par%Nsample_z)   )
-        ! sim_parameters%dt = sim_parameters%CFL * Delta / 3e8 / 1e-15
-        !
         write(*,'(A)') 'input file read'
-        ! write(*,*)
-        ! write(*,'(A,f6.3)') 'CFL     >',sim_parameters%CFL
-        ! write(*,'(A,f6.3)') 'CFL (fs)>',sim_parameters%dt
-        ! write(*,'(A,f6.3)') 'CFL (um)>',sim_parameters%dt*c
-        ! write(*,*)
 end subroutine read_input
 
 
@@ -277,8 +257,8 @@ end subroutine read_sim_parameters
 !--- MESH
 !--- --- --- --- --- --- ---!
 subroutine preset_mesh_parameters
-  mesh_par%dxm=-1.D0           !transverse mesh size        in [um] -> converted in kp
-  mesh_par%dzm=-1.D0           !longitudinal mesh size      in [um] -> converted in kp
+  mesh_par%dr=-1.D0           !transverse mesh size        in [um] -> converted in kp
+  mesh_par%dz=-1.D0           !longitudinal mesh size      in [um] -> converted in kp
   mesh_par%Nsample_z=-1        !longitudinal number of points per sigma_z
   mesh_par%Nsample_r=-1        !transverse number of points per 2*sigma_r
   mesh_par%R_mesh=-1.D0        !transverse domain dimension in [um] -> converted in kp
@@ -417,51 +397,54 @@ subroutine read_OS_nml
 end subroutine read_OS_nml
 
 
-subroutine preset_bunch_initialization
-    bunch_initialization%l_bunch_internal_init=.true.
+subroutine preset_bunch
+    bunchip%l_bunch_internal_init=.true.
     !1=coax-shells,2=LU,3=SOR
-    bunch_initialization%self_consistent_field_bunch=1
+    bunchip%self_consistent_field_bunch=1
     !width(in sigma_r)of the initialization domain around bunch
-    bunch_initialization%init_width_r=1000
+    bunchip%init_width_r=1000
     !width(in sigma_z)of the initialization domain around bunch
-    bunch_initialization%init_width_z=3
-		bunch_initialization%iter_max=2000
-		bunch_initialization%maxnorm=1e-4
-		bunch_initialization%wsor=1.45
+    bunchip%init_width_z=3
+		bunchip%iter_max=2000
+		bunchip%maxnorm=1e-4
+		bunchip%wsor=1.45
 
 		!just one driver
-		bunch_initialization%n_total_bunches=1
-    bunch_initialization%shape(:)='bigaussian'
-    bunch_initialization%chargeB(:)= 0.200
-		bunch_initialization%n_particles(:)= 50000
-		bunch_initialization%bunch_s_x(:)=8.0
-		bunch_initialization%bunch_s_y(:)=8.0
-		bunch_initialization%bunch_s_z(:)=50.0
-		bunch_initialization%bunch_gamma_m(:)=200.
-		bunch_initialization%bunch_eps_x(:)=1.0
-		bunch_initialization%bunch_eps_y(:)=1.0
-		bunch_initialization%bunch_dgamma(:)=0.1
-		bunch_initialization%db(:)=0.0
+		bunchip%n_total_bunches=1
+    bunchip%shape(:)='bigaussian'
+    bunchip%chargeB(:)= 0.200
+		bunchip%n_particles(:)= 50000
+		bunchip%bunch_s_x(:)=8.0
+		bunchip%bunch_s_y(:)=8.0
+		bunchip%bunch_s_z(:)=50.0
+		bunchip%bunch_gamma_m(:)=200.
+		bunchip%bunch_eps_x(:)=1.0
+		bunchip%bunch_eps_y(:)=1.0
+		bunchip%bunch_dgamma(:)=0.1
+		bunchip%db(:)=0.0
     !--- for triangular shape ---!
-    bunch_initialization%Charge_right(:)=0.d0
-    bunch_initialization%Charge_left(:)=1.d0
+    bunchip%Charge_right(:)=0.d0
+    bunchip%Charge_left(:)=1.d0
     !--- weight selection ---!
-    bunch_initialization%PWeights(:)='equal'
-    bunch_initialization%optimisation(:)='no'
-    bunch_initialization%sigma_cut(:)=5.0
-    bunch_initialization%npZ(:)=2
-    bunch_initialization%npR(:)=2
-end subroutine preset_bunch_initialization
+    bunchip%PWeights(:)='equal'
+    bunchip%optimisation(:)='no'
+    bunchip%sigma_cut(:)=5.0
+    bunchip%npZ(:)=2
+    bunchip%npR(:)=2
+    !--- particle selection :: particle that form the bunch ---!
+    bunchip%particle_charge(:)=-1.0  !this is an electron
+    bunchip%particle_mass(:)=1.0     !this is an electron
+end subroutine preset_bunch
 
 
-subroutine read_nml_bunch_initialization
-    NAMELIST / BUNCHINIT / bunch_initialization
+subroutine read_nml_bunch
+    NAMELIST / BUNCHINIT / bunchip
     open(iounit,file='architect.nml',status='old')
     READ(iounit,NML=BUNCHINIT,iostat=ierr)
     error_message='bunch parameters'
     close(iounit)
     if(ierr/=0) call print_at_screen_nml_error
-end subroutine read_nml_bunch_initialization
+end subroutine read_nml_bunch
 
 
 !--- --- --- --- --- --- ---!
