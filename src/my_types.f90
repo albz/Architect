@@ -47,7 +47,7 @@ IMPLICIT NONE
 	  INTEGER :: I_parabola_length_in_window,I_parabola_start,I_parabola_end,I_origin_z_axis
 	  REAL(8)    :: I_parabola_normalization_factor
 
-	  CHARACTER :: path_PS*255,path_grid*255,path_vtk*255,path_dumprestart*255,path_integrated_diagnostics*255
+	  CHARACTER :: path_PS*255,path_grid*255,path_vtk*255,path_xml*255,path_dumprestart*255,path_integrated_diagnostics*255
     CHARACTER :: out_dir*100,path_1D*100,out_root*100
 
 	  INTEGER :: init_width_r,init_width_z
@@ -152,8 +152,11 @@ IMPLICIT NONE
 		LOGICAL   :: l_bunch_internal_init
     INTEGER   :: n_total_bunches=1,n_particles(7)=0,self_consistent_field_bunch
     REAL      :: z_cm(7)
-		REAL(8)   :: bunch_s_x(7)=0.,bunch_s_y(7)=0.,bunch_s_z(7)=0.
-		REAL(8)   :: bunch_gamma_m(7)=0.,bunch_eps_x(7)=0.,bunch_eps_y(7)=0.,bunch_dgamma(7)=0.
+    real(dp)  :: sx(7),sy(7),sz(7)
+    real(dp)  :: sx_um(7),sy_um(7),sz_um(7)
+    real(dp)  :: epsx_um(7), epsy_um(7)
+    real(dp)  :: epsx(7), epsy(7)
+		REAL(8)   :: gamma(7)=0., dgamma(7)=0.
     real(8)   :: Charge_right(7),Charge_left(7),sigma_cut(7)
     real(8)   :: particle_charge(7),particle_mass(7)
 		REAL(8)   :: maxnorm,wsor

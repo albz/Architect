@@ -23,18 +23,20 @@
 //
 //
 
- #include <iostream>
- #include <string>
- #include <fstream>
- #include <cstring>
- #include "base64.h"
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <cstring>
+#include "base64.h"
+#include <vector>
 
- using namespace std;
+using namespace std;
 
 extern "C" {
   // remember that in fortran values are passed by reference, so we need to receive them using pointers in C/C++
 
-  void print_matrix_(int * idvariable, double * meshZ, double * meshR, double * vector_fromF, int * dim1, int * dim2, char * filename, int * filename_length ){
+  void write_surface_vtk_(int *idvariable, double *meshZ, double *meshR, double *vector_fromF, int *dim1, int *dim2, char *filename, int *filename_length)
+  {
     double value;
     int* flen = new(int);
     char* s,file_name;
@@ -175,4 +177,69 @@ extern "C" {
     outfile << "</VTKFile>" << endl;
   }
 
+  void write_ps_xml_header_(int *version, int *n_bunches, int *p_components, double *bunch_position, char *filename, int *filename_length)
+  {
+    //--- open file ---//
+    ofstream outfile(filename);
+
+    //--- header ---//
+    outfile << "<?xml version=\"1.0\"?>" << endl;
+    outfile << "<?Architect simulation Phase Space xml output?>" << endl;
+    outfile << "<?type=Particles, byte_order=LittleEndian, header_type=UInt64,?>" << endl;
+    outfile << "<?nbunches=" << *n_bunches << ",?>" << endl;
+    outfile << "<?bunch_position=" << *bunch_position << ",?>" << endl;
+    outfile << "<?particle_components=" << *p_components << ",?>" << endl;
+    outfile << "<?components_name= x y z px py pz lcut ldcut x_old y_old z_old macroparticle_charge macroparticle_nelectron lselect q m, ?>" << endl;
+  }
+
+  void write_ps_xml_bunch_header_(int *bunch_idx, char *filename, int *filename_length)
+  {
+    //--- open file ---//
+    ofstream outfile(filename, ios_base::app);
+    outfile << "<bunch " << *bunch_idx << " >" << endl;
+  }
+
+  void write_ps_xml_bunch_footer_(int *bunch_idx, char *filename, int *filename_length)
+  {
+    //--- open file ---//
+    ofstream outfile(filename, ios_base::app);
+    outfile << "</bunch " << *bunch_idx << " >" << endl;
+  }
+
+  void write_ps_xml_bunch_(int *bunch_idx, double *vector_fromF, int *dim1, int *flag_cmp_name, char *filename, int *filename_length)
+  {
+    double value;
+    char *s;
+    int *flen = new (int);
+    std::vector<std::string> cmp_name;
+    cmp_name.push_back("x"); cmp_name.push_back("y"); cmp_name.push_back("z"); 
+    cmp_name.push_back("px"); cmp_name.push_back("py"); cmp_name.push_back("pz"); 
+    cmp_name.push_back("cut"); cmp_name.push_back("dcut");
+    cmp_name.push_back("x_old"); cmp_name.push_back("y_old"); cmp_name.push_back("z_old");
+    cmp_name.push_back("particle_charge"); cmp_name.push_back("electrons_permacrop");
+    cmp_name.push_back("mask_cut");
+    cmp_name.push_back("q"); cmp_name.push_back("m");
+
+    //--- open file ---//
+    ofstream outfile(filename, ios_base::app);
+
+    //--- write Phase Space ---//
+    long long byte_number = 8 * ((long long)(*dim1));
+    char binsS[8 + 8 * (*dim1)];
+    memcpy(binsS, (char *)&byte_number, 8);
+
+    int byte_count = 0;
+    // outfile << "<" << *cmp_name << ">" << endl;
+    outfile << "<" << cmp_name[*flag_cmp_name-1] << ">" << endl;
+    for (int i = 0; i < *dim1; i++)
+    {
+      value = (double)vector_fromF[i];
+      memcpy(binsS + (8 + 8 * byte_count), (char *)&value, 8);
+      byte_count++;
+    }
+    s = base64(binsS, 8 + 8 * *dim1, flen);
+    outfile.write(s, *flen);
+    outfile << endl;
+    outfile << "</" << cmp_name[*flag_cmp_name-1] << ">" << endl;
+  }
 }

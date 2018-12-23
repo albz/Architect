@@ -119,11 +119,6 @@ CONTAINS
             inv_R_shifted(i) = 1./abs(x_mesh_shifted(i))
         enddo
 
-        ! --- auxiliary variables
-        ! DeltaR = mesh_par%dr
-        ! DeltaZ = mesh_par%dz
-        !Dt     = sim_parameters%dt_fs*plasma%omega_p
-
         one_over_dx = 1./mesh_par%dr
         one_over_dz = 1./mesh_par%dz
 

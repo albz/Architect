@@ -21,7 +21,7 @@
 
 MODULE grid_diagnostics
 
-  ! USE pstruct_data
+  ! USE class_species
   USE my_types
   USE use_my_types
   USE moments

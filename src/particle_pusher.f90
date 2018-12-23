@@ -24,8 +24,8 @@ MODULE MoveParticle_FDTD
 use digit_precision
 use my_types
 use use_my_types
-use pstruct_data
-use architect_class_structure
+use class_species
+use class_particle
 use utilities
 
 IMPLICIT NONE
@@ -51,11 +51,12 @@ CONTAINS
    REAL(8) :: Ex_onparticle,Ey_onparticle,Bx_onparticle,By_onparticle	!Er-Bphi on particle position projected on {x,y} components
    REAL(8) :: q,m
    REAL(8) :: xacc,yacc,zacc,racc
-   REAL(8) :: Beta_beam_x,Beta_beam_y,beta_beam_r,Beta_beam_z
+   REAL(dp) :: beta_x,beta_y,beta_z,beta_r
    INTEGER :: indz,indx,indz_s,indx_s
    REAL(8) :: Wr,Wz,Wr_s,Wz_s,fraz,fraz_s,pos_r,pos_z
    REAL(8) :: w00,w10,w01,w11
    REAL(8) :: Ex,Ey,Ez,Er,Bx,By,sin_theta,cos_theta,ux,uy,uz,ux_minus,uy_minus,uz_minus,ux_plus,uy_plus,uz_plus
+   REAL(dp) :: ur,ur_minus,ur_prime,ur_plus,t
    REAL(8) :: gamma_half_timestep,ux_prime,uy_prime,uz_prime,ux_new,uy_new,uz_new
    REAL(8) :: tx,ty,tz,sx,sy,sz,alpha,t2
    REAL(8) :: inv_gamma,pxsm,pysm,pzsm,us2,s,upx,upy,upz
@@ -191,13 +192,13 @@ CONTAINS
 
 		gammaend  = sqrt(1. + ux_new**2 + uy_new**2 + uz_new**2)
 
-		Beta_beam_x = ux_new/gammaend !updated velocity
-		Beta_beam_y = uy_new/gammaend !updated velocity
-		Beta_beam_z = uz_new/gammaend !updated velocity
+		beta_x = ux_new/gammaend !updated velocity
+		beta_y = uy_new/gammaend !updated velocity
+		beta_z = uz_new/gammaend !updated velocity
 
-		xacc  = bunch(j)%part(ip)%cmp(1)+c*Beta_beam_x*sim_parameters%dt_fs
-		yacc  = bunch(j)%part(ip)%cmp(2)+c*Beta_beam_y*sim_parameters%dt_fs
-		zacc  = bunch(j)%part(ip)%cmp(3)+c*Beta_beam_z*sim_parameters%dt_fs
+		xacc  = bunch(j)%part(ip)%cmp(1)+c*beta_x*sim_parameters%dt_fs
+		yacc  = bunch(j)%part(ip)%cmp(2)+c*beta_y*sim_parameters%dt_fs
+		zacc  = bunch(j)%part(ip)%cmp(3)+c*beta_z*sim_parameters%dt_fs
 
 
 		! ------------------ Diagnostics for Nan and Infinity after advancement -------- !
@@ -227,9 +228,9 @@ CONTAINS
 			write(*,*) 'Er_onparticle = ',Er_onparticle
 			write(*,*) 'Bphi_onparticle = ',Bphi_onparticle
 			write(*,*) '   '
-			write(*,*) 'Beta_x = ',Beta_beam_x
-			write(*,*) 'Beta_y = ',Beta_beam_y
-			write(*,*) 'Beta_z = ',Beta_beam_x
+			write(*,*) 'Beta_x = ',beta_x
+			write(*,*) 'Beta_y = ',beta_y
+			write(*,*) 'Beta_z = ',beta_z
 			write(*,*) 'gamma end = ',gammaend
 			write(*,*) '--------------------------'
 			stop
@@ -334,37 +335,55 @@ CONTAINS
 		!--- Updates beam positions and velocities ---!
 		gammaend  = sqrt(1. + pxsm**2 + pysm**2 + pzsm**2)
 
-		Beta_beam_x = pxsm/gammaend !updated velocity
-		Beta_beam_y = pysm/gammaend !updated velocity
-		Beta_beam_z = pzsm/gammaend !updated velocity
+		beta_x = pxsm/gammaend !updated velocity
+		beta_y = pysm/gammaend !updated velocity
+		beta_z = pzsm/gammaend !updated velocity
 
-		bunch(j)%part(ip)%cmp(1)  = bunch(j)%part(ip)%cmp(1) + c*Beta_beam_x*sim_parameters%dt_fs
-		bunch(j)%part(ip)%cmp(2)  = bunch(j)%part(ip)%cmp(2) + c*Beta_beam_y*sim_parameters%dt_fs
-		bunch(j)%part(ip)%cmp(3)  = bunch(j)%part(ip)%cmp(3) + c*Beta_beam_z*sim_parameters%dt_fs
+		bunch(j)%part(ip)%cmp(1)  = bunch(j)%part(ip)%cmp(1) + c*beta_x*sim_parameters%dt_fs
+		bunch(j)%part(ip)%cmp(2)  = bunch(j)%part(ip)%cmp(2) + c*beta_y*sim_parameters%dt_fs
+		bunch(j)%part(ip)%cmp(3)  = bunch(j)%part(ip)%cmp(3) + c*beta_z*sim_parameters%dt_fs
 
 	endif !casse for 'equal particles' with VAY pusher
 
 
 	! ----- Leap-Frog with Boris rotation for 'weighted' particle ----- !
 	if(trim(bunchip%PWeights(j))=='weighted') then
-		gamma       = sqrt(1.D0 + bunch(j)%part(ip)%cmp(4)**2 + bunch(j)%part(ip)%cmp(6)**2 )
-		beta_beam_r = bunch(j)%part(ip)%cmp(4)/gamma ! r-component
-		beta_beam_z = bunch(j)%part(ip)%cmp(6)/gamma ! z-component
 
-		bunch(j)%part(ip)%cmp(4) = bunch(j)%part(ip)%cmp(4) + (Er_onparticle-beta_beam_z*Bphi_onparticle) * sim_parameters%dt
-		bunch(j)%part(ip)%cmp(6) = bunch(j)%part(ip)%cmp(6) + (Ez_onparticle+beta_beam_r*Bphi_onparticle) * sim_parameters%dt
+		ur             = bunch(j)%part(ip)%cmp(4) !beta-r * gamma
+		uz             = bunch(j)%part(ip)%cmp(6) !beta-z * gamma
+		q              = bunch(j)%part(ip)%cmp(15)
+		m              = bunch(j)%part(ip)%cmp(16)
 
-		!--- storing old position ---!
+		ur_minus = ur + q/m * Er_onparticle * sim_parameters%dt/2.
+		uz_minus = uz + q/m * Ez_onparticle * sim_parameters%dt/2.
+
+		gamma  = sqrt(1.D0 + bunch(j)%part(ip)%cmp(4)**2 + bunch(j)%part(ip)%cmp(6)**2 )
+		t      = q/m * Bphi_onparticle/gamma * sim_parameters%dt/2.
+		s      = 2.*t / (1+t**2)
+
+		ur_prime = ur_minus - uz_minus*t
+		uz_prime = uz_minus + ur_minus*t
+
+		ur_plus  = ur_minus - uz_prime*s
+		uz_plus  = uz_minus + ur_prime*s
+
+
+		bunch(j)%part(ip)%cmp(4) = ur_plus + q/m * Er_onparticle * sim_parameters%dt/2.
+		bunch(j)%part(ip)%cmp(6) = uz_plus + q/m * Ez_onparticle * sim_parameters%dt/2.
+
+
+		!--- storing ---!
 		bunch(j)%part(ip)%cmp(9 )=bunch(j)%part(ip)%cmp(1)
-		bunch(j)%part(ip)%cmp(10)=bunch(j)%part(ip)%cmp(2)
 		bunch(j)%part(ip)%cmp(11)=bunch(j)%part(ip)%cmp(3)
 
-		gamma       = sqrt(1.D0 + bunch(j)%part(ip)%cmp(4)**2 + bunch(j)%part(ip)%cmp(6)**2 )
-		beta_beam_r = bunch(j)%part(ip)%cmp(4)/gamma ! r-component
-		beta_beam_z = bunch(j)%part(ip)%cmp(6)/gamma ! z-component
 
-		bunch(j)%part(ip)%cmp(1) = bunch(j)%part(ip)%cmp(1) + c*beta_beam_r*sim_parameters%dt_fs
-		bunch(j)%part(ip)%cmp(3) = bunch(j)%part(ip)%cmp(3) + c*beta_beam_z*sim_parameters%dt_fs
+		!--- space advancement ---!
+		gamma  = sqrt(1.D0 + bunch(j)%part(ip)%cmp(4)**2 + bunch(j)%part(ip)%cmp(6)**2 )
+		beta_r = bunch(j)%part(ip)%cmp(4) / gamma
+		beta_z = bunch(j)%part(ip)%cmp(6) / gamma
+		bunch(j)%part(ip)%cmp(1)  = bunch(j)%part(ip)%cmp(1) + c*beta_r*sim_parameters%dt_fs
+		bunch(j)%part(ip)%cmp(3)  = bunch(j)%part(ip)%cmp(3) + c*beta_z*sim_parameters%dt_fs
+
 		if(bunch(j)%part(ip)%cmp(1) < 0.) then
 			bunch(j)%part(ip)%cmp(1) = - bunch(j)%part(ip)%cmp(1)
 			bunch(j)%part(ip)%cmp(4) = - bunch(j)%part(ip)%cmp(4)

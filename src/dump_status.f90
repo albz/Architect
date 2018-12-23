@@ -23,8 +23,8 @@ MODULE dump_status
 
 	USE my_types
 	USE use_my_types
-	USE pstruct_data
-	USE architect_class_structure
+	USE class_species
+	USE class_particle
 
 IMPLICIT NONE
 

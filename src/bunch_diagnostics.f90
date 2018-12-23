@@ -21,7 +21,7 @@
 
 MODULE Diagnostics_on_Bunches
 
-  ! USE pstruct_data
+  ! USE class_species
   USE my_types
   USE use_my_types
   USE moments
@@ -57,8 +57,8 @@ END SUBROUTINE bunch_diagnostics_Integrated_AllBunches
 SUBROUTINE apply_Sigma_cut(sim_par,plasma_k_0)
 
 USE my_types
-USE pstruct_data
-USE architect_class_structure
+USE class_species
+USE class_particle
 
   TYPE(simul_param), INTENT(IN) :: sim_par
   INTEGER :: ss, npc, ni, nf, bunch_number, iparticle
@@ -77,9 +77,9 @@ USE architect_class_structure
 
     do iparticle=1,size(bunch(bunch_number)%part(:))
  			if( bunch(bunch_number)%part(iparticle)%cmp(8) .eq. 1.) then
-        if( abs(bunch(bunch_number)%part(iparticle)%cmp(1)-mu_x(1)) > 4.*bunchip%bunch_s_x(bunch_number) ) bunch(bunch_number)%part(iparticle)%cmp(8)=0.
-        if( abs(bunch(bunch_number)%part(iparticle)%cmp(2)-mu_y(1)) > 4.*bunchip%bunch_s_y(bunch_number) ) bunch(bunch_number)%part(iparticle)%cmp(8)=0.
-        if( abs(bunch(bunch_number)%part(iparticle)%cmp(3)-mu_z(1)) > 4.*bunchip%bunch_s_z(bunch_number) ) bunch(bunch_number)%part(iparticle)%cmp(8)=0.
+        if( abs(bunch(bunch_number)%part(iparticle)%cmp(1)-mu_x(1)) > 4.*bunchip%sx_um(bunch_number) ) bunch(bunch_number)%part(iparticle)%cmp(8)=0.
+        if( abs(bunch(bunch_number)%part(iparticle)%cmp(2)-mu_y(1)) > 4.*bunchip%sy_um(bunch_number) ) bunch(bunch_number)%part(iparticle)%cmp(8)=0.
+        if( abs(bunch(bunch_number)%part(iparticle)%cmp(3)-mu_z(1)) > 4.*bunchip%sz_um(bunch_number) ) bunch(bunch_number)%part(iparticle)%cmp(8)=0.
  			endif
  		enddo
 

@@ -33,8 +33,8 @@ USE MoveParticle_FDTD
 USE FluidAdvance_FDTD
 USE bunch_generation
 USE Data_dumping
-USE pstruct_data
-USE architect_class_structure
+USE class_species
+USE class_particle
 USE moments
 USE initialize_bunch
 USE utilities

@@ -23,8 +23,8 @@ MODULE ionisation_module
 
  USE my_types
  USE use_my_types
- USE pstruct_data
- USE architect_class_structure
+ USE class_species
+ USE class_particle
  USE utilities
  USE ion_background
 

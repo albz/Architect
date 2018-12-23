@@ -23,8 +23,8 @@ MODULE utilities
 
 USE my_types
 USE use_my_types
-USE pstruct_data
-USE architect_class_structure
+USE class_species
+USE class_particle
 
 IMPLICIT NONE
 
@@ -229,7 +229,6 @@ end subroutine open_file
 
 		fraz_s = (2.D0*x_mesh_shifted(indx_s)*one_over_dx + Wr_s) &
 				/ (2.D0*x_mesh_shifted(indx_s)*one_over_dx + 1.D0  )
-
 
 		if ((indx.eq.2).and.(pos_r.le.(0.5D0*mesh_par%dr))) then
 			!do nothing

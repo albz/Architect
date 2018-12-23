@@ -19,52 +19,59 @@
 !  along with architect.  If not, see <http://www.gnu.org/licenses/>.                                 !
 !*****************************************************************************************************!
 
-MODULE ComputeCurrentFDTD
+module class_particle
+	implicit none
+	integer,parameter :: P_ncmp=16
 
-USE my_types
-USE use_my_types
-USE Compute_beam_current_FDTD
-USE Compute_plasma_current
-USE class_species
-USE class_particle
-USE utilities
+	type components
+		real(8) :: cmp(P_ncmp)
+
+		! ---- particle components ---------- !
+
+		! 1  : X
+		! 2  : Y
+		! 3  : Z
+		! 4  : Px
+		! 5  : Py
+		! 6  : Pz
+
+		! 7  : cut
+		! 8  : dcut, cut from integrated parameters diagnostics
+
+		! 9  : X_old (in previous iteration, necessary for correct time centering in charge deposition)
+		! 10 : Y_old (in previous iteration, necessary for correct time centering in charge deposition)
+		! 11 : Z_old (in previous iteration, necessary for correct time centering in charge deposition)
+
+		! 12 : part_charge (macroparticle charge)
+		! 13 : elperpart (electrons per macroparticle)
+
+		! 14 : select particle for diagnostics
+		!      originally this part was called maskbunch a logical variable
+		!      used to select the particle, it comes to be more conveninet
+		!      to create a specific particle-component and then to convert
+		!      it to a logical variable
+		!      1 :: use it for diagnostics --- 0 :: exclude it
+
+		! 15 : q, particle charge in unit of elementary charge (eg electron=-1.)
+		! 16 : m, particle mass in unit of electron mass (eg electron=1.)
+
+	end type components
+
+	type static_background_ion
+		real(8) :: cmp(7)
+		! ---- cmp - background ion components ---------- !
+		! 1  : Z_coordinate
+		! 2  : R_coordinate
+		! 3  : A - Mass number
+		! 4  : Z - Atomic number
+		! 5  : Zstar - ionisation value
+		! 6  : n_plasma : original ion density
+		! 7  : inout - check particle Active(1) or inactive(0)
+	end type static_background_ion
 
 
+	type particle
+		type(components),allocatable :: part(:)
+	end type particle
 
-IMPLICIT NONE
-
-CONTAINS
-
-
-
-
-   SUBROUTINE Kernel_ComputeCurrent_FDTD
-   IMPLICIT NONE
-   INTEGER inc,tt
-   REAL(8) :: k_0,conv
-
-   k_0 = plasma%k_p
-
-   call Compute_beam_3current_FDTD
-
-   ! Conversion factor
-   conv     = (1./(2.*pi*mesh_par%dz*mesh_par%dr))*(k_0*1.e4)**3   	!Divide by cell volume (1/r factor included in subroutine Compute_beam_3current_FDTD)
-   conv     = conv/plasma%n0           						!dimensionless
-
-   mesh%ne_b =   mesh%ne_b*conv
-   mesh%Jz  =   mesh%Jz*conv
-   mesh%Jr  =   mesh%Jr*conv
-
-   if ( sim_parameters%Fluid_Scheme==0 ) then
-	     write(*,*) 'error: old upwind centering is not supported in this version'
-	     stop
-   !call Compute_plasma_electron_current_FDTD
-   else if (sim_parameters%Fluid_Scheme==2   .or.   sim_parameters%Fluid_Scheme==1) then
-       call Compute_plasma_electron_current
-   endif
-
-   return
-   END SUBROUTINE
-
-
-END MODULE
+end module class_particle

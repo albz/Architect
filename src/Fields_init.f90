@@ -134,14 +134,8 @@ contains
 			endif
 
 			! ---- The part of the domain involved is around the bunch
-			write(*,*) bunches_position(b),dim_Lapl_half_z,bunches_position(b)-dim_Lapl_half_z
-			write(*,*) mesh_par%Nzm-1,bunches_position(b),dim_Lapl_half_z
-			! stop
-			! left  =  max(2,(bunches_position(b)-dim_Lapl_half_z)) 
-			! right =  min(mesh_par%Nzm-1, (bunches_position(b)+dim_Lapl_half_z-1))
 			left = max(2             , bunches_position(b)-dim_Lapl_half_z   )
 			right  = min(mesh_par%Nzm-1, bunches_position(b)+dim_Lapl_half_z-1 )
-			write(*,*) left,right,left-right,2*dim_Lapl_half_z
 			bottom = 2
 			if(bunchip%self_consistent_field_bunch==5) bottom=1
 			up     = (dim_Lapl_r+1)
@@ -258,7 +252,7 @@ contains
 		REAL(8), DIMENSION(mesh_par%Nzm,mesh_par%Nxm), intent(in) :: Phi
 
 		!--- old version 2 points stencil ---!
-		!gamma_0 = bunchip%bunch_gamma_m(1)
+		!gamma_0 = bunchip%gamma(1)
 		!do i=2,(mesh_par%Nzm-2)
 		!	do j=2,(mesh_par%Nxm-1)
 		!		mesh(i,j)%Ex_bunch = -1.*(Phi(i,j)-Phi(i,j-1))/mesh_par%dr
@@ -267,7 +261,7 @@ contains
 		!enddo
 
 		!---> using 3points stencil
-		gamma_0 = bunchip%bunch_gamma_m(1)
+		gamma_0 = bunchip%gamma(1)
 		do i=2,(mesh_par%Nzm-2)
 			do j=2,(mesh_par%Nxm-1)
 				mesh(i,j)%Ex_bunch = +1.*(Phi(i,j+1)-Phi(i,j-1))/2./mesh_par%dr            !sign
@@ -304,7 +298,7 @@ contains
 		INTEGER bla
 
 			nn=2*dim_Lapl_half_z
-			gamma_0 = bunchip%bunch_gamma_m(1)
+			gamma_0 = bunchip%gamma(1)
 
 			k=1
 			do j=2,(dim_Lapl_r+1)
@@ -412,7 +406,7 @@ contains
 			count_non_null_elements = 0
 
 			nn=2*dim_Lapl_half_z
-			gamma_0 = bunchip%bunch_gamma_m(1)
+			gamma_0 = bunchip%gamma(1)
 			write(*,'(A,I10)') 'Laplacian matrix size: n x n, with n:',dim_Lapl
 			k=1
 			count=1
@@ -631,7 +625,7 @@ contains
 		! B = || beta_0 || unit vector_z x Efield
 		! all the bunches must have the same average initial gammma
 
-		! beta_0 = sqrt( 1.-1./(bunchip%bunch_gamma_m(1))**2 ) ! all the bunches must have the same average initial gammma
+		! beta_0 = sqrt( 1.-1./(bunchip%gamma(1))**2 ) ! all the bunches must have the same average initial gammma
 		!this definition also takes into account for the propagation direction 
 		!analytically correcting the Bphi sign depending on the direction of propagation
 		beta_0 = calculate_nth_moment(1,1,6,'nocentral')/calculate_nth_moment(1,1,7,'nocentral') !calculate_nth_moment(bunch_number,nth,cmp,'central')
@@ -750,7 +744,7 @@ contains
 
 		mesh(:,:)%Ez_bunch=0. ! with this initialization Ez is completely null
 		mesh(:,:)%Ex_bunch=0.
-		gamma_0 = bunchip%bunch_gamma_m(1)
+		gamma_0 = bunchip%gamma(1)
 
 		do j=2,(mesh_par%Nxm-2)
 			do j_prime=1,j

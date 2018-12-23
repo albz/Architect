@@ -23,8 +23,8 @@ module read_input_module
 
 USE my_types
 USE use_my_types
-USE pstruct_data
-USE architect_class_structure
+USE class_species
+USE class_particle
 
 implicit none
 
@@ -143,11 +143,13 @@ subroutine generate_output_tree
       sim_parameters%path_PS 	 = 'out/PS/'
 	    sim_parameters%path_grid = 'out/2D/'
       sim_parameters%path_vtk  = 'out/vtk/'
+      sim_parameters%path_xml  = 'out/xml/'
       sim_parameters%path_integrated_diagnostics = 'out/integrated_diagnostics/'
       sim_parameters%path_dumprestart = 'dumprestart/'
     	call system('mkdir -p out/PS')
     	call system('mkdir -p out/2D')
       call system('mkdir -p out/vtk')
+      call system('mkdir -p out/xml')
       call system('mkdir -p out/integrated_diagnostics')
       call system('mkdir -p dumprestart')
 
@@ -414,13 +416,13 @@ subroutine preset_bunch
     bunchip%shape(:)='bigaussian'
     bunchip%chargeB(:)= 0.200
 		bunchip%n_particles(:)= 50000
-		bunchip%bunch_s_x(:)=8.0
-		bunchip%bunch_s_y(:)=8.0
-		bunchip%bunch_s_z(:)=50.0
-		bunchip%bunch_gamma_m(:)=200.
-		bunchip%bunch_eps_x(:)=1.0
-		bunchip%bunch_eps_y(:)=1.0
-		bunchip%bunch_dgamma(:)=0.1
+		bunchip%sx_um(:)=8.0
+		bunchip%sy_um(:)=8.0
+		bunchip%sz_um(:)=50.0
+		bunchip%gamma(:)=200.
+		bunchip%epsx_um(:)=1.0
+		bunchip%epsy_um(:)=1.0
+		bunchip%dgamma(:)=0.1
 		bunchip%db(:)=0.0
     !--- for triangular shape ---!
     bunchip%Charge_right(:)=0.d0

@@ -23,7 +23,8 @@ FILES  =  digit_precision.f90 \
 					use_types.f90 \
 					random_numbers_functions.f90 \
 					shapiro_wilks.f90 \
-					Particle_Classes.f90 \
+					class_particle.f90 \
+					class_species.f90 \
 					read_input.f90 \
 					fileflags.f90 \
 					utility.f90 \
@@ -48,7 +49,7 @@ FILES  =  digit_precision.f90 \
 					bunch_diagnostics.f90 \
 					grid_diagnostics.f90 \
 					data_dump.f90 \
-					data_dump_xlm.cpp \
+					data_dump_vtk_xml_in.cpp \
 					dump_status.f90 \
 					architect.f90
 
@@ -103,7 +104,7 @@ $(OBJ_FOLDER)/digit_precision.mod: $(SRC_FOLDER)/digit_precision.f90 $(OBJ_FOLDE
 	@true
 
 $(OBJ_FOLDER)/my_types.o: $(SRC_FOLDER)/my_types.f90 \
-														$(SRC_FOLDER)/digit_precision.mod
+														$(OBJ_FOLDER)/digit_precision.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/my_types.mod: $(SRC_FOLDER)/my_types.f90 $(OBJ_FOLDER)/my_types.o
 	@true
@@ -123,16 +124,22 @@ $(OBJ_FOLDER)/shapiro_wilks.o: $(SRC_FOLDER)/shapiro_wilks.f90
 $(OBJ_FOLDER)/shapiro_wilks.mod: $(SRC_FOLDER)/shapiro_wilks.f90 $(OBJ_FOLDER)/shapiro_wilks.o
 	@true
 
-$(OBJ_FOLDER)/Particle_Classes.o: $(SRC_FOLDER)/Particle_Classes.f90
+$(OBJ_FOLDER)/class_particle.o: $(SRC_FOLDER)/class_particle.f90
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
-$(OBJ_FOLDER)/Particle_Classes.mod: $(SRC_FOLDER)/Particle_Classes.f90 $(OBJ_FOLDER)/Particle_Classes.o
+$(OBJ_FOLDER)/class_particle.mod: $(SRC_FOLDER)/class_particle.f90 $(OBJ_FOLDER)/class_particle.o
+	@true
+
+$(OBJ_FOLDER)/class_species.o: $(SRC_FOLDER)/class_species.f90 \
+															$(OBJ_FOLDER)/class_particle.mod
+	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
+$(OBJ_FOLDER)/class_species.mod: $(SRC_FOLDER)/class_species.f90 $(OBJ_FOLDER)/class_species.o
 	@true
 
 $(OBJ_FOLDER)/read_input.o: $(SRC_FOLDER)/read_input.f90 \
 												    $(OBJ_FOLDER)/my_types.mod \
 														$(OBJ_FOLDER)/use_types.mod \
-														$(OBJ_FOLDER)/pstruct_data.mod \
-														$(OBJ_FOLDER)/architect_class_structure.mod
+														$(OBJ_FOLDER)/class_species.mod \
+														$(OBJ_FOLDER)/class_particle.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/read_input.mod: $(SRC_FOLDER)/read_input.f90 $(OBJ_FOLDER)/read_input.o
 	@true
@@ -144,8 +151,8 @@ $(OBJ_FOLDER)/fileflags.mod: $(SRC_FOLDER)/fileflags.f90 $(OBJ_FOLDER)/fileflags
 
 $(OBJ_FOLDER)/bunch_generation.o: $(SRC_FOLDER)/bunch_generation.f90 \
 																	$(OBJ_FOLDER)/random_numbers_functions.mod \
-																	$(OBJ_FOLDER)/pstruct_data.mod \
-																	$(OBJ_FOLDER)/architect_class_structure.mod \
+																	$(OBJ_FOLDER)/class_species.mod \
+																	$(OBJ_FOLDER)/class_particle.mod \
 																	$(OBJ_FOLDER)/moments.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/bunch_generation.mod: $(SRC_FOLDER)/bunch_generation.f90 $(OBJ_FOLDER)/bunch_generation.o
@@ -154,8 +161,8 @@ $(OBJ_FOLDER)/bunch_generation.mod: $(SRC_FOLDER)/bunch_generation.f90 $(OBJ_FOL
 $(OBJ_FOLDER)/utility.o: $(SRC_FOLDER)/utility.f90 \
 												 $(OBJ_FOLDER)/my_types.mod \
 												 $(OBJ_FOLDER)/use_types.mod \
-												 $(OBJ_FOLDER)/pstruct_data.mod \
-												 $(OBJ_FOLDER)/architect_class_structure.mod
+												 $(OBJ_FOLDER)/class_species.mod \
+												 $(OBJ_FOLDER)/class_particle.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/utility.mod: $(SRC_FOLDER)/utility.f90 $(OBJ_FOLDER)/utility.o
 	@true
@@ -163,8 +170,8 @@ $(OBJ_FOLDER)/utility.mod: $(SRC_FOLDER)/utility.f90 $(OBJ_FOLDER)/utility.o
 $(OBJ_FOLDER)/bunch_initialization.o: $(SRC_FOLDER)/bunch_initialization.f90 \
 																			$(OBJ_FOLDER)/my_types.mod \
 																			$(OBJ_FOLDER)/use_types.mod \
-																			$(OBJ_FOLDER)/pstruct_data.mod \
-																			$(OBJ_FOLDER)/architect_class_structure.mod \
+																			$(OBJ_FOLDER)/class_species.mod \
+																			$(OBJ_FOLDER)/class_particle.mod \
 																			$(OBJ_FOLDER)/bunch_moments.mod \
 																			$(OBJ_FOLDER)/bunch_generation.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
@@ -198,8 +205,8 @@ $(OBJ_FOLDER)/linear_algebra_utilities.mod: $(SRC_FOLDER)/linear_algebra_utiliti
 $(OBJ_FOLDER)/compute_bunch_current.o: $(SRC_FOLDER)/compute_bunch_current.f90 \
 																		   $(OBJ_FOLDER)/my_types.mod \
 																			 $(OBJ_FOLDER)/use_types.mod \
-																			 $(OBJ_FOLDER)/pstruct_data.mod \
-																			 $(OBJ_FOLDER)/architect_class_structure.mod \
+																			 $(OBJ_FOLDER)/class_species.mod \
+																			 $(OBJ_FOLDER)/class_particle.mod \
 																			 $(OBJ_FOLDER)/utilities.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/compute_bunch_current.mod: $(SRC_FOLDER)/compute_bunch_current.f90 $(OBJ_FOLDER)/compute_bunch_current.o
@@ -247,7 +254,7 @@ $(OBJ_FOLDER)/compute_background_current.mod: $(SRC_FOLDER)/compute_background_c
 $(OBJ_FOLDER)/bunch_moments.o: $(SRC_FOLDER)/bunch_moments.f90 \
 													 		 $(OBJ_FOLDER)/my_types.mod \
 													     $(OBJ_FOLDER)/use_types.mod \
-													     $(OBJ_FOLDER)/pstruct_data.mod \
+													     $(OBJ_FOLDER)/class_species.mod \
 													     $(OBJ_FOLDER)/utilities.mod \
 															 $(OBJ_FOLDER)/compute_background_current.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
@@ -259,8 +266,8 @@ $(OBJ_FOLDER)/compute_current_manager.o: $(SRC_FOLDER)/compute_current_manager.f
 																					$(OBJ_FOLDER)/my_types.mod \
 																					$(OBJ_FOLDER)/use_types.mod \
 																					$(OBJ_FOLDER)/utilities.mod \
-																					$(OBJ_FOLDER)/pstruct_data.mod \
-																					$(OBJ_FOLDER)/architect_class_structure.mod \
+																					$(OBJ_FOLDER)/class_species.mod \
+																					$(OBJ_FOLDER)/class_particle.mod \
 																					$(OBJ_FOLDER)/compute_beam_current_fdtd.mod \
 																					$(OBJ_FOLDER)/compute_plasma_current.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
@@ -279,8 +286,8 @@ $(OBJ_FOLDER)/particle_pusher.o: $(SRC_FOLDER)/particle_pusher.f90 \
 																	$(OBJ_FOLDER)/my_types.mod \
 																	$(OBJ_FOLDER)/use_types.mod \
 																	$(OBJ_FOLDER)/utilities.mod \
-																	$(OBJ_FOLDER)/pstruct_data.mod \
-																	$(OBJ_FOLDER)/architect_class_structure.mod
+																	$(OBJ_FOLDER)/class_species.mod \
+																	$(OBJ_FOLDER)/class_particle.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/particle_pusher.mod: $(SRC_FOLDER)/particle_pusher.f90 $(OBJ_FOLDER)/particle_pusher.o
 	@true
@@ -289,9 +296,9 @@ $(OBJ_FOLDER)/ion_background.o: $(SRC_FOLDER)/ion_background.f90 \
 																$(OBJ_FOLDER)/my_types.mod \
 																$(OBJ_FOLDER)/use_types.mod \
 																$(OBJ_FOLDER)/utilities.mod \
-																$(OBJ_FOLDER)/pstruct_data.mod \
+																$(OBJ_FOLDER)/class_species.mod \
 																$(OBJ_FOLDER)/compute_plasma_current.mod \
-																$(OBJ_FOLDER)/architect_class_structure.mod
+																$(OBJ_FOLDER)/class_particle.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/ion_background.mod: $(SRC_FOLDER)/ion_background.f90 $(OBJ_FOLDER)/ion_background.o
 		@true
@@ -300,8 +307,8 @@ $(OBJ_FOLDER)/ionisation.o: $(SRC_FOLDER)/ionisation.f90 \
 														$(OBJ_FOLDER)/my_types.mod \
 														$(OBJ_FOLDER)/use_types.mod \
 														$(OBJ_FOLDER)/utilities.mod \
-														$(OBJ_FOLDER)/pstruct_data.mod \
-														$(OBJ_FOLDER)/architect_class_structure.mod \
+														$(OBJ_FOLDER)/class_species.mod \
+														$(OBJ_FOLDER)/class_particle.mod \
 														$(OBJ_FOLDER)/ion_background.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/ionisation.mod: $(SRC_FOLDER)/ionisation.f90 $(OBJ_FOLDER)/ionisation.o
@@ -312,8 +319,8 @@ $(OBJ_FOLDER)/window_shifting.o: $(SRC_FOLDER)/window_shifting.f90 \
 																	$(OBJ_FOLDER)/my_types.mod \
 																	$(OBJ_FOLDER)/use_types.mod \
 																	$(OBJ_FOLDER)/bunch_moments.mod \
-																	$(OBJ_FOLDER)/pstruct_data.mod \
-																	$(OBJ_FOLDER)/architect_class_structure.mod \
+																	$(OBJ_FOLDER)/class_species.mod \
+																	$(OBJ_FOLDER)/class_particle.mod \
 																	$(OBJ_FOLDER)/compute_plasma_current.mod \
 																	$(OBJ_FOLDER)/ion_background.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
@@ -322,8 +329,8 @@ $(OBJ_FOLDER)/window_shifting.mod: $(SRC_FOLDER)/window_shifting.f90 $(OBJ_FOLDE
 
 $(OBJ_FOLDER)/bunch_diagnostics.o: $(SRC_FOLDER)/bunch_diagnostics.f90 \
 																	 $(OBJ_FOLDER)/my_types.mod \
-																	 $(OBJ_FOLDER)/pstruct_data.mod \
-																	 $(OBJ_FOLDER)/architect_class_structure.mod \
+																	 $(OBJ_FOLDER)/class_species.mod \
+																	 $(OBJ_FOLDER)/class_particle.mod \
 																	 $(OBJ_FOLDER)/random_numbers_functions.mod \
 																	 $(OBJ_FOLDER)/shapiro_wilks.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
@@ -332,8 +339,8 @@ $(OBJ_FOLDER)/bunch_diagnostics.mod: $(SRC_FOLDER)/bunch_diagnostics.f90 $(OBJ_F
 
 $(OBJ_FOLDER)/grid_diagnostics.o: $(SRC_FOLDER)/grid_diagnostics.f90 \
 																	 $(OBJ_FOLDER)/my_types.mod \
- 																	 $(OBJ_FOLDER)/pstruct_data.mod \
-																	 $(OBJ_FOLDER)/architect_class_structure.mod
+ 																	 $(OBJ_FOLDER)/class_species.mod \
+																	 $(OBJ_FOLDER)/class_particle.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/grid_diagnostics.mod: $(SRC_FOLDER)/grid_diagnostics.f90 $(OBJ_FOLDER)/grid_diagnostics.o
 	@true
@@ -341,8 +348,8 @@ $(OBJ_FOLDER)/grid_diagnostics.mod: $(SRC_FOLDER)/grid_diagnostics.f90 $(OBJ_FOL
 $(OBJ_FOLDER)/data_dump.o: $(SRC_FOLDER)/data_dump.f90 \
 														$(OBJ_FOLDER)/my_types.mod \
 														$(OBJ_FOLDER)/use_types.mod \
-														$(OBJ_FOLDER)/pstruct_data.mod \
-														$(OBJ_FOLDER)/architect_class_structure.mod \
+														$(OBJ_FOLDER)/class_particle.mod \
+														$(OBJ_FOLDER)/class_species.mod \
 														$(OBJ_FOLDER)/ion_background.mod \
 														$(OBJ_FOLDER)/bunch_moments.mod \
 														$(OBJ_FOLDER)/grid_diagnostics.mod
@@ -350,15 +357,15 @@ $(OBJ_FOLDER)/data_dump.o: $(SRC_FOLDER)/data_dump.f90 \
 $(OBJ_FOLDER)/data_dump.mod: $(SRC_FOLDER)/data_dump.f90 $(OBJ_FOLDER)/data_dump.o
 	@true
 
-$(OBJ_FOLDER)/data_dump_xlm.o: $(SRC_FOLDER)/data_dump_xlm.cpp \
+$(OBJ_FOLDER)/data_dump_vtk_xml_in.o: $(SRC_FOLDER)/data_dump_vtk_xml_in.cpp \
 															 $(SRC_FOLDER)/base64.h
 	$(CC) $(OPTCC) -I$(BOOST_INC) -c -o $@ $< $(REDIRECT)
 
 $(OBJ_FOLDER)/dump_status.o: $(SRC_FOLDER)/dump_status.f90 \
 															$(OBJ_FOLDER)/my_types.mod \
 															$(OBJ_FOLDER)/use_my_types.mod \
-															$(OBJ_FOLDER)/pstruct_data.mod \
-															$(OBJ_FOLDER)/architect_class_structure.mod
+															$(OBJ_FOLDER)/class_species.mod \
+															$(OBJ_FOLDER)/class_particle.mod
 	$(FC) $(OPTFC) $(MODULE_REDIRECT) -c -o $@ $< $(REDIRECT)
 $(OBJ_FOLDER)/dump_status.mod: $(SRC_FOLDER)/dump_status.f90 $(OBJ_FOLDER)/dump_status.o
 	@true
@@ -376,8 +383,8 @@ $(OBJ_FOLDER)/architect.o: $(SRC_FOLDER)/architect.f90 \
 													 $(OBJ_FOLDER)/fluidadvance_fdtd.mod \
 													 $(OBJ_FOLDER)/bunch_generation.mod \
 													 $(OBJ_FOLDER)/data_dumping.mod \
-													 $(OBJ_FOLDER)/pstruct_data.mod \
-													 $(OBJ_FOLDER)/architect_class_structure.mod \
+													 $(OBJ_FOLDER)/class_species.mod \
+													 $(OBJ_FOLDER)/class_particle.mod \
 													 $(OBJ_FOLDER)/bunch_moments.mod \
 													 $(OBJ_FOLDER)/initialize_bunch.mod \
 													 $(OBJ_FOLDER)/utilities.mod \

@@ -23,8 +23,8 @@ MODULE Data_dumping
 
 USE my_types
 USE use_my_types
-USE pstruct_data
-USE architect_class_structure
+USE class_species
+USE class_particle
 USE ion_background
 USE Diagnostics_on_Bunches
 USE grid_diagnostics
@@ -90,10 +90,14 @@ SUBROUTINE data_dump
 				 if(sim_parameters%iter>30) then
 						write(*,'(A,I10,A,f12.3)') 'Printing PS   quantities :: at Iteration =',sim_parameters%iter,'  -  at run distance =',sim_parameters%zg
 						if (sim_parameters%Output_format.eq.0) call save_beam
-						if (sim_parameters%Output_format.eq.1) call save_beam_bin
+						if (sim_parameters%Output_format.eq.1) then 
+																	call save_beam_bin
+																	call write_f90_PS_xml
+						endif
 						if (sim_parameters%Output_format.eq.2) then
-																									 call save_beam_bin
-																									! call save_beam_vtk
+																	call save_beam_bin
+																	call write_f90_PS_xml
+																	! call save_beam_vtk
 					  endif
 						sim_parameters%PSLastOutput=sim_parameters%sim_time*c
 		endif
@@ -101,8 +105,7 @@ SUBROUTINE data_dump
 END SUBROUTINE data_dump
 
 
-	SUBROUTINE final_data_dump
-
+	subroutine final_data_dump
 		call from_particleZstart_to_meshZstar
 
 		if (sim_parameters%Output_format.eq.0) then
@@ -111,9 +114,9 @@ END SUBROUTINE data_dump
 		else if (sim_parameters%Output_format.eq.1) then
 			call savedata_bin
 			call save_beam_bin
+			call write_f90_PS_xml
 		endif
-
-	END SUBROUTINE final_data_dump
+	end subroutine final_data_dump
 
 	SUBROUTINE write_read_nml
 		NAMELIST / write_nml / plasma, sim_parameters, bck_plasma, bunchip, &
@@ -205,6 +208,40 @@ END SUBROUTINE data_dump
    return
 
    END SUBROUTINE
+
+
+	!--- write the beam PS on a xml structured output ---!
+	subroutine write_f90_PS_xml
+	character :: filename*150,position*10
+	integer   :: bunch_idx,i,j,dim1,dim2
+	integer,parameter :: P_ncmp=16
+	real(dp) :: bunch_position
+	real(dp), allocatable :: particles(:)
+	! character(len=19), dimension(P_ncmp) :: cmp_name = [character(len=19) :: "x", "y", "z", "px", "py", "pz", "cut", "dcut", "x_old", "y_old", "z_old", "particle_charge", "electrons_permacrop", "mask_cut", "q", "m"]
+
+	bunch_position = -1. * calculate_nth_moment(1,1,3,'nocentral') + mesh_par%z_max_moving_um
+	write(position, '(I7.7)' ) int( bunch_position )
+	filename          = TRIM(sim_parameters%path_xml)//'PS_bunch_'//TRIM(position)//'.xml'//C_NULL_CHAR
+
+	call write_ps_xml_header(1, bunchip%n_total_bunches, P_ncmp, bunch_position, filename)
+
+	do bunch_idx=1,bunchip%n_total_bunches
+		dim1 = bunchip%n_particles(bunch_idx)
+		dim2 = P_ncmp
+		allocate( particles( dim1 ) )
+
+		call write_ps_xml_bunch_header(bunch_idx, filename)
+		do j=1,dim2
+			particles=zero_dp
+			do i=1,dim1
+				particles(i)=bunch( bunch_idx )%part( i )%cmp( j )
+			enddo
+			call write_ps_xml_bunch(bunch_idx, particles(1:dim1), dim1, j, filename)
+		enddo
+		call write_ps_xml_bunch_footer(bunch_idx, filename)
+		deallocate( particles )
+	enddo
+	end subroutine write_f90_PS_xml
 
 
 
@@ -319,31 +356,31 @@ END SUBROUTINE data_dump
 
  !--- Writes bunch rho ---!
 	filename=TRIM(sim_parameters%path_vtk)//'rho_bunch_um_'//position//'.vtr'//C_NULL_CHAR
-	call print_matrix(1,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%ne_b,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call write_surface_vtk(1,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%ne_b,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	filename=TRIM(sim_parameters%path_vtk)//'rho_bck_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
-	call print_matrix(2,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%ne_bck,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call write_surface_vtk(2,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%ne_bck,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	filename=TRIM(sim_parameters%path_vtk)//'rho_tot_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
-	call print_matrix(3,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%ne_b+mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%ne_bck,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call write_surface_vtk(3,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%ne_b+mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%ne_bck,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	filename=TRIM(sim_parameters%path_vtk)//'Er_bck_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
-	call print_matrix(4,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call write_surface_vtk(4,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	filename=TRIM(sim_parameters%path_vtk)//'Er_bunch_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
-	call print_matrix(5,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call write_surface_vtk(5,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	filename=TRIM(sim_parameters%path_vtk)//'Er_tot_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
-	call print_matrix(6,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex+mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call write_surface_vtk(6,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex+mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ex_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	filename=TRIM(sim_parameters%path_vtk)//'Ez_bck_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
-	call print_matrix(7,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call write_surface_vtk(7,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	filename=TRIM(sim_parameters%path_vtk)//'Ez_bunch_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
-	call print_matrix(8,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call write_surface_vtk(8,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	filename=TRIM(sim_parameters%path_vtk)//'Ez_tot_um_'//TRIM(ADJUSTL(position))//'.vtr'//C_NULL_CHAR
-	call print_matrix(9,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez+mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
+	call write_surface_vtk(9,z_mesh(2:mesh_par%Nzm-1)/plasma%k_p,x_mesh(2:mesh_par%Nxm-1)/plasma%k_p,mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez+mesh(2:mesh_par%Nzm-2,2:mesh_par%Nxm-2)%Ez_bunch,mesh_par%Nzm-2,mesh_par%Nxm-2, filename)
 
 	!Still missing as quantities in the vtk format
 	!

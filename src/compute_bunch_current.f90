@@ -23,8 +23,8 @@ MODULE Compute_beam_current_FDTD
 
 USE my_types
 USE use_my_types
-USE pstruct_data
-USE architect_class_structure
+USE class_species
+USE class_particle
 USE utilities
 
 
@@ -299,16 +299,16 @@ endif
 	REAL(8)    :: gamma_0,beta_0,alpha,sigma_r,sigma_z
 	INTEGER :: i,j
 
-	gamma_0 = bunchip%bunch_gamma_m(1)
+	gamma_0 = bunchip%gamma(1)
 	beta_0  = sqrt(1-1/gamma_0**2.)
 
 	! bunch normalized peak density
 	alpha   = bunchip%ChargeB(1)*1e-9/(plasma%n0*1e6)/1.602e-19
-	alpha   = alpha/(2.*pi)**1.5/bunchip%bunch_s_x(1)/bunchip%bunch_s_y(1)/bunchip%bunch_s_z(1)/1e-18
+	alpha   = alpha/(2.*pi)**1.5/bunchip%sx_um(1)/bunchip%sy_um(1)/bunchip%sz_um(1)/1e-18
 
 	! adimensional bunch dimensions
-	sigma_r = bunchip%bunch_s_x(1)*plasma%k_p
-	sigma_z = bunchip%bunch_s_z(1)*plasma%k_p
+	sigma_r = bunchip%sx_um(1)*plasma%k_p
+	sigma_z = bunchip%sz_um(1)*plasma%k_p
 
 	! force rho to analytic value of multivariate gaussian
 	mesh(:,:)%ne_b = 0.

@@ -24,8 +24,8 @@
 
 	USE my_types
 	USE use_my_types
-	USE pstruct_data
-	USE architect_class_structure
+	USE class_species
+	USE class_particle
 	USE bunch_generation
 	USE moments
 
@@ -63,8 +63,8 @@
 
       do bunch_number = 1,bunchip%n_total_bunches
         allocate( bunch_init(8,bunchip%n_particles(bunch_number)) )
-        sim_parameters%rB0(bunch_number)    = bunchip%bunch_s_x(bunch_number)
-  			sim_parameters%lbunch(bunch_number) = bunchip%bunch_s_z(bunch_number)
+        sim_parameters%rB0(bunch_number)    = bunchip%sx_um(bunch_number)
+  			sim_parameters%lbunch(bunch_number) = bunchip%sz_um(bunch_number)
 
         if( trim(bunchip%shape(bunch_number))=='bigaussian'  .and. trim(bunchip%PWeights(bunch_number))=='equal')    call generate_bunch_bigaussian_equal(bunch_number)
         if( trim(bunchip%shape(bunch_number))=='bigaussian'  .and. trim(bunchip%PWeights(bunch_number))=='weighted') call generate_bunch_bigaussian_weighted(bunch_number)
@@ -119,10 +119,10 @@
 
      alphaTwiss = twiss%alpha_new_factor(i)
      betaTwiss  =	twiss%beta_new_factor(i)
-     eps_x=bunchip%bunch_eps_x(i)
-     eps_y=bunchip%bunch_eps_y(i)
-     s_x=bunchip%bunch_s_x(i)
-     s_y=bunchip%bunch_s_y(i)
+     eps_x=bunchip%epsx_um(i)
+     eps_y=bunchip%epsy_um(i)
+     s_x=bunchip%sx_um(i)
+     s_y=bunchip%sy_um(i)
 
      ax11=sqrt( eps_x*betaTwiss/(s_x**2+s_x**2*alphaTwiss**2) )
      ay11=sqrt( eps_y*betaTwiss/(s_y**2+s_y**2*alphaTwiss**2) )
@@ -345,8 +345,8 @@ subroutine dimension_first_bunch
  write(*,'(A)') ' >>> Initialisation :: Identify dimension for the first bunch <<<'
 
   if(bunchip%l_bunch_internal_init) then !from input file
-    sim_parameters%rB0(1)    = bunchip%bunch_s_x(1)
-    sim_parameters%lbunch(1) = bunchip%bunch_s_z(1)
+    sim_parameters%rB0(1)    = bunchip%sx_um(1)
+    sim_parameters%lbunch(1) = bunchip%sz_um(1)
   else !read from external file
     name_file = bunchip%inbunch(1)
     call read_header_external_file(name_file,bunchip%chargeB(1),bunchip%n_particles(1))

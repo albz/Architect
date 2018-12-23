@@ -24,8 +24,8 @@
  USE random_numbers_functions
  USE my_types
  USE use_my_types
- USE pstruct_data
- USE architect_class_structure
+ USE class_species
+ USE class_particle
  USE moments
  implicit none
 
@@ -52,13 +52,13 @@
     x_cm          = 0.
     y_cm          = 0.
     z_cm          = bunchip%z_cm(bunch_number)
-    s_x           = bunchip%bunch_s_x(bunch_number)
-    s_y           = bunchip%bunch_s_y(bunch_number)
-    s_z           = bunchip%bunch_s_z(bunch_number)
-    gamma_m       = bunchip%bunch_gamma_m(bunch_number)
-    eps_x         = bunchip%bunch_eps_x(bunch_number)
-    eps_x         = bunchip%bunch_eps_x(bunch_number)
-    dgamma        = bunchip%bunch_dgamma(bunch_number)
+    s_x           = bunchip%sx_um(bunch_number)
+    s_y           = bunchip%sy_um(bunch_number)
+    s_z           = bunchip%sz_um(bunch_number)
+    gamma_m       = bunchip%gamma(bunch_number)
+    eps_x         = bunchip%epsx_um(bunch_number)
+    eps_x         = bunchip%epsx_um(bunch_number)
+    dgamma        = bunchip%dgamma(bunch_number)
     nparticles    = bunchip%n_particles(bunch_number)
     npZ           = bunchip%npZ(bunch_number)
     npR           = bunchip%npR(bunch_number)
@@ -130,13 +130,13 @@
     x_cm          = 0.
     y_cm          = 0.
     z_cm          = bunchip%z_cm(bunch_number)
-    s_x           = bunchip%bunch_s_x(bunch_number)
-    s_y           = bunchip%bunch_s_y(bunch_number)
-    s_z           = bunchip%bunch_s_z(bunch_number)
-    gamma_m       = bunchip%bunch_gamma_m(bunch_number)
-    eps_x         = bunchip%bunch_eps_x(bunch_number)
-    eps_y         = bunchip%bunch_eps_y(bunch_number)
-    dgamma        = bunchip%bunch_dgamma(bunch_number)
+    s_x           = bunchip%sx_um(bunch_number)
+    s_y           = bunchip%sy_um(bunch_number)
+    s_z           = bunchip%sz_um(bunch_number)
+    gamma_m       = bunchip%gamma(bunch_number)
+    eps_x         = bunchip%epsx_um(bunch_number)
+    eps_y         = bunchip%epsy_um(bunch_number)
+    dgamma        = bunchip%dgamma(bunch_number)
     nparticles    = bunchip%n_particles(bunch_number)
     npZ           = bunchip%npZ(bunch_number)
     npR           = bunchip%npR(bunch_number)
@@ -224,13 +224,13 @@
     x_cm          = 0.
     y_cm          = 0.
     z_cm          = bunchip%z_cm(bunch_number)
-    s_x           = bunchip%bunch_s_x(bunch_number)
-    s_y           = bunchip%bunch_s_y(bunch_number)
-    s_z           = bunchip%bunch_s_z(bunch_number)
-    gamma_m       = bunchip%bunch_gamma_m(bunch_number)
-    eps_x         = bunchip%bunch_eps_x(bunch_number)
-    eps_y         = bunchip%bunch_eps_y(bunch_number)
-    dgamma        = bunchip%bunch_dgamma(bunch_number)
+    s_x           = bunchip%sx_um(bunch_number)
+    s_y           = bunchip%sy_um(bunch_number)
+    s_z           = bunchip%sz_um(bunch_number)
+    gamma_m       = bunchip%gamma(bunch_number)
+    eps_x         = bunchip%epsx_um(bunch_number)
+    eps_y         = bunchip%epsy_um(bunch_number)
+    dgamma        = bunchip%dgamma(bunch_number)
     nparticles    = bunchip%n_particles(bunch_number)
     npZ           = bunchip%npZ(bunch_number)
     npR           = bunchip%npR(bunch_number)
@@ -314,13 +314,13 @@
     x_cm          = 0.
     y_cm          = 0.
     z_cm          = bunchip%z_cm(bunch_number)
-    s_x           = bunchip%bunch_s_x(bunch_number)
-    s_y           = bunchip%bunch_s_y(bunch_number)
-    s_z           = bunchip%bunch_s_z(bunch_number)
-    gamma_m       = bunchip%bunch_gamma_m(bunch_number)
-    eps_x         = bunchip%bunch_eps_x(bunch_number)
-    eps_y         = bunchip%bunch_eps_y(bunch_number)
-    dgamma        = bunchip%bunch_dgamma(bunch_number)
+    s_x           = bunchip%sx_um(bunch_number)
+    s_y           = bunchip%sy_um(bunch_number)
+    s_z           = bunchip%sz_um(bunch_number)
+    gamma_m       = bunchip%gamma(bunch_number)
+    eps_x         = bunchip%epsx_um(bunch_number)
+    eps_y         = bunchip%epsy_um(bunch_number)
+    dgamma        = bunchip%dgamma(bunch_number)
     nparticles    = bunchip%n_particles(bunch_number)
     npZ           = bunchip%npZ(bunch_number)
     npR           = bunchip%npR(bunch_number)
@@ -405,13 +405,13 @@
     x_cm          = 0.
     y_cm          = 0.
     z_cm          = bunchip%z_cm(bunch_number)
-    s_x           = bunchip%bunch_s_x(bunch_number)
-    s_y           = bunchip%bunch_s_y(bunch_number)
-    s_z           = bunchip%bunch_s_z(bunch_number)
-    gamma_m       = bunchip%bunch_gamma_m(bunch_number)
-    eps_x         = bunchip%bunch_eps_x(bunch_number)
-    eps_y         = bunchip%bunch_eps_y(bunch_number)
-    dgamma        = bunchip%bunch_dgamma(bunch_number)
+    s_x           = bunchip%sx_um(bunch_number)
+    s_y           = bunchip%sy_um(bunch_number)
+    s_z           = bunchip%sz_um(bunch_number)
+    gamma_m       = bunchip%gamma(bunch_number)
+    eps_x         = bunchip%epsx_um(bunch_number)
+    eps_y         = bunchip%epsy_um(bunch_number)
+    dgamma        = bunchip%dgamma(bunch_number)
     nparticles    = bunchip%n_particles(bunch_number)
     npZ           = bunchip%npZ(bunch_number)
     npR           = bunchip%npR(bunch_number)
@@ -502,13 +502,13 @@
     x_cm          = 0.
     y_cm          = 0.
     z_cm          = bunchip%z_cm(bunch_number)
-    s_x           = bunchip%bunch_s_x(bunch_number)
-    s_y           = bunchip%bunch_s_y(bunch_number)
-    s_z           = bunchip%bunch_s_z(bunch_number)
-    gamma_m       = bunchip%bunch_gamma_m(bunch_number)
-    eps_x         = bunchip%bunch_eps_x(bunch_number)
-    eps_y         = bunchip%bunch_eps_y(bunch_number)
-    dgamma        = bunchip%bunch_dgamma(bunch_number)
+    s_x           = bunchip%sx_um(bunch_number)
+    s_y           = bunchip%sy_um(bunch_number)
+    s_z           = bunchip%sz_um(bunch_number)
+    gamma_m       = bunchip%gamma(bunch_number)
+    eps_x         = bunchip%epsx_um(bunch_number)
+    eps_y         = bunchip%epsy_um(bunch_number)
+    dgamma        = bunchip%dgamma(bunch_number)
     nparticles    = bunchip%n_particles(bunch_number)
     npZ           = bunchip%npZ(bunch_number)
     npR           = bunchip%npR(bunch_number)
@@ -646,8 +646,8 @@
     calculate_bunch_number_of_particles=0
     dr=mesh_par%dr/plasma%k_p
     dz=mesh_par%dz/plasma%k_p
-    s_x=bunchip%bunch_s_x(nb)
-    s_z=bunchip%bunch_s_z(nb)
+    s_x=bunchip%sx_um(nb)
+    s_z=bunchip%sz_um(nb)
     s_cut = bunchip%sigma_cut(nb)
 
     if( trim(PWeights)=='equal') calculate_bunch_number_of_particles=nparticles
